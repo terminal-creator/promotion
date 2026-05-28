@@ -3,27 +3,27 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>【S5】2026 大模型冲刺营 · Agentic 系统工程与 Post-Train 落地 · 样式 v4 · Sage · 植物学</title>
+<title>【S5】2026 大模型冲刺营 · Sage 版</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&family=Instrument+Serif:ital@0;1&display=swap" />
 <style>
 :root{
-  --bg:#FFFFFF;
-  --bg-2:#F6F4EE;
-  --bg-3:#EFEDE5;
-  --paper:#FFFFFF;
+  --bg:#F3F2EC;
+  --bg-2:#E7E8DE;
+  --bg-3:#D8DACA;
+  --paper:#FAFAF4;
   --ink:#0A0B0E;
   --ink-2:#2F3138;
   --ink-3:#5F6168;
   --ink-4:#9A9B9F;
   --line:#0A0B0E;
-  --line-soft:#D9D6CB;
-  --line-fade:#ECEAE0;
-  --accent:#C2410C;          /* 工业橙 · 主点缀 */
-  --accent-2:#0F766E;        /* 深绿 · S5 NEW 高亮 */
-  --accent-3:#1E3A8A;        /* 深蓝 · 引用 */
-  --warn:#B45309;
+  --line-soft:#C8CDBE;
+  --line-fade:#E1E3D5;
+  --accent:#A6531C;          /* 主点缀 */
+  --accent-2:#2F5D4A;        /* 次强调 */
+  --accent-3:#4B5B3C;        /* 引用 */
+  --warn:#9A6B1E;
   --sans:"Inter","PingFang SC","Microsoft YaHei",ui-sans-serif,system-ui,sans-serif;
   --serif:"Instrument Serif","Source Han Serif SC","Noto Serif SC",ui-serif,Georgia,serif;
   --mono:"JetBrains Mono","SF Mono",Menlo,Consolas,monospace;
@@ -82,7 +82,7 @@ a{color:inherit;text-decoration:none}
 .hero-sub{font-size:16px;line-height:1.65;color:var(--ink-2);max-width:620px;margin:0 0 24px}
 .hero-sub b{color:var(--ink);font-weight:700}
 
-.hero-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border:1px solid var(--line);background:#fff;max-width:820px}
+.hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--line);background:#fff;max-width:620px}
 .hero-stat{padding:14px 14px;border-right:1px solid var(--line-soft)}
 .hero-stat:last-child{border-right:none}
 .hero-stat .n{font-family:var(--mono);font-size:24px;font-weight:700;letter-spacing:-0.02em;color:var(--ink);line-height:1}
@@ -201,9 +201,9 @@ a{color:inherit;text-decoration:none}
 .s-body ul{margin:0;padding-left:16px;font-size:13px;line-height:1.6;color:var(--ink-2)}
 .s-body ul li{margin-bottom:2px}
 .s-body ul li b{color:var(--ink);font-weight:600}
-.s-body .new{background:linear-gradient(180deg,transparent 60%,#FEE9C8 60%);color:var(--ink);font-weight:700;padding:0 2px}
-.s-foot{padding:12px 20px;background:#FBFAF5;border-top:1px solid var(--line-fade);font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:0.02em;line-height:1.4}
-.s-cell.now .s-foot{background:#FFF8EB;color:var(--accent);font-weight:700}
+.s-body .new{background:linear-gradient(180deg,transparent 60%,#F7E8D6 60%);color:var(--ink);font-weight:700;padding:0 2px}
+.s-foot{padding:12px 20px;background:#F0F0E6;border-top:1px solid var(--line-fade);font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:0.02em;line-height:1.4}
+.s-cell.now .s-foot{background:#F6EBDD;color:var(--accent);font-weight:700}
 
 .s-axis{
   margin-top:22px;display:grid;grid-template-columns:repeat(4,1fr);
@@ -242,7 +242,7 @@ a{color:inherit;text-decoration:none}
 }
 .intro-quote .mark{font-family:var(--serif);font-size:42px;color:var(--accent);line-height:0;margin-right:6px;font-style:normal}
 .intro-quote b{font-style:normal;font-family:var(--sans);font-weight:800;border-bottom:2px solid var(--accent)}
-.intro-quote .em{font-family:var(--sans);font-style:normal;background:#FFF8EB;padding:0 4px;font-weight:700;color:var(--accent)}
+.intro-quote .em{font-family:var(--sans);font-style:normal;background:#F6EBDD;padding:0 4px;font-weight:700;color:var(--accent)}
 
 .intro-grid{margin-top:36px;display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);background:#fff}
 @media(max-width:680px){.intro-grid{grid-template-columns:1fr}}
@@ -291,7 +291,7 @@ a{color:inherit;text-decoration:none}
 .route-tbl .cell{padding:12px 14px;border-right:1px solid var(--line-soft);display:flex;align-items:center}
 .route-tbl .cell:last-child{border-right:none}
 .route-tbl .row.head .cell{border-right-color:rgba(255,255,255,0.15)}
-.route-tbl .row:hover:not(.head){background:#FFFBF0}
+.route-tbl .row:hover:not(.head){background:#EFEFE3}
 .route-tbl .wk{color:var(--accent);font-weight:700}
 .route-tbl .topic{color:var(--ink);font-size:13.5px;font-family:var(--sans);font-weight:700}
 .route-tbl .pos{color:var(--ink-2);font-family:var(--sans);font-size:13px}
@@ -331,10 +331,10 @@ a{color:inherit;text-decoration:none}
 .wb-lab{font-family:var(--mono);font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent);margin:0 0 10px;display:flex;align-items:center;gap:10px;font-weight:700}
 .wb-lab .div{flex:1;height:1px;background:var(--line-soft)}
 .wb-narr{font-size:15.5px;line-height:1.78;color:var(--ink);margin:0 0 22px}
-.wb-narr .em{background:#FFF8EB;padding:0 3px;font-weight:600}
+.wb-narr .em{background:#F6EBDD;padding:0 3px;font-weight:600}
 .wb-narr .strong{font-weight:700;color:var(--ink)}
 
-.wb-chapters{margin:16px 0 22px;border:1px solid var(--line-soft);background:#FFFEF8}
+.wb-chapters{margin:16px 0 22px;border:1px solid var(--line-soft);background:#F5F5EB}
 .wb-chapters .head{
   display:flex;justify-content:space-between;align-items:center;
   padding:11px 16px;border-bottom:1px solid var(--line-soft);
@@ -356,134 +356,12 @@ a{color:inherit;text-decoration:none}
 
 /* iframe player */
 .wb-player{margin:16px 0 22px;border:1px solid var(--line);background:var(--ink);overflow:hidden}
-.wb-player .pbar .ll{display:flex;align-items:center;gap:10px;flex:0 0 auto;min-width:0;white-space:nowrap}
-.wb-player[data-collapsed="true"] .frame-wrap{display:none}
-.wb-player[data-collapsed="true"] .pbar{border-bottom:0;padding:14px 16px;gap:18px}
-
-/* ===== 折叠态：极简发光裁切框 CTA · 拉满 pbar 右半 ===================== */
-.wb-player .pbar .toggle{
-  appearance:none;cursor:pointer;
-  font-family:var(--sans);
-  transition:all .25s cubic-bezier(.2,.7,.2,1);
-}
-
-/* ============================================================
-   折叠态：4 角描边 → hover 后边框递进合拢
-   原理：用两个 mask 覆盖中间，只露出 4 角；hover 时 mask 收缩
-        让中段慢慢显出，整条 border 像"被画出来"
-   ============================================================ */
-.wb-player[data-collapsed="true"] .pbar .toggle{
-  position:relative;
-  isolation:isolate;
-  flex:1;min-width:260px;
-  display:flex;align-items:center;justify-content:center;
-  height:52px;
-  margin:6px 0;
-  padding:0 28px;
-  /* 视觉等效于 rgba(255,255,255,0.06) 盖在 #0A0C10 上：略浮起来 */
-  background:#1A1D24;
-  border:2px solid #FEFEFE;
-  border-radius:0;
-  color:#FEFEFE;
-  font-family:var(--sans);
-  font-weight:500;
-  font-size:14px;
-  letter-spacing:0.22em;
-  text-transform:uppercase;
-  white-space:nowrap;
-  overflow:visible;
-  cursor:pointer;
-  box-shadow:0 0 0 0 rgba(255,255,255,0); /* 占位，hover 时柔光放大 */
-  transition:box-shadow .35s ease;
-}
-
-/* ::before · 水平方向 mask（与按钮底色一致 → 隐形遮挡左右 border 中段） */
-.wb-player[data-collapsed="true"] .pbar .toggle::before{
-  content:"";
-  position:absolute;
-  left:-2px; top:6px;
-  width:calc(100% + 4px);
-  height:calc(100% - 12px);
-  background:#1A1D24;
-  transform:scaleY(1);
-  transform-origin:center;
-  transition:transform 320ms cubic-bezier(.45,.05,.55,.95);
-  z-index:1;
-  pointer-events:none;
-}
-
-/* ::after · 垂直方向 mask（延迟 500ms 出场 → 边框分两步画完） */
-.wb-player[data-collapsed="true"] .pbar .toggle::after{
-  content:"";
-  position:absolute;
-  top:-2px; left:6px;
-  height:calc(100% + 4px);
-  width:calc(100% - 12px);
-  background:#1A1D24;
-  transform:scaleX(1);
-  transform-origin:center;
-  transition:transform 320ms cubic-bezier(.45,.05,.55,.95) 500ms;
-  z-index:1;
-  pointer-events:none;
-}
-
-/* 文字必须在 mask 之上 */
-.wb-player[data-collapsed="true"] .pbar .toggle .label,
-.wb-player[data-collapsed="true"] .pbar .toggle .chev,
-.wb-player[data-collapsed="true"] .pbar .toggle .arrow{
-  position:relative;
-  z-index:10;
-}
-.wb-player[data-collapsed="true"] .pbar .toggle .chev,
-.wb-player[data-collapsed="true"] .pbar .toggle .arrow{display:none}
-.wb-player[data-collapsed="true"] .pbar .toggle .label::after{content:"点击查看交互式课件"}
-
-/* hover · mask 依次收缩 → 边框递进显现 */
-.wb-player[data-collapsed="true"] .pbar .toggle:hover::before{ transform:scaleY(0); }
-.wb-player[data-collapsed="true"] .pbar .toggle:hover::after{  transform:scaleX(0); }
-
-.wb-player[data-collapsed="true"] .pbar .toggle:hover{
-  letter-spacing:0.28em;
-  box-shadow:0 0 24px -6px rgba(255,255,255,0.18);
-  transition:letter-spacing 600ms ease, box-shadow .35s ease;
-}
-.wb-player[data-collapsed="true"] .pbar .toggle:active{
-  background:#13161C;
-}
-.wb-player[data-collapsed="true"] .pbar .toggle:active::before,
-.wb-player[data-collapsed="true"] .pbar .toggle:active::after{
-  background:#13161C;
-}
-
-/* ===== 展开态：极简「× 收起」小按钮 ================================ */
-.wb-player[data-collapsed="false"] .pbar .toggle{
-  background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);
-  border:1px solid rgba(255,255,255,0.18);
-  font-family:var(--mono);font-size:10.5px;font-weight:500;
-  letter-spacing:0.08em;text-transform:uppercase;
-  padding:5px 12px;border-radius:0;
-  box-shadow:none;animation:none;
-  display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;
-}
-.wb-player[data-collapsed="false"] .pbar .toggle:hover{
-  background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.35);
-}
-.wb-player[data-collapsed="false"] .pbar .toggle .chev,
-.wb-player[data-collapsed="false"] .pbar .toggle .arrow{display:none}
-.wb-player[data-collapsed="false"] .pbar .toggle .label::after{content:"× 收起"}
-
-@media (max-width:760px){
-  .wb-player[data-collapsed="true"] .pbar{flex-wrap:wrap}
-  .wb-player[data-collapsed="true"] .pbar .toggle{
-    flex:1 0 100%;margin-top:8px;letter-spacing:0.18em;
-  }
-}
 .wb-player .pbar{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;background:#0A0C10;border-bottom:1px solid #000;font-family:var(--mono);font-size:11px;letter-spacing:0.06em;color:rgba(255,255,255,0.65)}
 .wb-player .pbar .ll{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.wb-player .pbar .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px rgba(194,65,12,0.25);animation:pulse 2s ease-in-out infinite}
+.wb-player .pbar .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px rgba(166,83,28,0.25);animation:pulse 2s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:0.4}50%{opacity:1}}
 .wb-player .pbar .name{color:#fff;font-weight:700}
-.wb-player .pbar .openlk{color:var(--accent);text-decoration:none;border:1px solid rgba(194,65,12,0.4);padding:4px 10px;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase}
+.wb-player .pbar .openlk{color:var(--accent);text-decoration:none;border:1px solid rgba(166,83,28,0.4);padding:4px 10px;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase}
 .wb-player .pbar .openlk:hover{background:var(--accent);color:#fff}
 .wb-player .frame-wrap{position:relative;background:#000;aspect-ratio:16/10}
 .wb-player iframe{width:100%;height:100%;border:0;display:block;background:#fff}
@@ -515,7 +393,7 @@ a{color:inherit;text-decoration:none}
 .wb-highlights{
   margin:18px 0 22px;
   display:grid;grid-template-columns:repeat(3,1fr);gap:0;
-  border:1px solid var(--line);background:#FBFAF5;
+  border:1px solid var(--line);background:#F0F0E6;
 }
 @media(max-width:760px){.wb-highlights{grid-template-columns:1fr}}
 .wb-hl{padding:14px 18px;border-right:1px solid var(--line-soft);position:relative}
@@ -575,7 +453,7 @@ a{color:inherit;text-decoration:none}
 .stack-row{display:grid;grid-template-columns:170px 1fr 100px;border-bottom:1px solid var(--line-soft);font-family:var(--mono);font-size:12.5px}
 .stack-row:last-child{border-bottom:none}
 .stack-row.head{background:var(--ink);color:#fff;font-size:11px;letter-spacing:0.12em;text-transform:uppercase}
-.stack-row:hover:not(.head){background:#FFFBF0}
+.stack-row:hover:not(.head){background:#EFEFE3}
 .stack-cell{padding:12px 16px;border-right:1px solid var(--line-soft);display:flex;align-items:center}
 .stack-cell:last-child{border-right:none}
 .stack-row.head .stack-cell{border-right-color:rgba(255,255,255,0.15)}
@@ -585,14 +463,8 @@ a{color:inherit;text-decoration:none}
 @media(max-width:680px){.stack-row{grid-template-columns:120px 1fr 70px}}
 
 /* ============= 配套支持 ============= */
-.support{margin-top:28px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--line);background:#fff}
-@media(max-width:1100px){.support{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:580px){.support{grid-template-columns:1fr}}
+.support{margin-top:28px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:0;border:1px solid var(--line);background:#fff}
 .sup{padding:24px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
-/* 第 7 张「Tech 跟踪」横跨 2 列，让 4×2 网格的最后一行不留空 */
-.sup.sup--wide{grid-column:span 2}
-@media(max-width:1100px){.sup.sup--wide{grid-column:span 2}}
-@media(max-width:580px){.sup.sup--wide{grid-column:1}}
 .sup:last-child{border-right:none}
 .sup .n{font-family:var(--mono);font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;font-weight:700}
 .sup .h{font-size:17px;font-weight:800;letter-spacing:-0.015em;margin:0 0 8px}
@@ -601,7 +473,7 @@ a{color:inherit;text-decoration:none}
 .extra{margin-top:28px;background:#fff;border:1px solid var(--line);padding:24px}
 .extra .h{font-family:var(--mono);font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent);margin-bottom:14px;font-weight:700}
 .extra-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:0;border:1px solid var(--line-soft)}
-.extra-item{padding:16px;border-right:1px solid var(--line-soft);background:#FFFBF0}
+.extra-item{padding:16px;border-right:1px solid var(--line-soft);background:#EFEFE3}
 .extra-item:last-child{border-right:none}
 .extra-item .t{font-family:var(--mono);font-size:11.5px;color:var(--accent);font-weight:700;letter-spacing:0.04em;margin-bottom:4px}
 .extra-item .ti{font-size:14.5px;font-weight:800;color:var(--ink);margin-bottom:6px;line-height:1.3}
@@ -665,11 +537,9 @@ a{color:inherit;text-decoration:none}
   .hero-title .l1{font-size:0.58em;margin-bottom:4px}
   .hero-sub{font-size:14px;line-height:1.6;margin-bottom:18px}
   .hero-stats{grid-template-columns:repeat(2,1fr)}
-  .hero-stat{padding:11px 12px;border-right:none;border-bottom:1px solid var(--line-soft)}
+  .hero-stat{padding:11px 12px;border-right:none;border-bottom:none}
   .hero-stat:nth-child(odd){border-right:1px solid var(--line-soft)}
-  .hero-stat:nth-last-child(-n+2):nth-child(odd) ~ .hero-stat:last-child{border-bottom:none}
-  .hero-stat:last-child{border-bottom:none}
-  .hero-stat:nth-last-child(2){border-bottom:none}
+  .hero-stat:nth-child(-n+2){border-bottom:1px solid var(--line-soft)}
   .hero-stat .n{font-size:21px}
   .hero-stat .l{font-size:9.5px;margin-top:5px}
 
@@ -821,8 +691,7 @@ a{color:inherit;text-decoration:none}
   .s-head .id{font-size:22px}
 }
 </style>
-  <link rel="stylesheet" href="theme.css">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto%20Serif%20SC:wght@400;700&family=JetBrains%20Mono:wght@400;700&display=swap">
+  <link rel="stylesheet" href="/collapse-cta.css">
 </head>
 <body data-screen-label="S5 Landing v2">
 
@@ -867,9 +736,8 @@ a{color:inherit;text-decoration:none}
 
       <div class="hero-stats">
         <div class="hero-stat"><div class="n">10<span class="u">周</span></div><div class="l">完整路线</div></div>
-        <div class="hero-stat"><div class="n">3V1</div><div class="l">答疑</div></div>
-        <div class="hero-stat"><div class="n">5<span class="u">个</span></div><div class="l">工业级项目</div></div>
-        <div class="hero-stat"><div class="n">1V1</div><div class="l">定制路线</div></div>
+        <div class="hero-stat"><div class="n">10<span class="u">套</span></div><div class="l">交互式课件</div></div>
+        <div class="hero-stat"><div class="n">2<span class="u">次</span></div><div class="l">1v1 陪跑</div></div>
         <div class="hero-stat"><div class="n">4090</div><div class="l">独享算力</div></div>
       </div>
     </div>
@@ -902,6 +770,7 @@ a{color:inherit;text-decoration:none}
       <div class="row"><div class="n">03</div><div class="t">面试官问 "你写过 Agent 系统吗？"<s>嗯…</s> <em>只用过 LangChain</em>。</div></div>
       <div class="row"><div class="n">04</div><div class="t">简历项目都是 <b>demo 级</b>，<s>看着挺多</s>，<em>面试官扫一眼就过</em>。</div></div>
       <div class="row"><div class="n">05</div><div class="t">跑过几次 <b>「一键训练脚本」</b>，<s>公开数据集出了点分</s>，<em>面试官一看就是 toy</em>。</div></div>
+
       <div class="row"><div class="n">06</div><div class="t">想转 LLM / 想拿高薪，<s>方向有了</s>，<em>但<b style="color:var(--accent);background:none">碎片化能力</b>撑不起议价</em>。</div></div>
     </div>
   </div>
@@ -1213,9 +1082,10 @@ a{color:inherit;text-decoration:none}
           </table>
         </div>
 
-        <div class="wb-player" data-collapsed="true">
+        <div class="wb-player">
           <div class="pbar">
             <div class="ll"><span class="dot"></span><span class="name">Agent Skill 交互式课件</span><span>· LIVE PREVIEW</span></div>
+            <a class="openlk" href="/courseware-preview/agentskill/index.html" target="_blank" rel="noopener">新窗口打开 ↗</a>
           </div>
           <div class="frame-wrap">
             <iframe loading="lazy" src="/courseware-preview/agentskill/index.html" title="Agent Skill 交互式课件"></iframe>
@@ -1286,9 +1156,10 @@ a{color:inherit;text-decoration:none}
           </table>
         </div>
 
-        <div class="wb-player" data-collapsed="true">
+        <div class="wb-player">
           <div class="pbar">
             <div class="ll"><span class="dot"></span><span class="name">ClaudeCode 从零到一复现</span><span>· LIVE PREVIEW</span></div>
+            <a class="openlk" href="/courseware-preview/claudecode/index.html" target="_blank" rel="noopener">新窗口打开 ↗</a>
           </div>
           <div class="frame-wrap">
             <iframe loading="lazy" src="/courseware-preview/claudecode/index.html" title="ClaudeCode 从零到一复现"></iframe>
@@ -1361,9 +1232,10 @@ a{color:inherit;text-decoration:none}
           </table>
         </div>
 
-        <div class="wb-player" data-collapsed="true">
+        <div class="wb-player">
           <div class="pbar">
             <div class="ll"><span class="dot"></span><span class="name">Deep-OpenClaw 核心架构与原理</span><span>· LIVE PREVIEW</span></div>
+            <a class="openlk" href="/courseware-preview/openclaw/index.html" target="_blank" rel="noopener">新窗口打开 ↗</a>
           </div>
           <div class="frame-wrap">
             <iframe loading="lazy" src="/courseware-preview/openclaw/index.html" title="Deep-OpenClaw"></iframe>
@@ -1434,9 +1306,10 @@ a{color:inherit;text-decoration:none}
           </table>
         </div>
 
-        <div class="wb-player" data-collapsed="true">
+        <div class="wb-player">
           <div class="pbar">
             <div class="ll"><span class="dot"></span><span class="name">verl · HybridFlow 深入剖析</span><span>· LIVE PREVIEW</span></div>
+            <a class="openlk" href="/courseware-preview/verl/index.html" target="_blank" rel="noopener">新窗口打开 ↗</a>
           </div>
           <div class="frame-wrap">
             <iframe loading="lazy" src="/courseware-preview/verl/index.html" title="verl HybridFlow"></iframe>
@@ -1511,9 +1384,10 @@ a{color:inherit;text-decoration:none}
           </table>
         </div>
 
-        <div class="wb-player" data-collapsed="true">
+        <div class="wb-player">
           <div class="pbar">
             <div class="ll"><span class="dot"></span><span class="name">Agentic RL · 实战课件</span><span>· LIVE PREVIEW</span></div>
+            <a class="openlk" href="/courseware-preview/agentic-rl-cover/index.html" target="_blank" rel="noopener">新窗口打开 ↗</a>
           </div>
           <div class="frame-wrap">
             <iframe loading="lazy" src="/courseware-preview/agentic-rl-cover/index.html" title="Agentic RL"></iframe>
@@ -1583,9 +1457,10 @@ a{color:inherit;text-decoration:none}
           </table>
         </div>
 
-        <div class="wb-player" data-collapsed="true">
+        <div class="wb-player">
           <div class="pbar">
             <div class="ll"><span class="dot"></span><span class="name">Post-Train 闭环课件</span><span>· COURSE PREVIEW</span></div>
+            <a class="openlk" href="/courseware-preview/agentic-rl-cover/index.html" target="_blank" rel="noopener">新窗口打开 ↗</a>
           </div>
           <div class="frame-wrap">
             <iframe loading="lazy" src="/courseware-preview/agentic-rl-ch4/index.html" title="Post-Train 闭环"></iframe>
@@ -1656,9 +1531,10 @@ a{color:inherit;text-decoration:none}
           </table>
         </div>
 
-        <div class="wb-player" data-collapsed="true">
+        <div class="wb-player">
           <div class="pbar">
             <div class="ll"><span class="dot"></span><span class="name">RL 算法实战课件</span><span>· COURSE PREVIEW</span></div>
+            <a class="openlk" href="/courseware-preview/agentic-rl-ch6/index.html" target="_blank" rel="noopener">新窗口打开 ↗</a>
           </div>
           <div class="frame-wrap">
             <iframe loading="lazy" src="/courseware-preview/agentic-rl-ch6/index.html" title="GRPO/GSPO/DAPO"></iframe>
@@ -1728,9 +1604,10 @@ a{color:inherit;text-decoration:none}
           </table>
         </div>
 
-        <div class="wb-player" data-collapsed="true">
+        <div class="wb-player">
           <div class="pbar">
             <div class="ll"><span class="dot"></span><span class="name">大模型架构课程 · Roadmap</span><span>· LIVE PREVIEW</span></div>
+            <a class="openlk" href="/courseware-preview/code-structure/index.html" target="_blank" rel="noopener">新窗口打开 ↗</a>
           </div>
           <div class="frame-wrap">
             <iframe loading="lazy" src="/courseware-preview/code-structure/index.html" title="大模型架构课程"></iframe>
@@ -1801,31 +1678,15 @@ a{color:inherit;text-decoration:none}
           </table>
         </div>
 
-        <div class="wb-player" data-collapsed="true">
+        <div class="wb-player">
           <div class="pbar">
-            <div class="ll"><span class="dot"></span><span class="name">多模态 + GUI Agent 课件</span><span>· 报名后解锁</span></div>
-            <a class="openlk" href="#enroll" data-cwp-action="enroll">报名解锁 ↗</a>
+            <div class="ll"><span class="dot"></span><span class="name">多模态 + GUI Agent 课件</span><span>· COMING</span></div>
+            <a class="openlk" href="#" style="opacity:0.4;pointer-events:none">开课前交付</a>
           </div>
           <div class="frame-wrap">
-            <div class="cwp-inline-lock">
-              <div class="cwp-inline-lock__bg" aria-hidden="true"></div>
-              <div class="cwp-inline-lock__card">
-                <span class="cwp-inline-lock__tag">完整课件 · 报名后开放</span>
-                <h3 class="cwp-inline-lock__title">多模态 RAG + <em>GUI Agent</em> 课件</h3>
-                <p class="cwp-inline-lock__sub">
-                  跨模态 Embedding 实战 · Grounding bbox 演示 · GUI Agent 浏览器任务录屏 · SFT 数据构造工具链。
-                </p>
-                <div class="cwp-inline-lock__meta">
-                  <span class="it">CLIP / SigLIP</span>
-                  <span class="it">视觉 Grounding</span>
-                  <span class="it">GUI ReAct</span>
-                  <span class="it">SFT 数据工厂</span>
-                </div>
-                <button class="cwp-inline-lock__cta" type="button" data-cwp-action="enroll">
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/><circle cx="12" cy="16.5" r="1.2" fill="currentColor"/></svg>
-                  报名解锁完整章节
-                </button>
-              </div>
+            <div class="placeholder" style="display:flex">
+              <div class="ph-h">多模态 RAG + GUI Agent 课件</div>
+              <div class="ph-d">课件大纲已就位 · 含跨模态 Embedding 实战 / Grounding bbox 演示 / GUI Agent 浏览器任务录屏 / SFT 数据构造工具链。开课前交付互动版本。</div>
             </div>
           </div>
         </div>
@@ -1934,7 +1795,7 @@ a{color:inherit;text-decoration:none}
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 1380" font-family="Inter,PingFang SC,sans-serif">
         <defs>
           <marker id="ar" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#cfcfd6"/></marker>
-          <marker id="arO" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#C2410C"/></marker>
+          <marker id="arO" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#A6531C"/></marker>
           <marker id="arG" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#5a8a5a"/></marker>
           <marker id="arB" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#5d8aba"/></marker>
         </defs>
@@ -1944,18 +1805,18 @@ a{color:inherit;text-decoration:none}
           .lyr-hd-t{fill:#e9e6dc;font-size:13px;font-weight:600;letter-spacing:0.06em}
           .lyr-hd-c{fill:#7c7868;font-size:9px;font-family:JetBrains Mono,monospace;letter-spacing:0.05em}
           .box{fill:#1f2229;stroke:#3a3d45;stroke-width:1}
-          .box-star{fill:#262024;stroke:#C2410C;stroke-width:1.5}
+          .box-star{fill:#262024;stroke:#A6531C;stroke-width:1.5}
           .box-t{fill:#e9e6dc;font-size:11px;font-weight:600}
           .box-st{fill:#b8b4a6;font-size:9px}
           .box-mt{fill:#7c7868;font-size:8px;font-family:JetBrains Mono,monospace}
-          .acc{fill:#C2410C;font-weight:700}
+          .acc{fill:#A6531C;font-weight:700}
           .ln{stroke:#4a4d55;stroke-width:1.2;fill:none}
-          .ln-o{stroke:#C2410C;stroke-width:1.5;fill:none}
+          .ln-o{stroke:#A6531C;stroke-width:1.5;fill:none}
           .ln-g{stroke:#5a8a5a;stroke-width:1.2;fill:none;stroke-dasharray:4 3}
           .ln-b{stroke:#5d8aba;stroke-width:1.2;fill:none}
           .ln-d{stroke:#5a5d65;stroke-width:1;fill:none;stroke-dasharray:3 3}
           .lab{fill:#a8a59a;font-size:9px;font-family:JetBrains Mono,monospace}
-          .lab-o{fill:#C2410C;font-size:9px;font-family:JetBrains Mono,monospace}
+          .lab-o{fill:#A6531C;font-size:9px;font-family:JetBrains Mono,monospace}
         </style>
 
         <text x="900" y="32" text-anchor="middle" fill="#e9e6dc" font-size="22" font-weight="700">企业智能协同助手平台 · System Architecture</text>
@@ -2040,17 +1901,17 @@ a{color:inherit;text-decoration:none}
             <line x1="62" y1="69" x2="74" y2="69" class="ln" marker-end="url(#ar)"/>
             <rect class="box" x="76" y="58" width="48" height="22"/><text x="100" y="73" text-anchor="middle" class="box-mt" style="fill:#e9e6dc">Plan</text>
             <line x1="124" y1="69" x2="136" y2="69" class="ln" marker-end="url(#ar)"/>
-            <rect class="box" x="138" y="58" width="34" height="22" style="fill:#C2410C"/><text x="155" y="73" text-anchor="middle" class="box-mt" style="fill:#fff">fork</text>
+            <rect class="box" x="138" y="58" width="34" height="22" style="fill:#A6531C"/><text x="155" y="73" text-anchor="middle" class="box-mt" style="fill:#fff">fork</text>
             <line x1="172" y1="65" x2="186" y2="58" class="ln"/><line x1="172" y1="69" x2="186" y2="69" class="ln"/><line x1="172" y1="73" x2="186" y2="80" class="ln"/>
             <rect class="box" x="186" y="50" width="80" height="18"/><text x="226" y="62" text-anchor="middle" class="box-mt" style="fill:#e9e6dc">WebSearch</text>
             <rect class="box" x="186" y="68" width="80" height="18"/><text x="226" y="80" text-anchor="middle" class="box-mt" style="fill:#e9e6dc">LocalRAG</text>
             <rect class="box" x="186" y="86" width="80" height="18"/><text x="226" y="98" text-anchor="middle" class="box-mt" style="fill:#e9e6dc">SQLQuery</text>
             <line x1="266" y1="59" x2="280" y2="69" class="ln"/><line x1="266" y1="77" x2="280" y2="69" class="ln"/><line x1="266" y1="95" x2="280" y2="69" class="ln"/>
-            <rect class="box" x="280" y="58" width="34" height="22" style="fill:#C2410C"/><text x="297" y="73" text-anchor="middle" class="box-mt" style="fill:#fff">join</text>
+            <rect class="box" x="280" y="58" width="34" height="22" style="fill:#A6531C"/><text x="297" y="73" text-anchor="middle" class="box-mt" style="fill:#fff">join</text>
             <line x1="314" y1="69" x2="326" y2="69" class="ln" marker-end="url(#ar)"/>
             <rect class="box" x="328" y="58" width="48" height="22"/><text x="352" y="73" text-anchor="middle" class="box-mt" style="fill:#e9e6dc">END</text>
             <text x="14" y="100" class="box-mt">asyncio.gather() · CheckpointSaver · 断点续传</text>
-            <text x="14" y="112" class="box-mt" style="fill:#C2410C">revise loop ↺  /  depth++</text>
+            <text x="14" y="112" class="box-mt" style="fill:#A6531C">revise loop ↺  /  depth++</text>
           </g>
 
           <g transform="translate(740,52)"><rect class="box" x="0" y="0" width="225" height="120"/><text x="14" y="22" class="box-t">知识检索 Agent</text><text x="14" y="40" class="box-st">RAG · 全网搜索 · 文档</text><line x1="10" y1="48" x2="215" y2="48" stroke="#3a3d45"/><text x="14" y="64" class="box-mt">— Milvus 向量检索</text><text x="14" y="78" class="box-mt">— BM25 + Rerank 混合</text><text x="14" y="92" class="box-mt">— 跨源引用追溯</text><text x="14" y="106" class="box-mt acc">tools: rag · web_search · doc_qa</text></g>
@@ -2292,7 +2153,7 @@ a{color:inherit;text-decoration:none}
       <div class="sup"><div class="n">04 · 社群</div><div class="h">知识星球 + 闭门直播</div><div class="b">每日更新 AI 岗位信息 · 闭门直播 · 飞书知识库资源 · 个性化指导。</div></div>
       <div class="sup"><div class="n">05 · 答疑</div><div class="h">3V1 答疑群 + 助教</div><div class="b">每个学员配 <b>3 个答疑老师</b> · 微信群答疑。</div></div>
       <div class="sup"><div class="n">06 · 面试真题</div><div class="h">真正的大厂面试真题</div><div class="b">2024-2026 跑通大厂的同学回流的 <b>LLM 真题库</b> · 算法 + 系统设计 + 八股，全部实战来源。</div></div>
-      <div class="sup sup--wide"><div class="n">07 · Tech 跟踪</div><div class="h">持续跟踪最新 Tech 更新</div><div class="b">每周整理 arxiv / 业界 blog / 新模型动态 · 课程内容随技术演进迭代 —— 让你不被淘汰、也不再 FOMO。</div></div>
+      <div class="sup"><div class="n">07 · Tech 跟踪</div><div class="h">持续跟踪最新 Tech 更新</div><div class="b">每周整理 arxiv / 业界 blog / 新模型动态 · 课程内容随技术演进迭代 —— 让你不被淘汰、也不再 FOMO。</div></div>
     </div>
 
     <div class="extra">
@@ -2337,373 +2198,15 @@ a{color:inherit;text-decoration:none}
 </section>
 
 <!-- ============= Footer CTA ============= -->
-<footer class="foot" id="enroll">
+<footer class="foot">
   <div class="wrap inner">
     <div class="eyebrow"><span class="sq"></span><span>08 · GET STARTED</span></div>
     <h2>10 周后，你会有一份<br>算法 + 工程<span class="serif" style="color:var(--accent)">双修</span>的硬资产。</h2>
     <p>从 Agent 应用层一路打通到模型基座、再到工业化部署的完整能力栈，10 套从 0-1 拆解和实现的工业级 Agentic 系统课件，一段企业级业务落地项目经历。</p>
-
-    <div class="teacher-cta">
-      <div class="teacher-cta__icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-      </div>
-      <div class="teacher-cta__text">
-        <div class="teacher-cta__title">READY TO ENROLL · 准备报名</div>
-        <div class="teacher-cta__sub">报名 / 价格 / 定制路径 等问题，<b>联系老师即可一对一解答</b>，附赠 1 节试听课</div>
-      </div>
-      <button class="teacher-cta__btn" type="button" data-cwp-action="contact-teacher">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-        联系老师领取试听课
-      </button>
-    </div>
-
-    <div class="meta" style="margin-top:24px">S5 · 2026 · 大模型冲刺营 · AGENT × POST-TRAIN × INDUSTRIAL DEPLOY</div>
+    <p style="margin-top:14px"><b>报名方式</b>：详见课程平台或联系课程顾问。</p>
+    <div class="meta">S5 · 2026 · 大模型冲刺营 · AGENT × POST-TRAIN × INDUSTRIAL DEPLOY</div>
   </div>
 </footer>
-
-<!-- ============= Teacher Contact CTA (复用样式) ============= -->
-<style>
-  .teacher-cta{
-    margin:24px 0 0;
-    display:flex;align-items:center;gap:18px;flex-wrap:wrap;
-    padding:18px 22px;
-    background:linear-gradient(135deg, rgba(194,65,12,0.10) 0%, rgba(194,65,12,0.04) 100%);
-    border:1px solid rgba(194,65,12,0.32);
-    border-left:4px solid var(--accent);
-    position:relative;
-  }
-  .teacher-cta::before{
-    content:"";position:absolute;right:-1px;top:-1px;bottom:-1px;width:6px;
-    background:linear-gradient(180deg, transparent, rgba(194,65,12,0.4), transparent);
-    pointer-events:none;
-  }
-  .teacher-cta__icon{
-    flex-shrink:0;width:44px;height:44px;
-    display:flex;align-items:center;justify-content:center;
-    background:rgba(194,65,12,0.12);
-    border:1px solid rgba(194,65,12,0.32);
-    color:var(--accent);border-radius:50%;
-  }
-  .teacher-cta__text{flex:1;min-width:0}
-  .teacher-cta__title{
-    font-family:var(--mono);font-size:11px;letter-spacing:0.18em;
-    color:var(--accent);text-transform:uppercase;font-weight:700;margin-bottom:4px;
-  }
-  .teacher-cta__sub{font-size:15px;color:var(--ink);font-weight:700;line-height:1.4}
-  .teacher-cta__sub b{color:var(--accent)}
-  .teacher-cta__btn{
-    appearance:none;border:0;cursor:pointer;
-    padding:13px 24px;background:var(--accent);color:#fff;
-    font-family:var(--sans);font-size:14px;font-weight:700;letter-spacing:0.04em;
-    display:inline-flex;align-items:center;gap:8px;
-    box-shadow:0 6px 18px -4px rgba(194,65,12,0.55);
-    transition:transform .15s ease, box-shadow .2s ease, background .15s ease;
-    flex-shrink:0;text-decoration:none;
-  }
-  .teacher-cta__btn:hover{background:#E25C20;transform:translateY(-1px);box-shadow:0 10px 24px -4px rgba(194,65,12,0.75)}
-  .teacher-cta__btn:active{transform:translateY(0)}
-  .teacher-cta__btn svg{width:18px;height:18px}
-
-  /* footer 版本（深底）*/
-  .foot .teacher-cta{
-    background:linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
-    border:1px solid rgba(255,255,255,0.16);
-    border-left:4px solid var(--accent);
-    margin-top:28px;
-  }
-  .foot .teacher-cta__sub{color:#fff}
-  .foot .teacher-cta__sub b{color:var(--accent)}
-  .foot .teacher-cta__icon{background:rgba(194,65,12,0.18)}
-  @media(max-width:680px){
-    .teacher-cta{padding:14px 16px;gap:12px}
-    .teacher-cta__btn{padding:11px 18px;font-size:13px;width:100%;justify-content:center}
-    .teacher-cta__text{flex:1 0 100%}
-  }
-</style>
-
-<!-- ============= Teacher Modal ============= -->
-<style>
-  .cwp-tm-backdrop{
-    position:fixed;inset:0;background:rgba(8,8,12,0.78);
-    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-    display:none;align-items:center;justify-content:center;
-    z-index:10000;animation:cwpFadeIn .18s ease;
-  }
-  .cwp-tm-backdrop.is-open{display:flex}
-  .cwp-tm{
-    width:min(440px,92vw);background:#fff;border-radius:14px;
-    box-shadow:0 24px 80px -16px rgba(0,0,0,0.45);
-    padding:28px 26px 22px;position:relative;color:#1A1D21;
-    font-family:'Inter Tight','Noto Sans SC','PingFang SC',system-ui,sans-serif;
-    animation:cwpPopIn .22s cubic-bezier(.2,.7,.2,1);
-  }
-  .cwp-tm__close{
-    position:absolute;top:12px;right:12px;width:28px;height:28px;
-    border:0;background:transparent;color:rgba(26,29,33,0.45);cursor:pointer;
-    border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:18px;
-  }
-  .cwp-tm__close:hover{background:rgba(0,0,0,0.05);color:#1A1D21}
-  .cwp-tm__icon{
-    width:48px;height:48px;display:flex;align-items:center;justify-content:center;
-    background:rgba(194,65,12,0.10);border:1px solid rgba(194,65,12,0.25);
-    border-radius:12px;color:var(--accent);margin-bottom:14px;
-  }
-  .cwp-tm__title{margin:0 0 6px;font-size:20px;font-weight:800;letter-spacing:-0.01em}
-  .cwp-tm__title em{font-style:normal;color:var(--accent)}
-  .cwp-tm__sub{margin:0 0 18px;font-size:13.5px;color:rgba(26,29,33,0.66);line-height:1.65}
-  .cwp-tm__qr{
-    display:flex;gap:16px;align-items:center;
-    padding:14px;background:#F4F5F7;border:1px solid #E5E7EB;border-radius:10px;margin-bottom:14px;
-  }
-  .cwp-tm__qr-img{
-    width:120px;height:120px;flex-shrink:0;
-    background:#fff;
-    border:1px solid #D1D5DB;border-radius:6px;
-    object-fit:contain;display:block;
-  }
-  .cwp-tm__qr-text{flex:1;min-width:0;font-size:13px;line-height:1.7;color:#1A1D21}
-  .cwp-tm__qr-text b{display:block;font-size:11px;color:var(--accent);font-family:var(--mono);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px}
-  .cwp-tm__wx{
-    font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:#1A1D21;
-    background:#fff;border:1px dashed #D1D5DB;border-radius:4px;padding:4px 8px;display:inline-block;
-  }
-  .cwp-tm__list{margin:0 0 18px;padding:0;list-style:none;font-size:13px;line-height:1.85;color:rgba(26,29,33,0.75)}
-  .cwp-tm__list li{padding-left:18px;position:relative}
-  .cwp-tm__list li::before{content:"✓";color:var(--accent);position:absolute;left:0;font-weight:700}
-  .cwp-tm__actions{display:flex;gap:10px;justify-content:flex-end}
-  .cwp-tm__btn{
-    appearance:none;border:0;cursor:pointer;padding:10px 18px;
-    font-family:inherit;font-size:13.5px;font-weight:600;border-radius:8px;
-    transition:transform .12s ease, background .18s ease;
-  }
-  .cwp-tm__btn--ghost{background:transparent;color:rgba(26,29,33,0.7);border:1px solid rgba(0,0,0,0.12)}
-  .cwp-tm__btn--ghost:hover{background:rgba(0,0,0,0.04);color:#1A1D21}
-</style>
-
-<div class="cwp-tm-backdrop" id="cwp-teacher-modal" role="dialog" aria-modal="true" aria-labelledby="cwp-tm-title" hidden>
-  <div class="cwp-tm">
-    <button class="cwp-tm__close" type="button" aria-label="关闭" data-cwp-close>×</button>
-    <div class="cwp-tm__icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18v14H3z M3 5l9 7 9-7"/></svg>
-    </div>
-    <h3 class="cwp-tm__title" id="cwp-tm-title">联系老师 · 领取 <em>免费试听课</em></h3>
-    <p class="cwp-tm__sub">扫码或加微信，老师会发你<b style="color:var(--accent)">完整试听课件 + 1 次学习路线诊断</b>，回你的所有报名/课程问题。</p>
-
-    <div class="cwp-tm__qr">
-      <img class="cwp-tm__qr-img" data-cwp-bind="qr" src="/static/qr-placeholder.svg" alt="老师二维码">
-      <div class="cwp-tm__qr-text">
-        <b>WeChat · 微信 · <span data-cwp-bind="name">老师</span></b>
-        <span class="cwp-tm__wx" data-cwp-bind="wechat">S5_LLM_2026</span>
-        <div style="margin-top:8px;color:rgba(26,29,33,0.6);font-size:12px;">备注「试听」可直接领取</div>
-      </div>
-    </div>
-
-    <ul class="cwp-tm__list">
-      <li>1 节完整试听课件 · 看完就能判断这门课合不合你</li>
-      <li>1V1 路线诊断 · 老师亲自给你拍方向</li>
-      <li>报名 / 价格 / 定制路径 等问题均可直接问</li>
-    </ul>
-
-    <div class="cwp-tm__actions">
-      <button class="cwp-tm__btn cwp-tm__btn--ghost" type="button" data-cwp-close>我知道了</button>
-    </div>
-  </div>
-</div>
-
-<!-- ============= Inline Lock Card (GUI Agent block) ============= -->
-<style>
-  .cwp-inline-lock {
-    position: absolute; inset: 0;
-    background: #0A0A0A;
-    color: #f5f5f7;
-    display: flex; align-items: center; justify-content: center;
-    overflow: hidden;
-    font-family: 'Inter Tight','Noto Sans SC','PingFang SC',system-ui,sans-serif;
-  }
-  .cwp-inline-lock__bg {
-    position: absolute; inset: 0;
-    background-image:
-      linear-gradient(to right, rgba(255,255,255,0.045) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255,255,255,0.045) 1px, transparent 1px);
-    background-size: 48px 48px;
-    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, #000 30%, transparent 80%);
-            mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, #000 30%, transparent 80%);
-    pointer-events: none;
-  }
-  .cwp-inline-lock__card {
-    position: relative; z-index: 2;
-    max-width: 520px;
-    padding: 28px 26px;
-    text-align: center;
-  }
-  .cwp-inline-lock__tag {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 5px 12px;
-    border: 1px solid #FFD400;
-    color: #FFD400;
-    border-radius: 999px;
-    font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
-  }
-  .cwp-inline-lock__tag::before {
-    content: ""; width: 6px; height: 6px;
-    background: #FFD400; border-radius: 50%;
-    box-shadow: 0 0 12px #FFD400;
-  }
-  .cwp-inline-lock__title {
-    margin: 14px 0 8px;
-    font-size: 24px; font-weight: 800;
-    letter-spacing: -0.01em; line-height: 1.25;
-  }
-  .cwp-inline-lock__title em { font-style: normal; color: #FFD400; }
-  .cwp-inline-lock__sub {
-    margin: 0 auto 16px; max-width: 440px;
-    color: rgba(245,245,247,0.62);
-    font-size: 13px; line-height: 1.7;
-  }
-  .cwp-inline-lock__meta {
-    display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
-    margin: 12px 0 18px;
-  }
-  .cwp-inline-lock__meta .it {
-    padding: 4px 10px;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 999px;
-    color: rgba(245,245,247,0.7);
-    font-size: 11px;
-  }
-  .cwp-inline-lock__cta {
-    appearance: none; border: 0;
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 12px 22px;
-    background: #FFD400; color: #0a0a0a;
-    font-family: inherit;
-    font-weight: 800; font-size: 14px;
-    border-radius: 10px; cursor: pointer;
-    letter-spacing: 0.02em;
-    box-shadow: 0 10px 28px -6px rgba(255,212,0,0.4);
-    transition: transform .12s ease, box-shadow .18s ease;
-  }
-  .cwp-inline-lock__cta:hover { transform: translateY(-1px); box-shadow: 0 14px 34px -6px rgba(255,212,0,0.6); }
-</style>
-
-<!-- ============= Enroll Modal ============= -->
-<style>
-  .cwp-modal-backdrop {
-    position: fixed; inset: 0;
-    background: rgba(8,8,12,0.72);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    animation: cwpFadeIn .18s ease;
-  }
-  .cwp-modal-backdrop.is-open { display: flex; }
-  @keyframes cwpFadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-  @keyframes cwpPopIn {
-    from { opacity: 0; transform: translateY(12px) scale(0.96); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
-  }
-  .cwp-modal {
-    width: min(480px, 92vw);
-    background: #fff;
-    border: 1px solid rgba(0,0,0,0.08);
-    border-radius: 14px;
-    box-shadow: 0 24px 80px -16px rgba(0,0,0,0.45);
-    padding: 28px 28px 22px;
-    font-family: 'Inter Tight','Noto Sans SC','PingFang SC',system-ui,sans-serif;
-    color: #1A1D21;
-    position: relative;
-    animation: cwpPopIn .22s cubic-bezier(.2,.7,.2,1);
-  }
-  .cwp-modal__icon {
-    width: 44px; height: 44px;
-    display: flex; align-items: center; justify-content: center;
-    background: rgba(0,85,255,0.08);
-    border: 1px solid rgba(0,85,255,0.18);
-    border-radius: 12px;
-    color: #0055FF;
-    margin-bottom: 14px;
-  }
-  .cwp-modal__title {
-    font-size: 20px;
-    font-weight: 800;
-    letter-spacing: -0.01em;
-    margin: 0 0 8px;
-  }
-  .cwp-modal__title em { font-style: normal; color: #0055FF; }
-  .cwp-modal__body {
-    font-size: 14px;
-    line-height: 1.7;
-    color: rgba(26,29,33,0.66);
-    margin: 0 0 22px;
-  }
-  .cwp-modal__body b { color: #1A1D21; font-weight: 600; }
-  .cwp-modal__actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-  }
-  .cwp-modal__btn {
-    appearance: none;
-    border: 0;
-    padding: 10px 18px;
-    font-family: inherit;
-    font-size: 13.5px;
-    font-weight: 600;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: transform .12s ease, background .18s ease, box-shadow .18s ease;
-  }
-  .cwp-modal__btn--primary {
-    background: #0055FF; color: #fff;
-    box-shadow: 0 8px 22px -6px rgba(0,85,255,0.5);
-  }
-  .cwp-modal__btn--primary:hover { background: #0044CC; transform: translateY(-1px); }
-  .cwp-modal__btn--ghost {
-    background: transparent;
-    color: rgba(26,29,33,0.7);
-    border: 1px solid rgba(0,0,0,0.12);
-  }
-  .cwp-modal__btn--ghost:hover { background: rgba(0,0,0,0.04); color: #1A1D21; }
-  .cwp-modal__close {
-    position: absolute;
-    top: 12px; right: 12px;
-    width: 28px; height: 28px;
-    border: 0;
-    background: transparent;
-    color: rgba(26,29,33,0.45);
-    cursor: pointer;
-    border-radius: 6px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-  }
-  .cwp-modal__close:hover { background: rgba(0,0,0,0.05); color: #1A1D21; }
-</style>
-
-<div class="cwp-modal-backdrop" id="cwp-modal" role="dialog" aria-modal="true" aria-labelledby="cwp-modal-title" hidden>
-  <div class="cwp-modal">
-    <button class="cwp-modal__close" type="button" aria-label="关闭" data-cwp-close>×</button>
-    <div class="cwp-modal__icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/><circle cx="12" cy="16.5" r="1.2" fill="currentColor"/></svg>
-    </div>
-    <h3 class="cwp-modal__title" id="cwp-modal-title">报名后解锁 <em>完整课件</em></h3>
-    <p class="cwp-modal__body">
-      此课件为 <b>S5 · 大模型冲刺营 · 2026</b> 的配套内容。<b style="color:#0055FF">联系老师可免费领 1 节完整试听课</b>，看完再决定要不要报名。
-    </p>
-    <div class="cwp-modal__actions" style="justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
-      <button class="cwp-modal__btn cwp-modal__btn--ghost" type="button" data-cwp-close>我知道了</button>
-      <button class="cwp-modal__btn cwp-modal__btn--primary" type="button" data-cwp-action="contact-teacher">
-        联系老师领取试听课 →
-      </button>
-    </div>
-  </div>
-</div>
 
 <script>
 document.querySelectorAll('.wb-player').forEach(p => {
@@ -2713,109 +2216,6 @@ document.querySelectorAll('.wb-player').forEach(p => {
   ph.style.display = 'flex';
   f.addEventListener('load', () => { try{ ph.style.display = 'none'; }catch(e){} });
 });
-
-// ============ 课件预览折叠 · 默认收起 · 首次展开才加载 iframe src ============
-(function () {
-  const players = document.querySelectorAll('.wb-player');
-  players.forEach((p, idx) => {
-    // 默认收起
-    p.setAttribute('data-collapsed', 'true');
-
-    // 把 iframe.src 存起来，先清空 — 折叠状态下不消耗网络
-    const iframe = p.querySelector('iframe');
-    if (iframe && iframe.getAttribute('src')) {
-      iframe.setAttribute('data-src', iframe.getAttribute('src'));
-      iframe.removeAttribute('src');
-    }
-
-    // 在 pbar 末尾插入 toggle 按钮
-    const pbar = p.querySelector('.pbar');
-    if (!pbar) return;
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'toggle';
-    btn.setAttribute('aria-expanded', 'false');
-    btn.setAttribute('aria-controls', 'cwp-frame-' + idx);
-    btn.innerHTML = '<span class="chev"></span><span class="label"></span><span class="arrow"></span>';
-    pbar.appendChild(btn);
-
-    const frameWrap = p.querySelector('.frame-wrap');
-    if (frameWrap) frameWrap.id = 'cwp-frame-' + idx;
-
-    btn.addEventListener('click', function (e) {
-      e.stopPropagation();
-      const collapsed = p.getAttribute('data-collapsed') === 'true';
-      const next = !collapsed;
-      p.setAttribute('data-collapsed', String(next));
-      btn.setAttribute('aria-expanded', String(!next));
-      // 首次展开时再灌入 src
-      if (!next && iframe && !iframe.getAttribute('src')) {
-        const ds = iframe.getAttribute('data-src');
-        if (ds) iframe.setAttribute('src', ds);
-      }
-    });
-
-    // 点击整个 pbar 也能展开/收起（除了 openlk 链接）
-    pbar.addEventListener('click', function (e) {
-      if (e.target.closest('.openlk') || e.target.closest('.toggle')) return;
-      btn.click();
-    });
-    pbar.style.cursor = 'pointer';
-  });
-})();
-
-// ============ 双弹窗系统：cwp-modal（解锁报名）+ cwp-teacher-modal（联系老师） ============
-(function () {
-  const enrollModal  = document.getElementById('cwp-modal');
-  const teacherModal = document.getElementById('cwp-teacher-modal');
-  if (!enrollModal && !teacherModal) return;
-  let lastFocused = null;
-
-  function show(modal) {
-    if (!modal) return;
-    lastFocused = document.activeElement;
-    modal.classList.add('is-open');
-    modal.hidden = false;
-    document.body.style.overflow = 'hidden';
-    const btn = modal.querySelector('[data-cwp-close], button');
-    if (btn) btn.focus();
-  }
-  function hide(modal) {
-    if (!modal) return;
-    modal.classList.remove('is-open');
-    modal.hidden = true;
-    document.body.style.overflow = '';
-  }
-  function hideAll() { hide(enrollModal); hide(teacherModal); }
-  function openEnroll()  { hideAll(); show(enrollModal); }
-  function openTeacher() { hideAll(); show(teacherModal); }
-
-  // iframe 内的解锁信号 → 打开解锁弹窗
-  window.addEventListener('message', function (ev) {
-    const d = ev && ev.data;
-    if (!d || typeof d !== 'object') return;
-    if (d.type === 'cwp:enroll') openEnroll();
-  });
-
-  // 全局点击委托
-  document.addEventListener('click', function (e) {
-    // 1) 联系老师 —— 优先级最高（即便在 enroll modal 里点也直接切换）
-    const tt = e.target.closest('[data-cwp-action="contact-teacher"]');
-    if (tt) { e.preventDefault(); openTeacher(); return; }
-    // 2) 解锁报名
-    const te = e.target.closest('[data-cwp-action="enroll"]');
-    if (te) { e.preventDefault(); openEnroll(); return; }
-    // 3) 关闭按钮
-    if (e.target.closest('[data-cwp-close]')) { hideAll(); return; }
-    // 4) 点击遮罩
-    if (e.target === enrollModal || e.target === teacherModal) hideAll();
-  });
-
-  // Esc 关闭
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') hideAll();
-  });
-})();
 </script>
 
 <!-- 架构图全屏模态 -->
@@ -2856,7 +2256,75 @@ document.querySelectorAll('.wb-player').forEach(p => {
 })();
 </script>
 
-<!-- 渠道数据注入器 · 必须最后加载 -->
+
+<!-- ============ ContactBlock · 自动注入（patch-styles.js） ============ -->
+<style>
+  .cwp-contact{
+    position:relative;z-index:5;
+    margin:0;padding:48px 24px;
+    background:#0A0C10;color:#EDE9DC;
+    font-family:'Inter','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    border-top:4px solid currentColor;
+  }
+  .cwp-contact__inner{
+    max-width:760px;margin:0 auto;
+    display:grid;grid-template-columns:160px 1fr;gap:28px;align-items:center;
+  }
+  @media (max-width:640px){
+    .cwp-contact__inner{grid-template-columns:1fr;text-align:center}
+  }
+  .cwp-contact__qr{
+    width:160px;height:160px;background:#fff;
+    border-radius:6px;display:block;object-fit:contain;
+    margin:0 auto;
+  }
+  .cwp-contact__title{
+    font-family:'JetBrains Mono',ui-monospace,monospace;
+    font-size:11px;letter-spacing:0.18em;text-transform:uppercase;
+    color:rgba(245,158,11,0.85);margin-bottom:10px;
+  }
+  .cwp-contact__head{
+    font-size:22px;font-weight:800;letter-spacing:-0.01em;
+    margin-bottom:8px;line-height:1.3;
+  }
+  .cwp-contact__head em{font-style:normal;color:#F59E0B}
+  .cwp-contact__sub{
+    font-size:14px;color:rgba(237,233,220,0.65);line-height:1.7;margin-bottom:14px;
+  }
+  .cwp-contact__wx{
+    display:inline-block;font-family:'JetBrains Mono',monospace;
+    font-size:13px;color:#F59E0B;font-weight:700;
+    background:rgba(245,158,11,0.08);
+    border:1px dashed rgba(245,158,11,0.35);
+    padding:6px 12px;border-radius:4px;letter-spacing:0.05em;
+  }
+  .cwp-contact__hint{
+    font-size:12px;color:rgba(237,233,220,0.45);
+    margin-top:10px;line-height:1.6;
+  }
+</style>
+<section class="cwp-contact" aria-label="联系老师">
+  <div class="cwp-contact__inner">
+    <img class="cwp-contact__qr" data-cwp-bind="qr" src="/static/qr-placeholder.svg" alt="老师二维码">
+    <div>
+      <div class="cwp-contact__title">FREE TRIAL · 联系老师领取试听课</div>
+      <div class="cwp-contact__head">
+        <span data-cwp-bind="name">老师</span>
+        <span style="opacity:0.5;margin:0 6px">·</span>
+        <em>免费试听</em>
+      </div>
+      <div class="cwp-contact__sub">扫码或加微信，老师会发你完整试听课件，回你的所有报名/价格/定制路径问题。</div>
+      <div>
+        微信号：<code class="cwp-contact__wx" data-cwp-bind="wechat">S5_LLM_2026</code>
+        <span style="opacity:0.55;margin-left:8px;font-size:12px">备注「试听」可直接领取</span>
+      </div>
+      <div class="cwp-contact__hint" data-cwp-bind="note"></div>
+    </div>
+  </div>
+</section>
+<!-- ============ /ContactBlock ============ -->
+<script src="/collapse-cta.js"></script>
 <script src="/channel-loader.js"></script>
+
 </body>
 </html>

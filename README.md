@@ -1,6 +1,6 @@
-# llmpromotion · 渠道专属链接生成系统
+# llmpromotion · 合作伙伴专属链接生成系统
 
-> S5 · 2026 大模型冲刺营 · 多渠道推广页生成器
+> S5 · 2026 大模型冲刺营 · 合作伙伴推广页生成器
 > **自包含可独立部署** · 任何 Linux 服务器 scp 进来即可运行
 
 ---
@@ -78,14 +78,14 @@ llmpromotion/
 │   ├── admin-*.jsx          控制台 React 源码（CDN Babel 实时编译）
 │   ├── admin-data.js        13 套样式元数据
 │   ├── s5-content.js        🔑 单一内容源（所有文案）
-│   ├── channel-loader.js    🔑 渠道数据注入器
+│   ├── channel-loader.js    🔑 合作伙伴数据注入器
 │   ├── styles/              13 套样式
 │   │   ├── main/
 │   │   └── v1/ ... v12/
 │   ├── courseware-preview/  8 个课件预览（自包含）
 │   ├── static/              占位图等
 │   └── thumbs/              样式画廊缩略图
-├── uploads/qr/              运行时生成 · 渠道二维码图片
+├── uploads/qr/              运行时生成 · 合作伙伴二维码图片
 ├── scripts/
 │   └── content-check.js     部署前内容一致性校验
 ├── nginx/
@@ -135,10 +135,10 @@ sqlite3 channels.db "SELECT slug, display_name, wechat_id, created_at FROM chann
 详见 `server/routes/channels.js`。5 个端点：
 
 ```
-POST   /api/channels              创建渠道（multipart, 含 QR）
-GET    /api/channels/:slug        读渠道
-PUT    /api/channels/:slug        改渠道（Header: X-Edit-Token）
-DELETE /api/channels/:slug        删渠道（Header: X-Edit-Token）
+POST   /api/channels              创建合作伙伴（multipart, 含 QR）
+GET    /api/channels/:slug        读合作伙伴
+PUT    /api/channels/:slug        改合作伙伴（Header: X-Edit-Token）
+DELETE /api/channels/:slug        删合作伙伴（Header: X-Edit-Token）
 GET    /api/check-slug/:slug      slug 可用性查询
 ```
 

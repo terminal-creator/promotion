@@ -115,7 +115,7 @@ function ResultScreen({ gen, styleObj, onReset, onManage, showToast }) {
           </div>
           <Stat k="累计访问" v="0" tail="次" />
           <Stat k="扫码加微信" v="0" tail="人 · 需自填" />
-          <Stat k="渠道分享" v="0" tail="二跳" />
+          <Stat k="合作伙伴分享" v="0" tail="二跳" />
           <div style={{marginTop:14, fontFamily:'var(--mono)', fontSize:10.5, color:'var(--ink-3)', lineHeight:1.6}}>
             数据每 5 分钟刷新一次，可在「管理已有」里随时查看。
           </div>

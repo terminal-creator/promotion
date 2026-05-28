@@ -1,0 +1,126 @@
+/*
+ * collapse-cta.css · 课件预览折叠 + 「点击查看交互式课件」CTA 样式
+ *
+ * 用法：每套样式 <head> 引入
+ *   <link rel="stylesheet" href="/collapse-cta.css">
+ *
+ * 配套：/collapse-cta.js 添加交互逻辑
+ * 抽取自主样式 styles/main/index.html · 13 套样式共享
+ */
+
+/* 默认折叠 */
+.wb-player[data-collapsed="true"] .frame-wrap{display:none}
+.wb-player[data-collapsed="true"] .pbar{border-bottom:0;padding:14px 16px;gap:18px}
+
+/* 通用 toggle 按钮 */
+.wb-player .pbar .toggle{
+  appearance:none;cursor:pointer;
+  font-family:var(--sans, 'Inter Tight', system-ui, sans-serif);
+  transition:all .25s cubic-bezier(.2,.7,.2,1);
+}
+
+/* ===== 折叠态：4 角描边 → hover 后边框递进合拢 ===== */
+.wb-player[data-collapsed="true"] .pbar .toggle{
+  position:relative;
+  isolation:isolate;
+  flex:1;min-width:260px;
+  display:flex;align-items:center;justify-content:center;
+  height:52px;
+  margin:6px 0;
+  padding:0 28px;
+  background:#1A1D24;
+  border:2px solid #FEFEFE;
+  border-radius:0;
+  color:#FEFEFE;
+  font-weight:500;
+  font-size:14px;
+  letter-spacing:0.22em;
+  text-transform:uppercase;
+  white-space:nowrap;
+  overflow:visible;
+  cursor:pointer;
+  box-shadow:0 0 0 0 rgba(255,255,255,0);
+  transition:box-shadow .35s ease;
+}
+
+/* ::before · 水平 mask（与按钮底色一致，隐形遮挡左右 border 中段） */
+.wb-player[data-collapsed="true"] .pbar .toggle::before{
+  content:"";
+  position:absolute;
+  left:-2px; top:6px;
+  width:calc(100% + 4px);
+  height:calc(100% - 12px);
+  background:#1A1D24;
+  transform:scaleY(1);
+  transform-origin:center;
+  transition:transform 320ms cubic-bezier(.45,.05,.55,.95);
+  z-index:1;
+  pointer-events:none;
+}
+
+/* ::after · 垂直 mask（延迟 500ms 出场） */
+.wb-player[data-collapsed="true"] .pbar .toggle::after{
+  content:"";
+  position:absolute;
+  top:-2px; left:6px;
+  height:calc(100% + 4px);
+  width:calc(100% - 12px);
+  background:#1A1D24;
+  transform:scaleX(1);
+  transform-origin:center;
+  transition:transform 320ms cubic-bezier(.45,.05,.55,.95) 500ms;
+  z-index:1;
+  pointer-events:none;
+}
+
+/* 文字必须在 mask 之上 */
+.wb-player[data-collapsed="true"] .pbar .toggle .label,
+.wb-player[data-collapsed="true"] .pbar .toggle .chev,
+.wb-player[data-collapsed="true"] .pbar .toggle .arrow{
+  position:relative;
+  z-index:10;
+}
+.wb-player[data-collapsed="true"] .pbar .toggle .chev,
+.wb-player[data-collapsed="true"] .pbar .toggle .arrow{display:none}
+.wb-player[data-collapsed="true"] .pbar .toggle .label::after{content:"点击查看交互式课件"}
+
+/* hover · mask 依次收缩 → 边框递进显现 */
+.wb-player[data-collapsed="true"] .pbar .toggle:hover::before{ transform:scaleY(0); }
+.wb-player[data-collapsed="true"] .pbar .toggle:hover::after{  transform:scaleX(0); }
+
+.wb-player[data-collapsed="true"] .pbar .toggle:hover{
+  letter-spacing:0.28em;
+  box-shadow:0 0 24px -6px rgba(255,255,255,0.18);
+  transition:letter-spacing 600ms ease, box-shadow .35s ease;
+}
+.wb-player[data-collapsed="true"] .pbar .toggle:active{
+  background:#13161C;
+}
+.wb-player[data-collapsed="true"] .pbar .toggle:active::before,
+.wb-player[data-collapsed="true"] .pbar .toggle:active::after{
+  background:#13161C;
+}
+
+/* ===== 展开态：极简「× 收起」小按钮 ===== */
+.wb-player[data-collapsed="false"] .pbar .toggle{
+  background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);
+  border:1px solid rgba(255,255,255,0.18);
+  font-family:var(--mono, 'JetBrains Mono', monospace);font-size:10.5px;font-weight:500;
+  letter-spacing:0.08em;text-transform:uppercase;
+  padding:5px 12px;border-radius:0;
+  box-shadow:none;animation:none;
+  display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;
+}
+.wb-player[data-collapsed="false"] .pbar .toggle:hover{
+  background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.35);
+}
+.wb-player[data-collapsed="false"] .pbar .toggle .chev,
+.wb-player[data-collapsed="false"] .pbar .toggle .arrow{display:none}
+.wb-player[data-collapsed="false"] .pbar .toggle .label::after{content:"× 收起"}
+
+@media (max-width:760px){
+  .wb-player[data-collapsed="true"] .pbar{flex-wrap:wrap}
+  .wb-player[data-collapsed="true"] .pbar .toggle{
+    flex:1 0 100%;margin-top:8px;letter-spacing:0.18em;
+  }
+}

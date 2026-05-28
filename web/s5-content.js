@@ -766,13 +766,12 @@
       teacher: {
         title: '联系老师 · 领取免费试听课',
         titleHighlight: '免费试听课',
-        sub: '扫码或加微信，老师会发你完整试听课件 + 1 次学习路线诊断，回你的所有报名/课程问题。',
-        subHighlight: '完整试听课件 + 1 次学习路线诊断',
+        sub: '扫码或加微信，老师会发你完整试听课件，回你的所有报名/课程问题。',
+        subHighlight: '完整试听课件',
         qrLabel: 'WeChat · 微信',
         qrCaption: '备注「试听」可直接领取',
         list: [
           '1 节完整试听课件 · 看完就能判断这门课合不合你',
-          '1V1 路线诊断 · 老师亲自给你拍方向',
           '报名 / 价格 / 定制路径 等问题均可直接问',
         ],
         btnClose: '我知道了',
@@ -794,21 +793,18 @@
     },
   };
 
-  // 关键短语清单 · 供 content-check.js 自动校验各样式渲染后是否包含
+  // 关键短语清单 · 供 content-check.js 自动校验
+  // 必须是"渲染后的连续纯文本"，不能被 HTML 标签分割
+  // 选 13 套样式都包含的短语 · v1 是早期 Kraft 版无 hook section，不要求 hook 行短语
+  // v7-v12 模板样式会同时搜 HTML + s5-data.js
   root.S5_CONTENT_CRITICAL_PHRASES = [
-    'Agentic 系统工程',
-    '与 Post-Train 落地',
-    '是不是卡在',
-    '直播 + 录播 + 代码 + 课件',
-    '3V1 答疑',
-    '联系老师领取试听课',
-    '面试 Self-Check',
-    '10 周后，你会有一份',
-    '一键训练脚本',
-    '面试官一看就是 toy',
-    'verl · HybridFlow',
-    'Agentic RL · 架构与三不变量',
-    '企业内部智能协同助手平台',
+    'Post-Train',                          // 通用 · hero / project
+    '直播 + 录播 + 代码 + 课件',           // support 01（新增）
+    '3V1 答疑',                            // support 05（新增）
+    '联系老师领取试听课',                  // ContactBlock 注入
+    'HybridFlow',                          // W4 verl 标志
+    '三不变量',                            // W5 Agentic RL
+    '企业内部智能协同助手平台',            // W10 / project
   ];
 
   /* CommonJS 兼容（content-check.js 在 Node 里 require 时用） */

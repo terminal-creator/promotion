@@ -60,7 +60,7 @@
 
       tip.innerHTML = '正在加载 <b>' + slug + '</b> 的页面…';
 
-      // 拉渠道数据拿到 style_version
+      // 拉合作伙伴数据拿到 style_version
       try {
         const res = await fetch('/api/channels/' + encodeURIComponent(slug), {
           headers: { Accept: 'application/json' },
@@ -70,8 +70,8 @@
         const styleId = data.style_version || 'main';
         gotoStyle(styleId, slug);
       } catch (e) {
-        // 找不到渠道：fallback 到 main demo
-        tip.innerHTML = '<div class="err">未找到 <b>' + slug + '</b> 这个渠道。<br>3 秒后进入默认样式 demo…<br><br><a href="/admin">→ 去创建一个新渠道</a></div>';
+        // 找不到合作伙伴：fallback 到 main demo
+        tip.innerHTML = '<div class="err">未找到 <b>' + slug + '</b> 这个合作伙伴。<br>3 秒后进入默认样式 demo…<br><br><a href="/admin">→ 去创建一个新合作伙伴链接</a></div>';
         setTimeout(() => gotoStyle('main', null), 3000);
       }
     }

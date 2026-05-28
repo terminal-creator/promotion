@@ -22,6 +22,9 @@ const WEB  = path.join(ROOT, 'web');
 const content = require(path.join(WEB, 's5-content.js'));
 const CRITICAL = content.CRITICAL_PHRASES;
 
+// 模板驱动样式 · 内容在 s5-data.js 里（不在 HTML 静态中）
+const TEMPLATE_STYLES = new Set(['v7', 'v8', 'v9', 'v10', 'v11', 'v12']);
+
 const STYLES = ['main', 'v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10', 'v11', 'v12'];
 
 let pass = 0;
@@ -36,16 +39,25 @@ function check(styleId) {
   }
   const html = fs.readFileSync(idx, 'utf8');
 
+  // 模板驱动样式：把 s5-data.js 内容也合进来一起搜
+  let searchText = html;
+  if (TEMPLATE_STYLES.has(styleId)) {
+    const dataFile = path.join(WEB, 'styles', styleId, 's5-data.js');
+    if (fs.existsSync(dataFile)) {
+      searchText = html + '\n\n/* === appended s5-data.js for content check === */\n' + fs.readFileSync(dataFile, 'utf8');
+    }
+  }
+
   const issues = [];
 
-  // 1) critical phrases 全在
+  // 1) critical phrases 全在（HTML + 数据文件合并搜）
   CRITICAL.forEach((phrase) => {
-    if (!html.includes(phrase)) {
+    if (!searchText.includes(phrase)) {
       issues.push(`缺关键文案: "${phrase}"`);
     }
   });
 
-  // 2) data-cwp-bind 锚点齐全
+  // 2) data-cwp-bind 锚点齐全（必须在 HTML 静态里）
   const requiredBinds = ['wechat', 'name', 'qr'];
   requiredBinds.forEach((k) => {
     const re = new RegExp(`data-cwp-bind=["']${k}["']`);

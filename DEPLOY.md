@@ -84,7 +84,7 @@ server {
   # admin 控制台
   location = /admin { try_files /admin.html =404; }
 
-  # 渠道路由壳（/c/<slug>）
+  # 合作伙伴路由壳（/c/<slug>）
   location /c/ { try_files /index.html =404; }
 
   # 样式（/styles/<id>/）
@@ -154,7 +154,7 @@ crontab -e
 | 上传 QR 失败 | 检查 `/opt/llmpromotion/uploads/qr/` 写权限；`chmod 755` |
 | `/c/<slug>` 404 | 检查 Nginx 配置里 `try_files /index.html` |
 | `/styles/main/` 加载慢 | 看 `web/courseware-preview/` 大小（~30M）· 可加 Nginx 缓存 |
-| 学员看不到自己渠道的 QR | 浏览器 DevTools 看 `/api/channels/<slug>` 是否返回；看 channel-loader.js 是否加载 |
+| 学员看不到自己合作伙伴的 QR | 浏览器 DevTools 看 `/api/channels/<slug>` 是否返回；看 channel-loader.js 是否加载 |
 
 ---
 

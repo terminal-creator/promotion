@@ -212,7 +212,7 @@ function TopBar({ step, mode, stepState, canGoStep, onGoStep, onGoManage, onRese
       <div className="brand">
         <span className="sq"></span>
         <b>S5 · 2026</b>
-        <span>渠道链接控制台</span>
+        <span>合作伙伴控制台</span>
         <span className="v">v0.3</span>
       </div>
       <div className="steps">
@@ -254,7 +254,7 @@ function MetaStrip({ mode, step, data, styleObj, historyCount }) {
       <div className="meta">
         <span><span className="pulse"></span><span className="k">系统</span><span className="v">就绪</span></span>
         <span className="sep"></span>
-        <span><span className="k">本机历史</span><span className="v acc">{historyCount}</span><span className="v dim"> · 条渠道链接</span></span>
+        <span><span className="k">本机历史</span><span className="v acc">{historyCount}</span><span className="v dim"> · 条合作伙伴链接</span></span>
         <span className="sep"></span>
         <span><span className="k">数据后端</span><span className="v">国内自建</span><span className="v dim"> · Node + SQLite</span></span>
         <span className="sep"></span>
@@ -278,7 +278,7 @@ function MetaStrip({ mode, step, data, styleObj, historyCount }) {
           : <span className="v dim">— 未选 —</span>}
       </span>
       <span className="sep"></span>
-      <span><span className="k">渠道老师</span>
+      <span><span className="k">合作伙伴</span>
         {data.displayName
           ? <span className="v">{data.displayName}</span>
           : <span className="v dim">未填写</span>}

@@ -30,7 +30,7 @@
   </p>
 
   <p>
-    <span data-cwp-bind="name">老师</span> · 1V1 路线诊断 / 完整试听课
+    <span data-cwp-bind="name">老师</span> · 完整试听课
   </p>
 </section>
 ```

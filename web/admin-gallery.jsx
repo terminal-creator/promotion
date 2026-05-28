@@ -109,7 +109,7 @@ function StyleCard({ s, isSelected, onSelect, onConfirm }) {
           <iframe
             src={s.file}
             scrolling="no"
-            sandbox="allow-same-origin"
+            sandbox="allow-same-origin allow-scripts"
             loading="lazy"
             title={s.name}
             onLoad={() => setLoaded(true)}
