@@ -1,0 +1,190 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1150" font-family="'SF Pro Display','PingFang SC','Microsoft YaHei',system-ui,sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#333"/>
+    </marker>
+    <marker id="arr-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#2563eb"/>
+    </marker>
+    <marker id="arr-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#dc2626"/>
+    </marker>
+  </defs>
+
+  <rect width="1400" height="1150" fill="white"/>
+
+  <!-- Title -->
+  <text x="700" y="38" text-anchor="middle" font-size="22" font-weight="700" fill="#111">LD-04 QUERY LOOP 完整状态机</text>
+  <text x="700" y="58" text-anchor="middle" font-size="12" fill="#999">core/query_loop.py:53-284 — while turn_count &lt; max_turns 的六个阶段与状态转移</text>
+
+  <!-- ===== State Variables (top right) ===== -->
+  <rect x="1040" y="75" width="325" height="140" rx="8" fill="#fafafa" stroke="#ddd" stroke-width="1"/>
+  <text x="1060" y="97" font-size="11" font-weight="700" fill="#111">循环状态变量</text>
+  <line x1="1055" y1="105" x2="1350" y2="105" stroke="#eee" stroke-width="1"/>
+  <text x="1060" y="122" font-size="10" fill="#666">turn_count=0, retry_count=0, max_retry=5</text>
+  <text x="1060" y="138" font-size="10" fill="#666">max_output_recovery_count=0</text>
+  <text x="1060" y="154" font-size="10" fill="#666">current_max_tokens=16384</text>
+  <text x="1060" y="170" font-size="10" fill="#666">has_attempted_reactive_compact=False</text>
+  <text x="1060" y="186" font-size="10" fill="#666">compact_consecutive_failures=0</text>
+  <text x="1060" y="204" font-size="10" fill="#999">max_turns: 50(REPL) / 20(print)</text>
+
+  <!-- ===== PHASE 1: Prepare Messages + Auto-Compact ===== -->
+  <rect x="55" y="75" width="490" height="145" rx="10" fill="white" stroke="#333" stroke-width="2"/>
+  <text x="72" y="99" font-size="14" font-weight="700" fill="#111">Phase 1</text>
+  <text x="155" y="99" font-size="12" fill="#666">准备消息 + Auto-Compact</text>
+  <line x1="72" y1="109" x2="530" y2="109" stroke="#eee" stroke-width="1"/>
+
+  <text x="75" y="129" font-size="10" fill="#333">&#x2460; turn_count += 1</text>
+  <text x="75" y="147" font-size="10" fill="#333">&#x2461; api_messages = normalize_messages_for_api(messages)</text>
+  <text x="90" y="161" font-size="9" fill="#999">确保交替 user/assistant, 合并连续 user, 清理孤儿 tool_result</text>
+  <text x="75" y="179" font-size="10" fill="#333">&#x2462; estimate_tokens() &#x2192; should_auto_compact()?</text>
+  <text x="90" y="193" font-size="9" fill="#999">tokens &gt;= 187000 &#x2192; compact_messages() &#x2192; yield CompactOccurred</text>
+  <text x="75" y="211" font-size="10" fill="#333">&#x2463; tool_schemas = tools.get_api_schemas()</text>
+
+  <!-- Arrow Phase1 → Phase2 -->
+  <line x1="545" y1="148" x2="595" y2="148" stroke="#333" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- ===== PHASE 2: Model Call (Streaming) ===== -->
+  <rect x="605" y="75" width="410" height="145" rx="10" fill="white" stroke="#333" stroke-width="2"/>
+  <rect x="605" y="75" width="4" height="145" rx="2" fill="#2563eb"/>
+  <text x="625" y="99" font-size="14" font-weight="700" fill="#111">Phase 2</text>
+  <text x="715" y="99" font-size="12" fill="#2563eb">调用模型 (Streaming)</text>
+  <line x1="625" y1="109" x2="1000" y2="109" stroke="#eee" stroke-width="1"/>
+
+  <text x="625" y="129" font-size="10" fill="#333">call_model(messages, system, tools, max_tokens)</text>
+  <text x="640" y="143" font-size="9" fill="#999">&#x2192; stream_response() &#x2192; client.messages.stream()</text>
+  <text x="625" y="163" font-size="10" fill="#666">实时 yield:</text>
+  <text x="645" y="179" font-size="10" fill="#666">TextDelta / ToolUseStart / TurnComplete / ErrorEvent</text>
+  <text x="625" y="197" font-size="10" fill="#333">StreamingToolExecutor.add_tool() 在流中调用</text>
+
+  <!-- Arrow Phase2 → Decision Diamond -->
+  <line x1="810" y1="220" x2="810" y2="252" stroke="#333" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Error check diamond -->
+  <polygon points="810,262 870,237 930,262 870,287" fill="white" stroke="#333" stroke-width="1.5"/>
+  <text x="870" y="259" text-anchor="middle" font-size="10" font-weight="600" fill="#333">error</text>
+  <text x="870" y="272" text-anchor="middle" font-size="10" font-weight="600" fill="#333">event?</text>
+
+  <!-- YES → Phase 3 (LEFT) -->
+  <line x1="810" y1="262" x2="620" y2="262" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arr-r)"/>
+  <text x="700" y="255" font-size="10" fill="#dc2626">有错误</text>
+
+  <!-- NO → Phase 4 (DOWN-RIGHT) -->
+  <line x1="930" y1="262" x2="1060" y2="262" stroke="#333" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="975" y="255" font-size="10" fill="#666">无错误</text>
+
+  <!-- ===== PHASE 3: Error Recovery ===== -->
+  <rect x="55" y="300" width="550" height="295" rx="10" fill="white" stroke="#dc2626" stroke-width="1.5"/>
+  <rect x="55" y="300" width="4" height="295" rx="2" fill="#dc2626"/>
+  <text x="75" y="325" font-size="14" font-weight="700" fill="#111">Phase 3</text>
+  <text x="160" y="325" font-size="12" fill="#dc2626">错误恢复</text>
+  <text x="310" y="325" font-size="9" fill="#999">query_loop.py:149-196</text>
+  <line x1="70" y1="335" x2="590" y2="335" stroke="#fee2e2" stroke-width="1"/>
+
+  <rect x="75" y="348" width="510" height="40" rx="5" fill="white" stroke="#eee" stroke-width="1"/>
+  <text x="90" y="365" font-size="10" font-weight="600" fill="#333">&#x2776; prompt_too_long / 413</text>
+  <text x="90" y="380" font-size="9" fill="#666">&#x2192; reactive compact_messages() (仅 1 次, has_attempted_reactive_compact)</text>
+
+  <rect x="75" y="396" width="510" height="40" rx="5" fill="white" stroke="#eee" stroke-width="1"/>
+  <text x="90" y="413" font-size="10" font-weight="600" fill="#333">&#x2777; max_output_tokens</text>
+  <text x="90" y="428" font-size="9" fill="#666">&#x2192; 第1次: max_tokens=65536 | 第2-3次: 追加 text + "Please continue..."</text>
+
+  <rect x="75" y="444" width="510" height="30" rx="5" fill="white" stroke="#eee" stroke-width="1"/>
+  <text x="90" y="464" font-size="10" font-weight="600" fill="#333">&#x2778; 429 / 529 / overloaded_error</text>
+  <text x="355" y="464" font-size="9" fill="#666">&#x2192; sleep(min(2*retry, 10s)) (最多5次)</text>
+
+  <rect x="75" y="482" width="510" height="30" rx="5" fill="#fafafa" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="90" y="502" font-size="10" font-weight="700" fill="#dc2626">&#x2779; 不可恢复 &#x2192; yield ErrorEvent &#x2192; return (终止)</text>
+
+  <!-- Recovery result -->
+  <rect x="75" y="525" width="510" height="52" rx="5" fill="white" stroke="#333" stroke-width="1"/>
+  <text x="90" y="545" font-size="10" fill="#333" font-weight="600">恢复成功: turn_count -= 1 (不消耗轮次) &#x2192; continue</text>
+  <text x="90" y="565" font-size="10" fill="#999">恢复失败: yield ErrorEvent(is_recoverable=False) &#x2192; return</text>
+
+  <!-- Recovery loop-back arrow (red dashed) to Phase 1 -->
+  <path d="M70 550 L35 550 L35 148 L55 148" stroke="#dc2626" stroke-width="1.5" fill="none" marker-end="url(#arr-r)" stroke-dasharray="8,4"/>
+  <text x="24" y="370" font-size="9" fill="#dc2626" transform="rotate(-90,24,370)">continue &#x2192; Phase 1</text>
+
+  <!-- ===== PHASE 4: Build Assistant Message + Tool Check ===== -->
+  <rect x="650" y="300" width="715" height="130" rx="10" fill="white" stroke="#333" stroke-width="2"/>
+  <text x="670" y="325" font-size="14" font-weight="700" fill="#111">Phase 4</text>
+  <text x="755" y="325" font-size="12" fill="#666">构建 Assistant 消息 + 工具判断</text>
+  <line x1="665" y1="335" x2="1350" y2="335" stroke="#eee" stroke-width="1"/>
+
+  <text x="670" y="358" font-size="10" fill="#333">&#x2460; assistant_blocks = [TextBlock(text)] + tool_use_blocks</text>
+  <text x="670" y="376" font-size="10" fill="#333">&#x2461; messages.append(AssistantMessage(content, usage, stop_reason))</text>
+  <text x="670" y="394" font-size="10" fill="#333">&#x2462; yield TurnComplete(stop_reason, usage)</text>
+
+  <!-- Decision diamond: tool_use_blocks? -->
+  <polygon points="1080,415 1135,393 1190,415 1135,437" fill="white" stroke="#333" stroke-width="1.5"/>
+  <text x="1135" y="413" text-anchor="middle" font-size="9" font-weight="600" fill="#333">tool_use</text>
+  <text x="1135" y="425" text-anchor="middle" font-size="9" font-weight="600" fill="#333">_blocks?</text>
+
+  <!-- Empty → return (black box) -->
+  <line x1="1190" y1="415" x2="1270" y2="415" stroke="#333" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="1215" y="408" font-size="10" fill="#666">空</text>
+  <rect x="1278" y="399" width="88" height="32" rx="8" fill="#111"/>
+  <text x="1322" y="419" text-anchor="middle" font-size="12" font-weight="700" fill="white">return</text>
+  <text x="1322" y="448" text-anchor="middle" font-size="9" fill="#999">对话轮完成</text>
+
+  <!-- Has tools → Phase 5 (DOWN) -->
+  <line x1="1135" y1="437" x2="1135" y2="478" stroke="#2563eb" stroke-width="2" marker-end="url(#arr-b)"/>
+  <text x="1145" y="465" font-size="10" fill="#2563eb" font-weight="600">有工具</text>
+
+  <!-- ===== PHASE 5: Tool Execution + Result Assembly ===== -->
+  <rect x="650" y="485" width="715" height="175" rx="10" fill="white" stroke="#2563eb" stroke-width="1.5"/>
+  <rect x="650" y="485" width="4" height="175" rx="2" fill="#2563eb"/>
+  <text x="670" y="510" font-size="14" font-weight="700" fill="#111">Phase 5</text>
+  <text x="755" y="510" font-size="12" fill="#2563eb">工具执行 + 结果拼回</text>
+  <line x1="665" y1="520" x2="1350" y2="520" stroke="#eee" stroke-width="1"/>
+
+  <text x="670" y="542" font-size="10" fill="#333" font-weight="600">&#x2460; tool_results = executor.get_results()</text>
+  <text x="690" y="558" font-size="9" fill="#999">tools/orchestration.py — 分批并发/串行 + Pre/Post hooks</text>
+
+  <text x="670" y="578" font-size="10" fill="#333">&#x2461; yield ToolResultReady(tool_id, content[:500], is_error) per tool</text>
+
+  <text x="670" y="598" font-size="10" fill="#333">&#x2462; 构建 ToolResultBlock &#x2192; 支持 str 和 rich content (images)</text>
+
+  <text x="670" y="618" font-size="10" fill="#333" font-weight="600">&#x2463; messages.append(UserMessage(content=[ToolResultBlock...]))</text>
+
+  <text x="670" y="648" font-size="11" fill="#2563eb" font-weight="700">&#x2464; continue &#x2192; 回到 Phase 1，Claude 看到工具结果后决定下一步</text>
+
+  <!-- Continue loop-back arrow (blue dashed) to Phase 1 -->
+  <path d="M650 640 L630 640 L630 710 L300 710 L300 148 L55 148" stroke="#2563eb" stroke-width="2" fill="none" marker-end="url(#arr-b)" stroke-dasharray="10,5"/>
+  <text x="440" y="728" font-size="10" font-weight="600" fill="#2563eb">continue &#x2192; Phase 1 (工具结果已在 messages 中)</text>
+
+  <!-- ===== LEGEND (bottom left) ===== -->
+  <rect x="40" y="770" width="620" height="135" rx="8" fill="white" stroke="#ddd" stroke-width="1"/>
+  <text x="60" y="795" font-size="11" font-weight="700" fill="#111">事件类型 (core/events.py)</text>
+  <line x1="55" y1="805" x2="645" y2="805" stroke="#eee" stroke-width="1"/>
+  <text x="60" y="825" font-size="10" fill="#666">TextDelta           流式文本增量</text>
+  <text x="60" y="843" font-size="10" fill="#666">ThinkingDelta       思考过程增量</text>
+  <text x="60" y="861" font-size="10" fill="#666">ToolUseStart        工具调用开始</text>
+  <text x="60" y="879" font-size="10" fill="#666">TurnComplete        本轮完成 + usage</text>
+  <text x="350" y="825" font-size="10" fill="#666">ToolResultReady     工具执行完成</text>
+  <text x="350" y="843" font-size="10" fill="#666">CompactOccurred     上下文已压缩</text>
+  <text x="350" y="861" font-size="10" fill="#dc2626">ErrorEvent          错误 (可恢复/不可恢复)</text>
+  <text x="60" y="897" font-size="9" fill="#999">图例:  ━━ 正常流  </text>
+  <line x1="138" y1="894" x2="188" y2="894" stroke="#333" stroke-width="1.5"/>
+  <text x="195" y="897" font-size="9" fill="#2563eb">━━ 工具循环  </text>
+  <line x1="273" y1="894" x2="323" y2="894" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="330" y="897" font-size="9" fill="#dc2626">━━ 错误恢复  </text>
+  <line x1="408" y1="894" x2="458" y2="894" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="468" y="897" font-size="9" fill="#333">&#x25C6; 决策节点  </text>
+  <polygon points="532,894 538,888 544,894 538,900" fill="white" stroke="#333" stroke-width="1"/>
+
+  <!-- ===== KEY INSIGHT (bottom right) ===== -->
+  <rect x="690" y="770" width="675" height="135" rx="8" fill="white" stroke="#333" stroke-width="1.5"/>
+  <text x="710" y="795" font-size="11" font-weight="700" fill="#111">核心洞察</text>
+  <line x1="705" y1="805" x2="1350" y2="805" stroke="#eee" stroke-width="1"/>
+
+  <text x="710" y="828" font-size="10" fill="#2563eb" font-weight="600">工具循环 = 对话循环</text>
+  <text x="710" y="846" font-size="10" fill="#666">tool_result 包装为 UserMessage 送回 &#x2192; Claude 看到后决定下一步</text>
+
+  <text x="710" y="868" font-size="10" fill="#333" font-weight="600">没有 tool_use &#x2192; return</text>
+  <text x="890" y="868" font-size="10" fill="#333">|</text>
+  <text x="910" y="868" font-size="10" fill="#333" font-weight="600">有 tool_use &#x2192; exec &#x2192; continue &#x2192; 下一轮 API</text>
+
+  <text x="710" y="890" font-size="10" fill="#dc2626" font-weight="600">错误恢复不消耗轮次</text>
+  <text x="910" y="890" font-size="10" fill="#666">recovered &#x2192; turn_count -= 1 &#x2192; continue</text>
+</svg>

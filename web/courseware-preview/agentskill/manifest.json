@@ -1,0 +1,19 @@
+{
+  "schema_version": "2.0",
+  "package_type": "runtime-protected-static",
+  "title": "Agent Skill 交互式课件",
+  "version": "2026.04.28",
+  "entry": "index.html",
+  "locale": "zh-CN",
+  "author": "shenweiLLM",
+  "description": "Agent Skill 深度拆解交互式课件",
+  "course_binding": {
+    "series_key": "s5",
+    "phase_hint": "第1周"
+  },
+  "runtime": {
+    "requires_auth": true,
+    "allow_offline": false,
+    "platform_handles_auth": true
+  }
+}

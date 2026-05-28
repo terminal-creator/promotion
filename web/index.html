@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>S5 · 2026 · 大模型冲刺营</title>
+  <style>
+    html,body{margin:0;padding:0;height:100%;background:#0A0C10;color:#EDE9DC;font-family:'Inter Tight','PingFang SC',system-ui,sans-serif}
+    .loader{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px}
+    .spin{width:36px;height:36px;border:3px solid rgba(255,255,255,0.18);border-top-color:#C2410C;border-radius:50%;animation:r 0.9s linear infinite}
+    @keyframes r{to{transform:rotate(360deg)}}
+    .tip{font-size:13px;color:rgba(255,255,255,0.55);letter-spacing:0.04em}
+    .tip b{color:#fff}
+    .err{color:#EF4444;text-align:center;max-width:480px;line-height:1.6;padding:0 20px}
+    .err a{color:#C2410C}
+  </style>
+</head>
+<body>
+  <div class="loader" id="loader">
+    <div class="spin"></div>
+    <div class="tip" id="tip">正在加载课程页…</div>
+  </div>
+
+  <script>
+  /**
+   * 路由壳页 · 根据 URL 的 slug + DB 里的 style_version 跳转
+   *
+   * 路径形式：
+   *   /c/<slug>           → 学员入口（必须查 style）
+   *   /                   → 直接展示 main 样式（demo / 兜底）
+   *   /?slug=xxx          → 与 /c/<slug> 同义
+   */
+  (function () {
+    const tip = document.getElementById('tip');
+    const SOURCE_BASE = location.origin;
+
+    function detectSlug() {
+      const m = location.pathname.match(/^\/c\/([\w-]+)/);
+      if (m) return m[1];
+      const sp = new URLSearchParams(location.search);
+      return sp.get('slug') || null;
+    }
+
+    function gotoStyle(styleId, slug) {
+      // slug 为空 = demo 模式，直接进 styles/<id>/ 不带 query
+      const q = slug ? '?slug=' + encodeURIComponent(slug) : '';
+      location.replace(`/styles/${encodeURIComponent(styleId)}/${q}`);
+    }
+
+    async function go() {
+      const slug = detectSlug();
+
+      // 无 slug：直接进 main 样式 demo
+      if (!slug) {
+        tip.textContent = '加载默认样式…';
+        gotoStyle('main', null);
+        return;
+      }
+
+      tip.innerHTML = '正在加载 <b>' + slug + '</b> 的页面…';
+
+      // 拉渠道数据拿到 style_version
+      try {
+        const res = await fetch('/api/channels/' + encodeURIComponent(slug), {
+          headers: { Accept: 'application/json' },
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const styleId = data.style_version || 'main';
+        gotoStyle(styleId, slug);
+      } catch (e) {
+        // 找不到渠道：fallback 到 main demo
+        tip.innerHTML = '<div class="err">未找到 <b>' + slug + '</b> 这个渠道。<br>3 秒后进入默认样式 demo…<br><br><a href="/admin">→ 去创建一个新渠道</a></div>';
+        setTimeout(() => gotoStyle('main', null), 3000);
+      }
+    }
+
+    go();
+  })();
+  </script>
+</body>
+</html>

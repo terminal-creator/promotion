@@ -1,0 +1,349 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 1640" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Helvetica Neue', sans-serif">
+
+  <defs>
+    <!-- Subtle paper background -->
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FAFAF7"/>
+      <stop offset="100%" stop-color="#F3F2EC"/>
+    </linearGradient>
+
+    <!-- Layer accent colors, muted editorial palette -->
+    <linearGradient id="g-trainer" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2C2C2A"/>
+      <stop offset="100%" stop-color="#444441"/>
+    </linearGradient>
+
+    <!-- Arrow markers -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-thin" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="dot" viewBox="0 0 6 6" refX="3" refY="3" markerWidth="6" markerHeight="6">
+      <circle cx="3" cy="3" r="2" fill="context-stroke"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="1640" fill="url(#bg)"/>
+
+  <!-- ============== Title ============== -->
+  <text x="80" y="80" font-size="34" font-weight="600" fill="#1a1a1a" letter-spacing="-0.5">verl source map · five layers in one GRPO step</text>
+  <text x="80" y="112" font-size="16" fill="#6b6b66" font-style="italic">following a batch of 512 prompts through rollout → reward → advantage → update</text>
+  <line x1="80" y1="130" x2="1200" y2="130" stroke="#d4d2c7" stroke-width="0.8"/>
+
+  <!-- Left rail: layer index -->
+  <g font-size="11" fill="#9a988e" letter-spacing="2">
+    <text x="80" y="180" font-weight="600">LAYER 01</text>
+    <text x="80" y="320" font-weight="600">LAYER 02</text>
+    <text x="80" y="700" font-weight="600">LAYER 03</text>
+    <text x="80" y="940" font-weight="600">LAYER 04</text>
+    <text x="80" y="1320" font-weight="600">LAYER 05</text>
+  </g>
+
+  <!-- ============== LAYER 1: Trainer ============== -->
+  <g transform="translate(190, 158)">
+    <rect x="0" y="0" width="1010" height="100" rx="6" fill="#FFFFFF" stroke="#2C2C2A" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="100" rx="2" fill="#2C2C2A"/>
+    <text x="28" y="32" font-size="20" font-weight="600" fill="#1a1a1a">Trainer · 工厂老板</text>
+    <text x="28" y="56" font-size="13.5" fill="#5f5e5a">RayPPOTrainer.fit() — 解析 yaml、ray.init()、按配置创建各 WorkerGroup、进入 step 循环</text>
+    <text x="28" y="78" font-size="12" fill="#888780" font-style="italic">入口文件: verl/trainer/main_ppo.py · GRPO 通过 advantage_estimator=grpo 切换</text>
+  </g>
+
+  <!-- arrow down -->
+  <path d="M 695 270 L 695 296" stroke="#5f5e5a" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- ============== LAYER 2: Single Controller ============== -->
+  <g transform="translate(190, 298)">
+    <rect x="0" y="0" width="1010" height="370" rx="6" fill="#FFFFFF" stroke="#534AB7" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="370" rx="2" fill="#534AB7"/>
+
+    <text x="28" y="32" font-size="20" font-weight="600" fill="#26215C">Single Controller · 总调度员（driver 单进程）</text>
+    <text x="28" y="56" font-size="13" fill="#534AB7">看起来像单机顺序代码，每个 _wg.xxx() 都是跨进程 RPC</text>
+
+    <!-- Code-like sequential flow boxes -->
+    <g transform="translate(28, 80)" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="13">
+
+      <!-- Step 1 -->
+      <g>
+        <rect x="0" y="0" width="950" height="38" rx="4" fill="#F6F5FF" stroke="#CECBF6" stroke-width="0.8"/>
+        <circle cx="20" cy="19" r="10" fill="#534AB7"/>
+        <text x="20" y="23" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">1</text>
+        <text x="42" y="23.5" fill="#26215C">batch = next(dataloader)</text>
+        <text x="700" y="23.5" font-size="11" fill="#7F77DD" font-style="italic">512 prompts → DataProto</text>
+      </g>
+
+      <!-- Step 2 -->
+      <g transform="translate(0, 50)">
+        <rect x="0" y="0" width="950" height="38" rx="4" fill="#F6F5FF" stroke="#CECBF6" stroke-width="0.8"/>
+        <circle cx="20" cy="19" r="10" fill="#534AB7"/>
+        <text x="20" y="23" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">2</text>
+        <text x="42" y="23.5" fill="#26215C">gen = actor_rollout_wg.generate_sequences(batch).repeat(group_size=8)</text>
+        <text x="700" y="23.5" font-size="11" fill="#7F77DD" font-style="italic">512 × 8 = 4096 responses</text>
+      </g>
+
+      <!-- Step 3 -->
+      <g transform="translate(0, 100)">
+        <rect x="0" y="0" width="950" height="38" rx="4" fill="#F6F5FF" stroke="#CECBF6" stroke-width="0.8"/>
+        <circle cx="20" cy="19" r="10" fill="#534AB7"/>
+        <text x="20" y="23" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">3</text>
+        <text x="42" y="23.5" fill="#26215C">old_logp = actor_wg.compute_log_prob(gen)</text>
+        <text x="700" y="23.5" font-size="11" fill="#7F77DD" font-style="italic">用于 importance ratio</text>
+      </g>
+
+      <!-- Step 4 -->
+      <g transform="translate(0, 150)">
+        <rect x="0" y="0" width="950" height="38" rx="4" fill="#F6F5FF" stroke="#CECBF6" stroke-width="0.8"/>
+        <circle cx="20" cy="19" r="10" fill="#534AB7"/>
+        <text x="20" y="23" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">4</text>
+        <text x="42" y="23.5" fill="#26215C">ref_logp  = ref_wg.compute_ref_log_prob(gen)</text>
+        <text x="700" y="23.5" font-size="11" fill="#7F77DD" font-style="italic">用于 KL 惩罚项</text>
+      </g>
+
+      <!-- Step 5 -->
+      <g transform="translate(0, 200)">
+        <rect x="0" y="0" width="950" height="38" rx="4" fill="#F6F5FF" stroke="#CECBF6" stroke-width="0.8"/>
+        <circle cx="20" cy="19" r="10" fill="#534AB7"/>
+        <text x="20" y="23" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">5</text>
+        <text x="42" y="23.5" fill="#26215C">rewards = reward_wg.compute_reward(gen)</text>
+        <text x="700" y="23.5" font-size="11" fill="#7F77DD" font-style="italic">每条 response 一个标量分</text>
+      </g>
+
+      <!-- Step 6 -->
+      <g transform="translate(0, 250)">
+        <rect x="0" y="0" width="950" height="38" rx="4" fill="#FFF9EE" stroke="#FAC775" stroke-width="0.8"/>
+        <circle cx="20" cy="19" r="10" fill="#854F0B"/>
+        <text x="20" y="23" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">6</text>
+        <text x="42" y="23.5" fill="#412402">adv = compute_grpo_advantage(rewards)</text>
+        <text x="700" y="23.5" font-size="11" fill="#854F0B" font-style="italic">本地计算 · 组内归一化</text>
+      </g>
+
+    </g>
+  </g>
+
+  <!-- arrow down to WorkerGroup -->
+  <path d="M 695 680 L 695 706" stroke="#5f5e5a" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <text x="710" y="697" font-size="11" fill="#888780" font-style="italic">每个 _wg 调用经此层翻译为多 actor 并行 RPC</text>
+
+  <!-- ============== LAYER 3: WorkerGroup ============== -->
+  <g transform="translate(190, 708)">
+    <rect x="0" y="0" width="1010" height="190" rx="6" fill="#FFFFFF" stroke="#0F6E56" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="190" rx="2" fill="#0F6E56"/>
+
+    <text x="28" y="32" font-size="20" font-weight="600" fill="#04342C">WorkerGroup · 对讲机（dispatch / fan-out）</text>
+    <text x="28" y="56" font-size="13" fill="#0F6E56">@register(dispatch_mode=DP_COMPUTE_PROTO) — 切片 → 并行 RPC → 聚合</text>
+
+    <!-- Conceptual split visualization -->
+    <g transform="translate(28, 80)">
+      <!-- Single batch on left -->
+      <rect x="0" y="20" width="120" height="60" rx="4" fill="#E1F5EE" stroke="#1D9E75" stroke-width="0.8"/>
+      <text x="60" y="46" font-size="12" fill="#04342C" text-anchor="middle" font-weight="500">batch · 512</text>
+      <text x="60" y="64" font-size="10.5" fill="#0F6E56" text-anchor="middle">DataProto</text>
+
+      <!-- Splitting lines -->
+      <path d="M 124 50 L 200 30"  stroke="#5DCAA5" stroke-width="0.8" fill="none"/>
+      <path d="M 124 50 L 200 50"  stroke="#5DCAA5" stroke-width="0.8" fill="none"/>
+      <path d="M 124 50 L 200 70"  stroke="#5DCAA5" stroke-width="0.8" fill="none"/>
+      <path d="M 124 50 L 200 90"  stroke="#5DCAA5" stroke-width="0.8" fill="none"/>
+
+      <!-- Shards in middle -->
+      <g font-size="11" fill="#04342C">
+        <rect x="200" y="20" width="90" height="20" rx="3" fill="#FFFFFF" stroke="#5DCAA5" stroke-width="0.8"/>
+        <text x="245" y="34" text-anchor="middle">shard 0 · 64</text>
+        <rect x="200" y="44" width="90" height="20" rx="3" fill="#FFFFFF" stroke="#5DCAA5" stroke-width="0.8"/>
+        <text x="245" y="58" text-anchor="middle">shard 1 · 64</text>
+        <rect x="200" y="68" width="90" height="20" rx="3" fill="#FFFFFF" stroke="#5DCAA5" stroke-width="0.8"/>
+        <text x="245" y="82" text-anchor="middle">⋯</text>
+        <rect x="200" y="92" width="90" height="20" rx="3" fill="#FFFFFF" stroke="#5DCAA5" stroke-width="0.8"/>
+        <text x="245" y="106" text-anchor="middle">shard 7 · 64</text>
+      </g>
+
+      <!-- RPC arrows to workers -->
+      <path d="M 295 30 L 405 30"  stroke="#0F6E56" stroke-width="1" fill="none" marker-end="url(#arrow-thin)"/>
+      <path d="M 295 54 L 405 54"  stroke="#0F6E56" stroke-width="1" fill="none" marker-end="url(#arrow-thin)"/>
+      <path d="M 295 78 L 405 78"  stroke="#0F6E56" stroke-width="1" fill="none" marker-end="url(#arrow-thin)"/>
+      <path d="M 295 102 L 405 102" stroke="#0F6E56" stroke-width="1" fill="none" marker-end="url(#arrow-thin)"/>
+
+      <!-- Worker stubs -->
+      <g font-size="11" fill="#04342C">
+        <rect x="405" y="20" width="100" height="20" rx="3" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.8"/>
+        <text x="455" y="34" text-anchor="middle">Ray actor 0</text>
+        <rect x="405" y="44" width="100" height="20" rx="3" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.8"/>
+        <text x="455" y="58" text-anchor="middle">Ray actor 1</text>
+        <rect x="405" y="68" width="100" height="20" rx="3" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.8"/>
+        <text x="455" y="82" text-anchor="middle">⋯</text>
+        <rect x="405" y="92" width="100" height="20" rx="3" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.8"/>
+        <text x="455" y="106" text-anchor="middle">Ray actor 7</text>
+      </g>
+
+      <!-- Gather arrows -->
+      <path d="M 605 30 L 715 30"  stroke="#0F6E56" stroke-width="1" fill="none" marker-end="url(#arrow-thin)"/>
+      <path d="M 605 54 L 715 54"  stroke="#0F6E56" stroke-width="1" fill="none" marker-end="url(#arrow-thin)"/>
+      <path d="M 605 78 L 715 78"  stroke="#0F6E56" stroke-width="1" fill="none" marker-end="url(#arrow-thin)"/>
+      <path d="M 605 102 L 715 102" stroke="#0F6E56" stroke-width="1" fill="none" marker-end="url(#arrow-thin)"/>
+
+      <!-- Result shards -->
+      <g font-size="11" fill="#04342C">
+        <rect x="715" y="20" width="90" height="20" rx="3" fill="#FFFFFF" stroke="#5DCAA5" stroke-width="0.8"/>
+        <text x="760" y="34" text-anchor="middle">result 0</text>
+        <rect x="715" y="44" width="90" height="20" rx="3" fill="#FFFFFF" stroke="#5DCAA5" stroke-width="0.8"/>
+        <text x="760" y="58" text-anchor="middle">result 1</text>
+        <rect x="715" y="68" width="90" height="20" rx="3" fill="#FFFFFF" stroke="#5DCAA5" stroke-width="0.8"/>
+        <text x="760" y="82" text-anchor="middle">⋯</text>
+        <rect x="715" y="92" width="90" height="20" rx="3" fill="#FFFFFF" stroke="#5DCAA5" stroke-width="0.8"/>
+        <text x="760" y="106" text-anchor="middle">result 7</text>
+      </g>
+
+      <!-- Merge arrows -->
+      <path d="M 808 30 L 870 50"  stroke="#5DCAA5" stroke-width="0.8" fill="none"/>
+      <path d="M 808 54 L 870 50"  stroke="#5DCAA5" stroke-width="0.8" fill="none"/>
+      <path d="M 808 78 L 870 50"  stroke="#5DCAA5" stroke-width="0.8" fill="none"/>
+      <path d="M 808 102 L 870 50"  stroke="#5DCAA5" stroke-width="0.8" fill="none"/>
+
+      <!-- Merged result -->
+      <rect x="870" y="20" width="100" height="60" rx="4" fill="#E1F5EE" stroke="#1D9E75" stroke-width="0.8"/>
+      <text x="920" y="46" font-size="12" fill="#04342C" text-anchor="middle" font-weight="500">merged</text>
+      <text x="920" y="64" font-size="10.5" fill="#0F6E56" text-anchor="middle">DataProto</text>
+    </g>
+
+    <!-- caption row inside layer 3 -->
+    <text x="28" y="178" font-size="11" fill="#888780" font-style="italic">关键洞察：dispatch 装饰器声明数据怎么切，让上层得以"假装"在写单机代码</text>
+  </g>
+
+  <!-- arrow down to Workers -->
+  <path d="M 695 910 L 695 936" stroke="#5f5e5a" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- ============== LAYER 4: Workers ============== -->
+  <g transform="translate(190, 938)">
+    <rect x="0" y="0" width="1010" height="350" rx="6" fill="#FFFFFF" stroke="#993C1D" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="350" rx="2" fill="#993C1D"/>
+
+    <text x="28" y="32" font-size="20" font-weight="600" fill="#4A1B0C">Worker / Engine · 真正干活的车间（每个 worker 是一个 GPU 上的 Ray actor）</text>
+    <text x="28" y="56" font-size="13" fill="#993C1D">控制流到此结束，下面是计算流：FSDP / Megatron 训练，vLLM / SGLang 推理</text>
+
+    <!-- Three worker cards -->
+    <g transform="translate(28, 80)">
+
+      <!-- ActorRolloutWorker -->
+      <g>
+        <rect x="0" y="0" width="320" height="240" rx="6" fill="#FAECE7" stroke="#D85A30" stroke-width="1"/>
+        <text x="160" y="28" font-size="15" font-weight="600" fill="#4A1B0C" text-anchor="middle">ActorRolloutWorker</text>
+        <line x1="20" y1="42" x2="300" y2="42" stroke="#F5C4B3" stroke-width="0.8"/>
+
+        <!-- Two engine slots -->
+        <rect x="20" y="56" width="280" height="68" rx="4" fill="#FFFFFF" stroke="#F0997B" stroke-width="0.8"/>
+        <text x="32" y="76" font-size="12" font-weight="600" fill="#993C1D">Inference engine</text>
+        <text x="32" y="94" font-size="11" fill="#712B13">vLLM / SGLang · paged KV cache</text>
+        <text x="32" y="111" font-size="11" fill="#712B13">64 prompt × 8 sample = 512 response</text>
+
+        <rect x="20" y="136" width="280" height="68" rx="4" fill="#FFFFFF" stroke="#F0997B" stroke-width="0.8"/>
+        <text x="32" y="156" font-size="12" font-weight="600" fill="#993C1D">Training engine</text>
+        <text x="32" y="174" font-size="11" fill="#712B13">FSDP / Megatron · GRPO loss bwd</text>
+        <text x="32" y="191" font-size="11" fill="#712B13">update_actor 阶段切换到此</text>
+
+        <!-- bottom note -->
+        <text x="160" y="226" font-size="10.5" fill="#993C1D" text-anchor="middle" font-style="italic">两个 engine 共享权重 · sharding_manager 负责 reshard</text>
+      </g>
+
+      <!-- RefWorker -->
+      <g transform="translate(340, 0)">
+        <rect x="0" y="0" width="290" height="240" rx="6" fill="#FAECE7" stroke="#D85A30" stroke-width="1"/>
+        <text x="145" y="28" font-size="15" font-weight="600" fill="#4A1B0C" text-anchor="middle">RefWorker</text>
+        <line x1="20" y1="42" x2="270" y2="42" stroke="#F5C4B3" stroke-width="0.8"/>
+
+        <rect x="20" y="56" width="250" height="148" rx="4" fill="#FFFFFF" stroke="#F0997B" stroke-width="0.8"/>
+        <text x="32" y="76" font-size="12" font-weight="600" fill="#993C1D">Frozen reference model</text>
+        <text x="32" y="98" font-size="11" fill="#712B13">forward only · 没有 optimizer</text>
+        <text x="32" y="118" font-size="11" fill="#712B13">输出 ref log-prob</text>
+        <text x="32" y="138" font-size="11" fill="#712B13">用来约束 actor 不要漂太远</text>
+
+        <!-- KL formula via tspan -->
+        <text x="32" y="172" font-size="11" font-weight="600" fill="#993C1D">用途：</text>
+        <text x="32" y="192" font-size="13" fill="#712B13" font-family="'Cambria Math', 'STIX Two Math', 'Times New Roman', serif" font-style="italic">
+          KL(π<tspan baseline-shift="sub" font-size="9">θ</tspan> ‖ π<tspan baseline-shift="sub" font-size="9">ref</tspan>)
+        </text>
+
+        <text x="145" y="226" font-size="10.5" fill="#993C1D" text-anchor="middle" font-style="italic">轻量 worker · 仅前向</text>
+      </g>
+
+      <!-- RewardWorker -->
+      <g transform="translate(642, 0)">
+        <rect x="0" y="0" width="312" height="240" rx="6" fill="#FAECE7" stroke="#D85A30" stroke-width="1"/>
+        <text x="156" y="28" font-size="15" font-weight="600" fill="#4A1B0C" text-anchor="middle">RewardWorker</text>
+        <line x1="20" y1="42" x2="292" y2="42" stroke="#F5C4B3" stroke-width="0.8"/>
+
+        <rect x="20" y="56" width="272" height="68" rx="4" fill="#FFFFFF" stroke="#F0997B" stroke-width="0.8"/>
+        <text x="32" y="76" font-size="12" font-weight="600" fill="#993C1D">Rule-based</text>
+        <text x="32" y="94" font-size="11" fill="#712B13">数学题判分、代码执行、答案匹配</text>
+        <text x="32" y="111" font-size="11" fill="#712B13">GRPO 在数学/代码任务的常用形式</text>
+
+        <rect x="20" y="136" width="272" height="68" rx="4" fill="#FFFFFF" stroke="#F0997B" stroke-width="0.8"/>
+        <text x="32" y="156" font-size="12" font-weight="600" fill="#993C1D">Model-based</text>
+        <text x="32" y="174" font-size="11" fill="#712B13">独立的 reward model 前向打分</text>
+        <text x="32" y="191" font-size="11" fill="#712B13">RLHF on chat 的常用形式</text>
+
+        <text x="156" y="226" font-size="10.5" fill="#993C1D" text-anchor="middle" font-style="italic">输出 r ∈ ℝ · 每条 response 一个标量</text>
+      </g>
+
+    </g>
+  </g>
+
+  <!-- arrow down to extension -->
+  <path d="M 695 1300 L 695 1326" stroke="#5f5e5a" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+  <text x="710" y="1317" font-size="11" fill="#888780" font-style="italic">用户最常改的部分 · 不与调度逻辑耦合</text>
+
+  <!-- ============== LAYER 5: Extension points ============== -->
+  <g transform="translate(190, 1328)">
+    <rect x="0" y="0" width="1010" height="240" rx="6" fill="#FFFFFF" stroke="#BA7517" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="240" rx="2" fill="#BA7517"/>
+
+    <text x="28" y="32" font-size="20" font-weight="600" fill="#412402">Data / Reward / Loss · 可插拔策略</text>
+    <text x="28" y="56" font-size="13" fill="#854F0B">改这一层不需要碰上面四层 — verl 把"最常变"和"最复杂"分开了</text>
+
+    <!-- Three columns -->
+    <g transform="translate(28, 78)">
+      <!-- Dataset -->
+      <g>
+        <rect x="0" y="0" width="305" height="142" rx="6" fill="#FAEEDA" stroke="#EF9F27" stroke-width="0.8"/>
+        <text x="20" y="28" font-size="14" font-weight="600" fill="#412402">Dataset</text>
+        <text x="20" y="50" font-size="11" fill="#633806" font-family="ui-monospace, 'SF Mono', monospace">verl/utils/dataset/</text>
+        <text x="20" y="74" font-size="11.5" fill="#633806">RLHFDataset · 自定义子类</text>
+        <text x="20" y="94" font-size="11.5" fill="#633806">→ 由 dataloader 消费</text>
+        <text x="20" y="120" font-size="10.5" fill="#854F0B" font-style="italic">在 Layer 2 第 1 步被使用</text>
+      </g>
+
+      <!-- Reward -->
+      <g transform="translate(325, 0)">
+        <rect x="0" y="0" width="305" height="142" rx="6" fill="#FAEEDA" stroke="#EF9F27" stroke-width="0.8"/>
+        <text x="20" y="28" font-size="14" font-weight="600" fill="#412402">Reward function</text>
+        <text x="20" y="50" font-size="11" fill="#633806" font-family="ui-monospace, 'SF Mono', monospace">workers/reward_manager/</text>
+        <text x="20" y="74" font-size="11.5" fill="#633806">规则函数或模型推理</text>
+        <text x="20" y="94" font-size="11.5" fill="#633806">→ RewardWorker 内部调用</text>
+        <text x="20" y="120" font-size="10.5" fill="#854F0B" font-style="italic">在 Layer 4 RewardWorker 内被使用</text>
+      </g>
+
+      <!-- Loss -->
+      <g transform="translate(650, 0)">
+        <rect x="0" y="0" width="305" height="142" rx="6" fill="#FAEEDA" stroke="#EF9F27" stroke-width="0.8"/>
+        <text x="20" y="28" font-size="14" font-weight="600" fill="#412402">Loss function</text>
+        <text x="20" y="50" font-size="11" fill="#633806" font-family="ui-monospace, 'SF Mono', monospace">trainer/ppo/core_algos.py</text>
+        <text x="20" y="74" font-size="11.5" fill="#633806">GRPO PG loss + KL 项</text>
+        <text x="20" y="94" font-size="11.5" fill="#633806">→ ActorRolloutWorker 训练侧调用</text>
+        <text x="20" y="120" font-size="10.5" fill="#854F0B" font-style="italic">在 Layer 4 update_actor 内被使用</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============== Footer / reading order legend ============== -->
+  <g transform="translate(80, 1592)">
+    <text x="0" y="0" font-size="11" fill="#888780">阅读建议：</text>
+    <text x="80" y="0" font-size="11" fill="#5f5e5a">自上而下读控制流（fit → _wg → dispatch）</text>
+    <text x="380" y="0" font-size="11" fill="#888780">·</text>
+    <text x="395" y="0" font-size="11" fill="#5f5e5a">自下而上读计算细节（worker → engine → loss/reward）</text>
+    <text x="780" y="0" font-size="11" fill="#888780">·</text>
+    <text x="795" y="0" font-size="11" fill="#5f5e5a">改实验先看 Layer 5</text>
+  </g>
+
+</svg>

@@ -1,0 +1,374 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1480 2480" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Helvetica Neue', sans-serif">
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FAFAF7"/>
+      <stop offset="100%" stop-color="#F3F2EC"/>
+    </linearGradient>
+
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-thin" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect width="1480" height="2480" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="60" y="58" font-size="28" font-weight="600" fill="#1a1a1a" letter-spacing="-0.4">完整 step 计算题 · 64 卡上的 70B GRPO 训练</text>
+  <text x="60" y="86" font-size="14" fill="#6b6b66" font-style="italic">先看条件 · 自己算一遍 · 再对答案 · 所有数字都用 Python 验证过</text>
+  <line x1="60" y1="100" x2="1420" y2="100" stroke="#d4d2c7" stroke-width="0.8"/>
+
+  <!-- ============================================== -->
+  <!-- 已知条件                                         -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 120)">
+    <rect x="0" y="0" width="1360" height="180" rx="6" fill="#FFFFFF" stroke="#534AB7" stroke-width="0.8"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#26215C">已知条件</text>
+    <line x1="22" y1="40" x2="200" y2="40" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <g transform="translate(22, 60)" font-size="12.5">
+      <text x="0" y="0" fill="#444441"><tspan font-weight="700" fill="#26215C">模型</tspan>：LLaMA-style 70B 参数 · 80 层 · hidden_dim=8192 · BF16 精度</text>
+      <text x="0" y="22" fill="#444441"><tspan font-weight="700" fill="#26215C">硬件</tspan>：8 节点 × 8 GPU = 64 张 H100 80GB</text>
+      <text x="0" y="44" fill="#444441"><tspan font-weight="700" fill="#26215C">vLLM</tspan>：节点内 TP=8（8 卡合力做 1 个推理实例）· 节点间 DP=8（共 8 个独立 vLLM 实例）</text>
+      <text x="0" y="66" fill="#444441"><tspan font-weight="700" fill="#26215C">FSDP</tspan>：训练时 fsdp_size=64（参数全切到 64 份）· 优化器：Adam（FP32 m+v = 8B/param）</text>
+      <text x="0" y="88" fill="#444441"><tspan font-weight="700" fill="#26215C">数据</tspan>：128 个 (prompt, response) 训练样本 · response 平均 200 tokens · prompt 平均 100 tokens</text>
+      <text x="0" y="110" fill="#444441"><tspan font-weight="700" fill="#26215C">vLLM 设置</tspan>：gpu_memory_utilization = 0.9（占满每卡 90%）</text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 题目 + 答案区                                     -->
+  <!-- ============================================== -->
+
+  <!-- ===== Phase 1 ===== -->
+  <g transform="translate(60, 320)">
+    <rect x="0" y="0" width="1360" height="380" rx="8" fill="#FFFFFF" stroke="#D85A30" stroke-width="1.4"/>
+    <rect x="0" y="0" width="6" height="380" rx="2" fill="#D85A30"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#4A1B0C">Phase 1 · Rollout（推理）</text>
+    <text x="22" y="54" font-size="12.5" fill="#993C1D">64 卡组成 8 个 vLLM 实例 · 每实例 8 卡 TP · 128 个 prompt 分摊给 8 个实例</text>
+
+    <!-- Q1.1 -->
+    <g transform="translate(40, 80)">
+      <rect x="0" y="0" width="640" height="86" rx="6" fill="#FAECE7" stroke="#D85A30" stroke-width="0.5"/>
+      <text x="14" y="22" font-size="12.5" font-weight="700" fill="#4A1B0C">Q1.1 · 每个 vLLM 实例分到几个 prompt？</text>
+      <text x="14" y="44" font-size="11.5" fill="#993C1D">提示：8 个实例平摊 128 prompt</text>
+      <text x="14" y="68" font-size="14" font-weight="700" fill="#4A1B0C">→ 128 / 8 = <tspan fill="#993C1D">16 个 prompt / 实例</tspan></text>
+    </g>
+
+    <!-- Q1.2 -->
+    <g transform="translate(700, 80)">
+      <rect x="0" y="0" width="640" height="86" rx="6" fill="#FAECE7" stroke="#D85A30" stroke-width="0.5"/>
+      <text x="14" y="22" font-size="12.5" font-weight="700" fill="#4A1B0C">Q1.2 · 单卡上 KV cache pool 多大？</text>
+      <text x="14" y="44" font-size="11.5" fill="#993C1D">提示：80GB × 0.9 - 参数 - CUDA 开销</text>
+      <text x="14" y="68" font-size="14" font-weight="700" fill="#4A1B0C">参数 70×2/8 = 17.5GB ; pool = 72 - 17.5 - 2 = <tspan fill="#993C1D">52.5 GB / 卡</tspan></text>
+    </g>
+
+    <!-- Q1.3 -->
+    <g transform="translate(40, 180)">
+      <rect x="0" y="0" width="640" height="86" rx="6" fill="#FAECE7" stroke="#D85A30" stroke-width="0.5"/>
+      <text x="14" y="22" font-size="12.5" font-weight="700" fill="#4A1B0C">Q1.3 · 一个 vLLM 实例（8卡）forward 调用多少次？</text>
+      <text x="14" y="44" font-size="11.5" fill="#993C1D">提示：continuous batching 让 16 prompt 同时跑 · 每次 fwd 各产 1 token</text>
+      <text x="14" y="68" font-size="14" font-weight="700" fill="#4A1B0C">→ 200 次 fwd（= max_new_tokens）· 共 <tspan fill="#993C1D">16 × 200 = 3200 tokens / 实例</tspan></text>
+    </g>
+
+    <!-- Q1.4 -->
+    <g transform="translate(700, 180)">
+      <rect x="0" y="0" width="640" height="86" rx="6" fill="#FAECE7" stroke="#D85A30" stroke-width="0.5"/>
+      <text x="14" y="22" font-size="12.5" font-weight="700" fill="#4A1B0C">Q1.4 · 全集群一共生成多少 tokens？</text>
+      <text x="14" y="44" font-size="11.5" fill="#993C1D">提示：8 个实例并行</text>
+      <text x="14" y="68" font-size="14" font-weight="700" fill="#4A1B0C">→ 8 × 3200 = <tspan fill="#993C1D">25,600 tokens / step</tspan></text>
+    </g>
+
+    <!-- Phase 1 关键数字总结条 -->
+    <g transform="translate(40, 290)">
+      <rect x="0" y="0" width="1300" height="70" rx="6" fill="#FFFFFF" stroke="#993C1D" stroke-width="0.8"/>
+      <text x="14" y="22" font-size="13" font-weight="700" fill="#4A1B0C">Phase 1 单卡显存峰值</text>
+      <text x="14" y="46" font-size="12" fill="#444441">vLLM 参数 shard 17.5 GB + KV pool 52.5 GB = <tspan font-weight="700" fill="#993C1D">70 GB / 卡</tspan>（占 80GB cap 的 87.5%）</text>
+      <text x="14" y="62" font-size="11.5" fill="#5f5e5a" font-style="italic">→ 此时 actor 训练态、Ref、Reward 全部 offload 到 CPU</text>
+    </g>
+  </g>
+
+  <!-- ===== Phase 2 (Reshard) ===== -->
+  <g transform="translate(60, 720)">
+    <rect x="0" y="0" width="1360" height="280" rx="8" fill="#FFFFFF" stroke="#534AB7" stroke-width="1.4"/>
+    <rect x="0" y="0" width="6" height="280" rx="2" fill="#534AB7"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#26215C">Phase 2 · Reshard（权重换布局）</text>
+    <text x="22" y="54" font-size="12.5" fill="#534AB7">vLLM 释放显存 · FSDP 加载训练态 · 这是 verl 工程上最难的部分</text>
+
+    <!-- Q2.1 -->
+    <g transform="translate(40, 80)">
+      <rect x="0" y="0" width="640" height="86" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="14" y="22" font-size="12.5" font-weight="700" fill="#26215C">Q2.1 · vLLM 需要释放多少显存？</text>
+      <text x="14" y="44" font-size="11.5" fill="#534AB7">提示：KV pool + 推理参数</text>
+      <text x="14" y="68" font-size="14" font-weight="700" fill="#26215C">→ 52.5 + 17.5 = <tspan fill="#534AB7">70 GB / 卡</tspan></text>
+    </g>
+
+    <!-- Q2.2 -->
+    <g transform="translate(700, 80)">
+      <rect x="0" y="0" width="640" height="86" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+      <text x="14" y="22" font-size="12.5" font-weight="700" fill="#26215C">Q2.2 · FSDP 需要加载多少 GB / 卡？</text>
+      <text x="14" y="44" font-size="11.5" fill="#534AB7">提示：参数 + 梯度 + Adam（m+v in FP32 = 8B/param）</text>
+      <text x="14" y="68" font-size="14" font-weight="700" fill="#26215C">参数 70×2/64 = 2.19 + 梯度 2.19 + 优化器 70×8/64 = 8.75 → <tspan fill="#534AB7">13.1 GB / 卡</tspan></text>
+    </g>
+
+    <!-- Phase 2 总结 -->
+    <g transform="translate(40, 190)">
+      <rect x="0" y="0" width="1300" height="70" rx="6" fill="#FFFFFF" stroke="#534AB7" stroke-width="0.8"/>
+      <text x="14" y="22" font-size="13" font-weight="700" fill="#26215C">关键工程点</text>
+      <text x="14" y="46" font-size="12" fill="#444441">如果 vLLM 还没释放完 FSDP 就开始加载，瞬时会占用 70 + 13 = 83 GB → <tspan font-weight="700" fill="#A32D2D">超 80 GB cap，OOM</tspan></text>
+      <text x="14" y="62" font-size="11.5" fill="#5f5e5a" font-style="italic">→ sharding_manager 必须严格按"先释放后加载"顺序 · 加上同步屏障 · 这是 verl 最容易出 bug 的地方</text>
+    </g>
+  </g>
+
+  <!-- ===== Phase 3 (Training) ===== -->
+  <g transform="translate(60, 1020)">
+    <rect x="0" y="0" width="1360" height="700" rx="8" fill="#FFFFFF" stroke="#BA7517" stroke-width="1.4"/>
+    <rect x="0" y="0" width="6" height="700" rx="2" fill="#BA7517"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#412402">Phase 3 · Actor Update（FSDP 训练）</text>
+    <text x="22" y="54" font-size="12.5" fill="#854F0B">64 卡组一个 FSDP 训练 job · 128 样本分到 64 卡 · 每层都需要 all-gather 完整参数</text>
+
+    <!-- Q3.1 -->
+    <g transform="translate(40, 80)">
+      <rect x="0" y="0" width="640" height="86" rx="6" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+      <text x="14" y="22" font-size="12.5" font-weight="700" fill="#412402">Q3.1 · 每张卡分到几个训练样本？</text>
+      <text x="14" y="44" font-size="11.5" fill="#854F0B">提示：128 样本均分到 64 卡</text>
+      <text x="14" y="68" font-size="14" font-weight="700" fill="#412402">→ 128 / 64 = <tspan fill="#854F0B">2 个 (prompt, response) / 卡</tspan></text>
+    </g>
+
+    <!-- Q3.2 -->
+    <g transform="translate(700, 80)">
+      <rect x="0" y="0" width="640" height="86" rx="6" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+      <text x="14" y="22" font-size="12.5" font-weight="700" fill="#412402">Q3.2 · 一次 forward 全程 all-gather 多少次？</text>
+      <text x="14" y="44" font-size="11.5" fill="#854F0B">提示：FSDP 每层 fwd 前必须把完整参数聚齐</text>
+      <text x="14" y="68" font-size="14" font-weight="700" fill="#412402">→ 80 层 × 1 次 = <tspan fill="#854F0B">80 次 all-gather</tspan></text>
+    </g>
+
+    <!-- Q3.3 -->
+    <g transform="translate(40, 180)">
+      <rect x="0" y="0" width="640" height="86" rx="6" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+      <text x="14" y="22" font-size="12.5" font-weight="700" fill="#412402">Q3.3 · 一次 backward 全程通信多少次？</text>
+      <text x="14" y="44" font-size="11.5" fill="#854F0B">提示：每层 bwd = all-gather 参数 + reduce-scatter 梯度</text>
+      <text x="14" y="68" font-size="14" font-weight="700" fill="#412402">→ 80 × 2 = <tspan fill="#854F0B">160 次通信</tspan></text>
+    </g>
+
+    <!-- Q3.4 -->
+    <g transform="translate(700, 180)">
+      <rect x="0" y="0" width="640" height="86" rx="6" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+      <text x="14" y="22" font-size="12.5" font-weight="700" fill="#412402">Q3.4 · 一个 step 总通信次数？</text>
+      <text x="14" y="44" font-size="11.5" fill="#854F0B">提示：fwd + bwd</text>
+      <text x="14" y="68" font-size="14" font-weight="700" fill="#412402">→ 80 + 160 = <tspan fill="#854F0B">240 次集体通信</tspan></text>
+    </g>
+
+    <!-- Q3.5 -->
+    <g transform="translate(40, 280)">
+      <rect x="0" y="0" width="640" height="106" rx="6" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+      <text x="14" y="22" font-size="12.5" font-weight="700" fill="#412402">Q3.5 · all-gather 一层时单卡发出多少数据？</text>
+      <text x="14" y="44" font-size="11.5" fill="#854F0B">提示：单层参数 / fsdp_size</text>
+      <text x="14" y="64" font-size="12" fill="#444441">单层参数 = 70G / 80 = 875M params × 2B = 1.75 GB</text>
+      <text x="14" y="82" font-size="14" font-weight="700" fill="#412402">→ 每卡持有 1.75 / 64 = <tspan fill="#854F0B">27.3 MB</tspan> · 这就是单次 all-gather 的发送量</text>
+    </g>
+
+    <!-- Q3.6 -->
+    <g transform="translate(700, 280)">
+      <rect x="0" y="0" width="640" height="106" rx="6" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+      <text x="14" y="22" font-size="12.5" font-weight="700" fill="#412402">Q3.6 · Phase 3 单卡显存峰值？</text>
+      <text x="14" y="44" font-size="11.5" fill="#854F0B">提示：训练态 + gather buffer + 激活</text>
+      <text x="14" y="64" font-size="12" fill="#444441">训练态 13.1 + 临时 gather 1.75 + 激活 ~30 (with checkpoint)</text>
+      <text x="14" y="82" font-size="14" font-weight="700" fill="#412402">→ <tspan fill="#854F0B">≈ 45 GB / 卡</tspan>（远低于 80GB cap，激活值是大头）</text>
+    </g>
+
+    <!-- 概念示意：FSDP 一层的处理过程 -->
+    <g transform="translate(40, 410)">
+      <text x="0" y="0" font-size="13" font-weight="700" fill="#412402">FSDP 处理一层的微观流程（fwd 阶段）</text>
+
+      <!-- Step 1: 当前每卡持有自己那 1/64 -->
+      <g transform="translate(0, 18)">
+        <text x="0" y="20" font-size="11" fill="#5f5e5a">① 当前状态</text>
+        <g transform="translate(80, 0)">
+          <rect x="0" y="6" width="40" height="22" rx="3" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+          <text x="20" y="22" font-size="10" fill="#412402" text-anchor="middle">GPU 0</text>
+          <text x="20" y="42" font-size="9.5" fill="#854F0B" text-anchor="middle">W₁_shard₀</text>
+        </g>
+        <g transform="translate(130, 0)">
+          <rect x="0" y="6" width="40" height="22" rx="3" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+          <text x="20" y="22" font-size="10" fill="#412402" text-anchor="middle">GPU 1</text>
+          <text x="20" y="42" font-size="9.5" fill="#854F0B" text-anchor="middle">W₁_shard₁</text>
+        </g>
+        <g transform="translate(180, 0)"><text x="20" y="22" font-size="14" fill="#5f5e5a" text-anchor="middle">⋯</text></g>
+        <g transform="translate(220, 0)">
+          <rect x="0" y="6" width="40" height="22" rx="3" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+          <text x="20" y="22" font-size="10" fill="#412402" text-anchor="middle">GPU 63</text>
+          <text x="20" y="42" font-size="9.5" fill="#854F0B" text-anchor="middle">W₁_shard₆₃</text>
+        </g>
+        <text x="290" y="22" font-size="11" fill="#5f5e5a">每卡只有 27.3 MB（1/64 层参数）</text>
+      </g>
+
+      <!-- Arrow + Step 2: all-gather -->
+      <g transform="translate(0, 80)">
+        <text x="0" y="20" font-size="11" fill="#534AB7" font-weight="600">② all-gather</text>
+        <line x1="80" y1="20" x2="200" y2="20" stroke="#534AB7" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <text x="140" y="14" font-size="10.5" fill="#534AB7" text-anchor="middle">每卡发 27.3MB</text>
+        <text x="140" y="38" font-size="10.5" fill="#534AB7" text-anchor="middle">收齐全部</text>
+
+        <g transform="translate(220, 0)">
+          <rect x="0" y="6" width="180" height="22" rx="3" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.8"/>
+          <text x="90" y="22" font-size="10" fill="#412402" text-anchor="middle" font-weight="600">所有卡都有完整 W₁ (1.75 GB)</text>
+        </g>
+        <text x="420" y="22" font-size="11" fill="#5f5e5a">→ 临时占用 1.75 GB</text>
+      </g>
+
+      <!-- Step 3: forward -->
+      <g transform="translate(0, 134)">
+        <text x="0" y="20" font-size="11" fill="#04342C" font-weight="600">③ 算 fwd</text>
+        <g transform="translate(80, 0)">
+          <rect x="0" y="6" width="180" height="22" rx="3" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.8"/>
+          <text x="90" y="22" font-size="10" fill="#04342C" text-anchor="middle">y = W₁ × x （local 计算）</text>
+        </g>
+      </g>
+
+      <!-- Step 4: release -->
+      <g transform="translate(0, 178)">
+        <text x="0" y="20" font-size="11" fill="#A32D2D" font-weight="600">④ 释放</text>
+        <g transform="translate(80, 0)">
+          <rect x="0" y="6" width="180" height="22" rx="3" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.8"/>
+          <text x="90" y="22" font-size="10" fill="#501313" text-anchor="middle">扔掉非 shard 部分，回到 27.3MB</text>
+        </g>
+        <text x="280" y="22" font-size="11" fill="#5f5e5a">→ 进入下一层 (W₂)</text>
+      </g>
+
+      <!-- 备注 -->
+      <text x="0" y="240" font-size="11" fill="#854F0B" font-style="italic">这就是为什么 80 层 = 80 次 all-gather · 每层都要重复 ①→②→③→④ 这四步</text>
+    </g>
+  </g>
+
+  <!-- ===== 总览：完整 step 流程图 ===== -->
+  <g transform="translate(60, 1740)">
+    <rect x="0" y="0" width="1360" height="500" rx="8" fill="#FFFFFF" stroke="#d4d2c7" stroke-width="0.8"/>
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#1a1a1a">完整一个 step · 64 卡资源使用流程</text>
+    <line x1="22" y1="44" x2="500" y2="44" stroke="#d4d2c7" stroke-width="0.6"/>
+
+    <!-- Time axis -->
+    <g transform="translate(80, 80)">
+      <text x="-12" y="20" font-size="11" font-weight="600" fill="#5f5e5a" text-anchor="end">time →</text>
+
+      <!-- Phase headers -->
+      <rect x="0"   y="0" width="500" height="36" rx="4" fill="#FAECE7" stroke="#D85A30" stroke-width="0.8"/>
+      <text x="250" y="22" font-size="13" font-weight="700" fill="#4A1B0C" text-anchor="middle">Phase 1 · Rollout (8 vLLM 实例并行)</text>
+
+      <rect x="510" y="0" width="100" height="36" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.8"/>
+      <text x="560" y="22" font-size="12" font-weight="700" fill="#26215C" text-anchor="middle">reshard</text>
+
+      <rect x="620" y="0" width="120" height="36" rx="4" fill="#E6F1FB" stroke="#378ADD" stroke-width="0.8"/>
+      <text x="680" y="22" font-size="12" font-weight="700" fill="#042C53" text-anchor="middle">Ref + RM</text>
+
+      <rect x="750" y="0" width="500" height="36" rx="4" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.8"/>
+      <text x="1000" y="22" font-size="13" font-weight="700" fill="#412402" text-anchor="middle">Phase 3 · Training (1 个 FSDP=64 大 job)</text>
+    </g>
+
+    <!-- 资源占用细节 -->
+    <g transform="translate(80, 132)">
+
+      <!-- Phase 1 详情 -->
+      <g>
+        <text x="0" y="20" font-size="12" font-weight="700" fill="#4A1B0C">Phase 1 · 64 卡分成 8 组并行</text>
+        <text x="0" y="38" font-size="11" fill="#444441">8 个 vLLM 实例（每实例 = 1 节点 8 卡）</text>
+        <text x="0" y="54" font-size="11" fill="#444441">每实例处理 16 prompt，调用 200 次 fwd</text>
+        <text x="0" y="70" font-size="11" fill="#444441">每实例输出 16×200 = 3,200 tokens</text>
+        <text x="0" y="86" font-size="11.5" font-weight="700" fill="#993C1D">全集群 8 实例 → 25,600 tokens</text>
+        <text x="0" y="106" font-size="11" fill="#5f5e5a" font-style="italic">单卡显存：70 GB（KV pool 占 75%）</text>
+
+        <!-- 8 instances visualization -->
+        <g transform="translate(0, 120)">
+          <text x="0" y="14" font-size="10.5" fill="#5f5e5a">vLLM 实例：</text>
+          <g font-size="9">
+            <rect x="60" y="2" width="48" height="20" rx="3" fill="#F5C4B3" stroke="#D85A30" stroke-width="0.5"/>
+            <text x="84" y="16" fill="#4A1B0C" text-anchor="middle">N0·8卡</text>
+            <rect x="113" y="2" width="48" height="20" rx="3" fill="#F5C4B3" stroke="#D85A30" stroke-width="0.5"/>
+            <text x="137" y="16" fill="#4A1B0C" text-anchor="middle">N1·8卡</text>
+            <rect x="166" y="2" width="48" height="20" rx="3" fill="#F5C4B3" stroke="#D85A30" stroke-width="0.5"/>
+            <text x="190" y="16" fill="#4A1B0C" text-anchor="middle">N2·8卡</text>
+            <rect x="219" y="2" width="48" height="20" rx="3" fill="#F5C4B3" stroke="#D85A30" stroke-width="0.5"/>
+            <text x="243" y="16" fill="#4A1B0C" text-anchor="middle">N3·8卡</text>
+            <rect x="272" y="2" width="48" height="20" rx="3" fill="#F5C4B3" stroke="#D85A30" stroke-width="0.5"/>
+            <text x="296" y="16" fill="#4A1B0C" text-anchor="middle">N4·8卡</text>
+            <rect x="325" y="2" width="48" height="20" rx="3" fill="#F5C4B3" stroke="#D85A30" stroke-width="0.5"/>
+            <text x="349" y="16" fill="#4A1B0C" text-anchor="middle">N5·8卡</text>
+            <rect x="378" y="2" width="48" height="20" rx="3" fill="#F5C4B3" stroke="#D85A30" stroke-width="0.5"/>
+            <text x="402" y="16" fill="#4A1B0C" text-anchor="middle">N6·8卡</text>
+            <rect x="431" y="2" width="48" height="20" rx="3" fill="#F5C4B3" stroke="#D85A30" stroke-width="0.5"/>
+            <text x="455" y="16" fill="#4A1B0C" text-anchor="middle">N7·8卡</text>
+          </g>
+        </g>
+      </g>
+
+      <!-- Reshard 详情 -->
+      <g transform="translate(510, 0)">
+        <text x="0" y="20" font-size="12" font-weight="700" fill="#26215C">Reshard</text>
+        <text x="0" y="38" font-size="11" fill="#444441">vLLM 释放：</text>
+        <text x="0" y="54" font-size="11" fill="#444441">→ KV pool 52.5GB</text>
+        <text x="0" y="70" font-size="11" fill="#444441">→ TP 参数 17.5GB</text>
+        <text x="0" y="90" font-size="11" fill="#444441">FSDP 加载：</text>
+        <text x="0" y="106" font-size="11" fill="#444441">→ 训练态 13.1GB</text>
+        <text x="0" y="126" font-size="11.5" font-weight="700" fill="#534AB7">耗时 1-3 秒</text>
+      </g>
+
+      <!-- Ref+RM -->
+      <g transform="translate(620, 0)">
+        <text x="0" y="20" font-size="12" font-weight="700" fill="#042C53">Ref + RM</text>
+        <text x="0" y="38" font-size="11" fill="#444441">forward only</text>
+        <text x="0" y="54" font-size="11" fill="#444441">FSDP 切片</text>
+        <text x="0" y="70" font-size="11" fill="#444441">短暂加载</text>
+        <text x="0" y="90" font-size="11" fill="#444441">算完即 unload</text>
+        <text x="0" y="110" font-size="11.5" font-weight="700" fill="#185FA5">显存仅 ~5GB</text>
+      </g>
+
+      <!-- Phase 3 -->
+      <g transform="translate(750, 0)">
+        <text x="0" y="20" font-size="12" font-weight="700" fill="#412402">Phase 3 · 64 卡组成 1 个 FSDP job</text>
+        <text x="0" y="38" font-size="11" fill="#444441">128 样本 → 每卡 2 个</text>
+        <text x="0" y="54" font-size="11" fill="#444441">80 层 × (1 fwd gather + 1 bwd gather + 1 reduce-scatter)</text>
+        <text x="0" y="70" font-size="11" fill="#444441">= 240 次集体通信 / step</text>
+        <text x="0" y="86" font-size="11" fill="#444441">每次 all-gather: 单卡发 27.3 MB</text>
+        <text x="0" y="106" font-size="11.5" font-weight="700" fill="#854F0B">单卡显存：~45 GB（激活值是大头）</text>
+
+        <!-- 64 卡组成大 job 的示意 -->
+        <g transform="translate(0, 120)">
+          <text x="0" y="14" font-size="10.5" fill="#5f5e5a">FSDP 组：</text>
+          <rect x="60" y="2" width="420" height="20" rx="3" fill="#FAC775" stroke="#BA7517" stroke-width="0.8"/>
+          <text x="270" y="16" font-size="10" fill="#412402" text-anchor="middle" font-weight="600">所有 64 卡组成一个 FSDP=64 训练 group</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Bottom callout -->
+    <g transform="translate(80, 410)">
+      <rect x="0" y="0" width="1240" height="60" rx="6" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.6"/>
+      <text x="16" y="22" font-size="12" font-weight="700" fill="#042C53">关键观察</text>
+      <text x="16" y="42" font-size="12" fill="#444441">同一组 64 卡，Phase 1 时是 8 个独立小群（每群 8 卡 TP）· Phase 3 时是 1 个大群（64 卡 FSDP）· <tspan font-weight="700" fill="#185FA5">"组织形式"完全不同，但物理硬件不变</tspan></text>
+    </g>
+  </g>
+
+  <!-- ===== 终极总结 ===== -->
+  <g transform="translate(60, 2260)">
+    <rect x="0" y="0" width="1360" height="190" rx="6" fill="#FFFFFF" stroke="#534AB7" stroke-width="1"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#26215C">把所有数字串起来 · 这才是一个 step 的全貌</text>
+    <line x1="22" y1="40" x2="450" y2="40" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <g transform="translate(22, 60)" font-size="12.5">
+      <text x="0" y="0" fill="#444441"><tspan font-weight="700" fill="#993C1D">Phase 1：</tspan>64 卡 → 8 个 vLLM 实例 → 每实例 16 prompt × 200 fwd → 全集群 25,600 tokens · 单卡显存 70 GB</text>
+      <text x="0" y="24" fill="#444441"><tspan font-weight="700" fill="#534AB7">Reshard：</tspan>每卡释放 70 GB · 加载 13 GB · 耗时 1-3 秒（sharding_manager 严格按"先释放后加载"防止 OOM）</text>
+      <text x="0" y="48" fill="#444441"><tspan font-weight="700" fill="#185FA5">Ref+RM：</tspan>forward only · 每卡仅 ~5 GB · 是整个 step 显存最低的阶段</text>
+      <text x="0" y="72" fill="#444441"><tspan font-weight="700" fill="#854F0B">Phase 3：</tspan>64 卡 1 个 FSDP job · 240 次集体通信 · 每次 all-gather 单卡发 27.3 MB · 单卡显存 ~45 GB</text>
+      <text x="0" y="108" font-size="13" font-weight="700" fill="#26215C">为什么这套设计能工作？</text>
+      <text x="0" y="130" fill="#5f5e5a" font-style="italic">同一组 64 卡，在 Phase 1 是 8 群小 TP（节点内），在 Phase 3 是 1 个大 FSDP（跨节点）· 通过 reshard 完成"组织形式"切换 · 硬件不变，软件视图重组</text>
+    </g>
+  </g>
+
+</svg>

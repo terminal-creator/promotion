@@ -1,0 +1,463 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1480 2200" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Helvetica Neue', sans-serif">
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FAFAF7"/>
+      <stop offset="100%" stop-color="#F3F2EC"/>
+    </linearGradient>
+
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-thin" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+
+    <pattern id="discarded" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+      <rect width="6" height="6" fill="#F1EFE8"/>
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#888780" stroke-width="0.8"/>
+    </pattern>
+
+    <pattern id="recompute" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+      <rect width="6" height="6" fill="#FAEEDA"/>
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#BA7517" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1480" height="2200" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="60" y="58" font-size="28" font-weight="600" fill="#1a1a1a" letter-spacing="-0.4">Gradient Checkpointing · 用时间换空间</text>
+  <text x="60" y="86" font-size="14" fill="#6b6b66" font-style="italic">大模型训练的核心显存优化 · 不存全部激活值，反向时重算一次 forward</text>
+  <line x1="60" y1="100" x2="1420" y2="100" stroke="#d4d2c7" stroke-width="0.8"/>
+
+  <!-- ============================================== -->
+  <!-- 问题背景                                         -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 120)">
+    <rect x="0" y="0" width="1360" height="160" rx="6" fill="#FFFFFF" stroke="#534AB7" stroke-width="0.8"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#26215C">问题背景</text>
+    <line x1="22" y1="40" x2="200" y2="40" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <g transform="translate(22, 60)" font-size="13">
+      <text x="0" y="0" fill="#444441">backward 求梯度时需要用到每层 forward 的激活值（链式法则）</text>
+      <text x="0" y="22" fill="#444441">默认做法：forward 时把每层激活都存下来，反向时直接读 → <tspan font-weight="700" fill="#A32D2D">显存爆炸</tspan></text>
+      <text x="0" y="48" fill="#444441">7B 模型 32 层、batch=4、seq=2048：32 层激活 ≈ <tspan font-weight="700" fill="#A32D2D">21 GB</tspan>（仅激活！还没算参数和优化器）</text>
+      <text x="0" y="70" fill="#444441">长 seq 场景更夸张：seq=8192 时激活值能到 80GB+，单卡直接装不下</text>
+      <text x="0" y="100" fill="#5f5e5a" font-style="italic">关键洞察：训练阶段显存峰值的大头不是参数也不是优化器，而是激活值</text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 不开 checkpoint 的 forward 过程                    -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 300)">
+    <rect x="0" y="0" width="1360" height="320" rx="8" fill="#FFFFFF" stroke="#A32D2D" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="320" rx="2" fill="#A32D2D"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#501313">不开 checkpoint · 全部存起来</text>
+    <text x="22" y="54" font-size="12.5" fill="#791F1F">forward 每一层算完都把激活存进显存 · backward 直接读 · 速度快但显存吃满</text>
+
+    <!-- Forward 过程 -->
+    <g transform="translate(40, 90)">
+      <text x="0" y="0" font-size="13" font-weight="700" fill="#1a1a1a">Forward 32 层（每层都存激活）：</text>
+
+      <g transform="translate(0, 20)">
+        <text x="0" y="20" font-size="11" font-weight="600" fill="#444441">输入</text>
+        <line x1="40" y1="14" x2="80" y2="14" stroke="#888780" stroke-width="1" marker-end="url(#arrow-thin)"/>
+
+        <!-- 32 个层方块, 每个表示存激活 -->
+        <g transform="translate(80, 0)">
+          <!-- 8 个块代表 32 层 -->
+          <g>
+            <rect x="0" y="0" width="120" height="28" rx="3" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.8"/>
+            <text x="60" y="18" font-size="11" fill="#501313" text-anchor="middle">L1-L4</text>
+            <text x="60" y="44" font-size="9" fill="#A32D2D" text-anchor="middle">存 4 份激活</text>
+          </g>
+          <g transform="translate(125, 0)">
+            <rect x="0" y="0" width="120" height="28" rx="3" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.8"/>
+            <text x="60" y="18" font-size="11" fill="#501313" text-anchor="middle">L5-L8</text>
+            <text x="60" y="44" font-size="9" fill="#A32D2D" text-anchor="middle">存 4 份</text>
+          </g>
+          <g transform="translate(250, 0)">
+            <rect x="0" y="0" width="120" height="28" rx="3" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.8"/>
+            <text x="60" y="18" font-size="11" fill="#501313" text-anchor="middle">L9-L12</text>
+            <text x="60" y="44" font-size="9" fill="#A32D2D" text-anchor="middle">存 4 份</text>
+          </g>
+          <g transform="translate(375, 0)">
+            <rect x="0" y="0" width="120" height="28" rx="3" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.8"/>
+            <text x="60" y="18" font-size="11" fill="#501313" text-anchor="middle">L13-L16</text>
+            <text x="60" y="44" font-size="9" fill="#A32D2D" text-anchor="middle">存 4 份</text>
+          </g>
+          <g transform="translate(500, 0)">
+            <rect x="0" y="0" width="120" height="28" rx="3" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.8"/>
+            <text x="60" y="18" font-size="11" fill="#501313" text-anchor="middle">L17-L20</text>
+            <text x="60" y="44" font-size="9" fill="#A32D2D" text-anchor="middle">存 4 份</text>
+          </g>
+          <g transform="translate(625, 0)">
+            <rect x="0" y="0" width="120" height="28" rx="3" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.8"/>
+            <text x="60" y="18" font-size="11" fill="#501313" text-anchor="middle">L21-L24</text>
+            <text x="60" y="44" font-size="9" fill="#A32D2D" text-anchor="middle">存 4 份</text>
+          </g>
+          <g transform="translate(750, 0)">
+            <rect x="0" y="0" width="120" height="28" rx="3" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.8"/>
+            <text x="60" y="18" font-size="11" fill="#501313" text-anchor="middle">L25-L28</text>
+            <text x="60" y="44" font-size="9" fill="#A32D2D" text-anchor="middle">存 4 份</text>
+          </g>
+          <g transform="translate(875, 0)">
+            <rect x="0" y="0" width="120" height="28" rx="3" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.8"/>
+            <text x="60" y="18" font-size="11" fill="#501313" text-anchor="middle">L29-L32</text>
+            <text x="60" y="44" font-size="9" fill="#A32D2D" text-anchor="middle">存 4 份</text>
+          </g>
+        </g>
+
+        <line x1="1080" y1="14" x2="1110" y2="14" stroke="#888780" stroke-width="1" marker-end="url(#arrow-thin)"/>
+        <text x="1120" y="20" font-size="11" font-weight="600" fill="#444441">输出</text>
+      </g>
+
+      <text x="0" y="80" font-size="11" fill="#A32D2D" font-style="italic">所有 32 层激活都在显存中常驻 · 直到 backward 用完才释放</text>
+    </g>
+
+    <!-- 显存占用条 -->
+    <g transform="translate(40, 200)">
+      <text x="0" y="0" font-size="13" font-weight="700" fill="#1a1a1a">显存占用（激活值部分）：</text>
+
+      <g transform="translate(0, 20)">
+        <rect x="0" y="0" width="1280" height="36" rx="3" fill="#FFFFFF" stroke="#d4d2c7" stroke-width="0.5"/>
+        <!-- 21 GB 占满几乎全部 -->
+        <rect x="0" y="0" width="1280" height="36" fill="#F09595" stroke="#A32D2D" stroke-width="0.6"/>
+        <text x="640" y="22" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="700">激活值 ~21 GB（32 层全部）</text>
+      </g>
+
+      <text x="0" y="76" font-size="11" fill="#A32D2D" font-weight="700">→ 加上参数/梯度/优化器后总计 ~50GB+ · 长 seq 时直接 OOM</text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 开 checkpoint 的 forward 过程                     -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 640)">
+    <rect x="0" y="0" width="1360" height="380" rx="8" fill="#FFFFFF" stroke="#0F6E56" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="380" rx="2" fill="#0F6E56"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#04342C">开 checkpoint · 只存边界，中间扔掉</text>
+    <text x="22" y="54" font-size="12.5" fill="#0F6E56">把 32 层切成 4 段每段 8 层 · 只在段边界存激活 · 反向时按需重算</text>
+
+    <!-- Forward 过程 -->
+    <g transform="translate(40, 90)">
+      <text x="0" y="0" font-size="13" font-weight="700" fill="#1a1a1a">Forward 32 层（只在段边界存）：</text>
+
+      <g transform="translate(0, 20)">
+        <text x="0" y="20" font-size="11" font-weight="600" fill="#444441">输入</text>
+        <line x1="40" y1="14" x2="80" y2="14" stroke="#888780" stroke-width="1" marker-end="url(#arrow-thin)"/>
+
+        <g transform="translate(80, 0)">
+          <!-- 段 1: L1-L8 -->
+          <rect x="0" y="0" width="240" height="28" rx="3" fill="url(#discarded)" stroke="#888780" stroke-width="0.8"/>
+          <text x="120" y="18" font-size="11" fill="#5f5e5a" text-anchor="middle">L1-L8（中间激活全扔）</text>
+
+          <!-- 检查点 A -->
+          <g transform="translate(245, 0)">
+            <rect x="0" y="0" width="40" height="28" rx="3" fill="#9FE1CB" stroke="#0F6E56" stroke-width="1.5"/>
+            <text x="20" y="18" font-size="10" font-weight="700" fill="#04342C" text-anchor="middle">A</text>
+            <text x="20" y="44" font-size="9" fill="#0F6E56" text-anchor="middle">存!</text>
+          </g>
+
+          <!-- 段 2: L9-L16 -->
+          <rect x="290" y="0" width="240" height="28" rx="3" fill="url(#discarded)" stroke="#888780" stroke-width="0.8"/>
+          <text x="410" y="18" font-size="11" fill="#5f5e5a" text-anchor="middle">L9-L16（扔）</text>
+
+          <!-- 检查点 B -->
+          <g transform="translate(535, 0)">
+            <rect x="0" y="0" width="40" height="28" rx="3" fill="#9FE1CB" stroke="#0F6E56" stroke-width="1.5"/>
+            <text x="20" y="18" font-size="10" font-weight="700" fill="#04342C" text-anchor="middle">B</text>
+            <text x="20" y="44" font-size="9" fill="#0F6E56" text-anchor="middle">存!</text>
+          </g>
+
+          <!-- 段 3: L17-L24 -->
+          <rect x="580" y="0" width="240" height="28" rx="3" fill="url(#discarded)" stroke="#888780" stroke-width="0.8"/>
+          <text x="700" y="18" font-size="11" fill="#5f5e5a" text-anchor="middle">L17-L24（扔）</text>
+
+          <!-- 检查点 C -->
+          <g transform="translate(825, 0)">
+            <rect x="0" y="0" width="40" height="28" rx="3" fill="#9FE1CB" stroke="#0F6E56" stroke-width="1.5"/>
+            <text x="20" y="18" font-size="10" font-weight="700" fill="#04342C" text-anchor="middle">C</text>
+            <text x="20" y="44" font-size="9" fill="#0F6E56" text-anchor="middle">存!</text>
+          </g>
+
+          <!-- 段 4: L25-L32 -->
+          <rect x="870" y="0" width="200" height="28" rx="3" fill="url(#discarded)" stroke="#888780" stroke-width="0.8"/>
+          <text x="970" y="18" font-size="11" fill="#5f5e5a" text-anchor="middle">L25-L32（扔）</text>
+        </g>
+
+        <line x1="1160" y1="14" x2="1200" y2="14" stroke="#888780" stroke-width="1" marker-end="url(#arrow-thin)"/>
+        <text x="1210" y="20" font-size="11" font-weight="600" fill="#444441">输出</text>
+      </g>
+
+      <text x="0" y="80" font-size="11" fill="#04342C" font-style="italic">只存 3 个检查点的激活 · 中间 28 层激活全部丢弃</text>
+    </g>
+
+    <!-- Backward 重算过程 -->
+    <g transform="translate(40, 200)">
+      <text x="0" y="0" font-size="13" font-weight="700" fill="#1a1a1a">Backward 到第 20 层时（举例）：</text>
+
+      <g transform="translate(0, 20)">
+        <text x="0" y="20" font-size="11" fill="#444441">需要 L20 的激活，但已被丢弃</text>
+        <line x1="200" y1="14" x2="240" y2="14" stroke="#534AB7" stroke-width="1.5" marker-end="url(#arrow-thin)"/>
+
+        <text x="248" y="20" font-size="11" font-weight="700" fill="#534AB7">从最近的检查点 B 出发</text>
+        <line x1="424" y1="14" x2="464" y2="14" stroke="#534AB7" stroke-width="1.5" marker-end="url(#arrow-thin)"/>
+
+        <g transform="translate(472, 0)">
+          <rect x="0" y="0" width="200" height="28" rx="3" fill="url(#recompute)" stroke="#BA7517" stroke-width="1"/>
+          <text x="100" y="18" font-size="11" fill="#412402" text-anchor="middle" font-weight="600">重算 L17-L20</text>
+        </g>
+
+        <line x1="676" y1="14" x2="716" y2="14" stroke="#534AB7" stroke-width="1.5" marker-end="url(#arrow-thin)"/>
+        <text x="724" y="20" font-size="11" fill="#444441">得到 L20 激活 → 算 L20 梯度</text>
+      </g>
+
+      <text x="0" y="68" font-size="11" fill="#854F0B" font-style="italic">代价：多算了 4 层 forward · 但激活立刻可以扔掉，不占长期显存</text>
+    </g>
+
+    <!-- 显存占用条 -->
+    <g transform="translate(40, 290)">
+      <text x="0" y="0" font-size="13" font-weight="700" fill="#1a1a1a">显存占用（激活值部分）：</text>
+
+      <g transform="translate(0, 20)">
+        <rect x="0" y="0" width="1280" height="36" rx="3" fill="#FFFFFF" stroke="#d4d2c7" stroke-width="0.5"/>
+        <!-- 大约 8 GB = 1280 * 8/21 ≈ 488 -->
+        <rect x="0" y="0" width="488" height="36" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.6"/>
+        <text x="244" y="22" font-size="12" fill="#04342C" text-anchor="middle" font-weight="700">激活值 ~8 GB（节省 62%）</text>
+        <!-- 节省的部分用浅色 -->
+        <rect x="488" y="0" width="792" height="36" fill="#F1EFE8" stroke="#888780" stroke-width="0.4" stroke-dasharray="3 2"/>
+        <text x="884" y="22" font-size="11" fill="#5f5e5a" text-anchor="middle" font-style="italic">省下来的 13 GB · 可以用于更大 batch / 更长 seq</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 时间-空间权衡的不同段数                            -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 1040)">
+    <rect x="0" y="0" width="1360" height="500" rx="8" fill="#FFFFFF" stroke="#d4d2c7" stroke-width="0.8"/>
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#1a1a1a">时间-空间权衡 · 切多少段最划算</text>
+    <line x1="22" y1="44" x2="500" y2="44" stroke="#d4d2c7" stroke-width="0.6"/>
+
+    <text x="22" y="68" font-size="12" fill="#5f5e5a">32 层模型不同切法的对比（per_layer 激活 ~0.67GB）</text>
+
+    <!-- 表格 -->
+    <g transform="translate(40, 90)" font-size="12">
+      <!-- Header -->
+      <rect x="0" y="0" width="1280" height="32" fill="#F1EFE8"/>
+      <text x="14" y="20" font-weight="700" fill="#444441">配置</text>
+      <text x="220" y="20" font-weight="700" fill="#444441">存激活数量</text>
+      <text x="440" y="20" font-weight="700" fill="#444441">显存占用</text>
+      <text x="640" y="20" font-weight="700" fill="#444441">节省</text>
+      <text x="780" y="20" font-weight="700" fill="#444441">重算开销</text>
+      <text x="1020" y="20" font-weight="700" fill="#444441">总耗时</text>
+      <text x="1180" y="20" font-weight="700" fill="#444441">推荐</text>
+
+      <!-- 不开 -->
+      <g transform="translate(0, 32)">
+        <rect x="0" y="0" width="1280" height="40" fill="#FCEBEB" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="14" y="22" font-weight="600" fill="#501313">不开 checkpoint</text>
+        <text x="220" y="22" fill="#444441">32 层全存</text>
+        <text x="440" y="22" fill="#A32D2D" font-weight="700">21 GB</text>
+        <text x="640" y="22" fill="#444441">—</text>
+        <text x="780" y="22" fill="#444441">无（只 fwd 1 次）</text>
+        <text x="1020" y="22" fill="#04342C" font-weight="700">100%</text>
+        <text x="1180" y="22" fill="#A32D2D">显存够才能用</text>
+      </g>
+
+      <!-- 4 段 -->
+      <g transform="translate(0, 72)">
+        <rect x="0" y="0" width="1280" height="40" fill="#E1F5EE" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="14" y="22" font-weight="600" fill="#04342C">分 4 段（每段 8 层）</text>
+        <text x="220" y="22" fill="#444441">3 检查点 + 8 层峰值</text>
+        <text x="440" y="22" fill="#04342C" font-weight="700">~8 GB</text>
+        <text x="640" y="22" fill="#04342C" font-weight="700">省 62%</text>
+        <text x="780" y="22" fill="#444441">重算 ~1 段 = 25% 时间</text>
+        <text x="1020" y="22" fill="#854F0B">~125%</text>
+        <text x="1180" y="22" fill="#04342C">★ 平衡选择</text>
+      </g>
+
+      <!-- 8 段 -->
+      <g transform="translate(0, 112)">
+        <rect x="0" y="0" width="1280" height="40" fill="#E1F5EE" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="14" y="22" font-weight="600" fill="#04342C">分 8 段（每段 4 层）</text>
+        <text x="220" y="22" fill="#444441">7 检查点 + 4 层峰值</text>
+        <text x="440" y="22" fill="#04342C" font-weight="700">~7 GB</text>
+        <text x="640" y="22" fill="#04342C" font-weight="700">省 67%</text>
+        <text x="780" y="22" fill="#444441">重算 ~1 段 = 12.5% 时间</text>
+        <text x="1020" y="22" fill="#854F0B">~115%</text>
+        <text x="1180" y="22" fill="#04342C">很常用</text>
+      </g>
+
+      <!-- 32 段（每层一段）-->
+      <g transform="translate(0, 152)">
+        <rect x="0" y="0" width="1280" height="40" fill="#FAEEDA" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="14" y="22" font-weight="600" fill="#412402">每层一段（最激进）</text>
+        <text x="220" y="22" fill="#444441">仅 1 个检查点</text>
+        <text x="440" y="22" fill="#412402" font-weight="700">~1.4 GB</text>
+        <text x="640" y="22" fill="#04342C" font-weight="700">省 94%</text>
+        <text x="780" y="22" fill="#A32D2D">每层都重算 = 100% 时间</text>
+        <text x="1020" y="22" fill="#A32D2D" font-weight="700">~200%</text>
+        <text x="1180" y="22" fill="#854F0B">极端显存紧张时</text>
+      </g>
+    </g>
+
+    <!-- 可视化对比 -->
+    <g transform="translate(40, 320)">
+      <text x="0" y="0" font-size="13" font-weight="700" fill="#1a1a1a">显存 vs 时间的权衡曲线（直观感受）：</text>
+
+      <g transform="translate(0, 24)">
+        <!-- 不开 -->
+        <text x="0" y="20" font-size="11" font-weight="600" fill="#501313">不开:</text>
+        <rect x="120" y="6" width="800" height="28" fill="#F09595" stroke="#A32D2D" stroke-width="0.5"/>
+        <text x="520" y="24" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="700">显存 21 GB</text>
+        <rect x="940" y="6" width="200" height="28" fill="#9FE1CB" stroke="#0F6E56" stroke-width="0.5"/>
+        <text x="1040" y="24" font-size="11" fill="#04342C" text-anchor="middle" font-weight="700">时间 100%</text>
+      </g>
+
+      <g transform="translate(0, 56)">
+        <text x="0" y="20" font-size="11" font-weight="600" fill="#04342C">4 段:</text>
+        <rect x="120" y="6" width="305" height="28" fill="#FAC775" stroke="#BA7517" stroke-width="0.5"/>
+        <text x="272" y="24" font-size="11" fill="#412402" text-anchor="middle" font-weight="700">~8 GB</text>
+        <rect x="940" y="6" width="250" height="28" fill="#5DCAA5" stroke="#0F6E56" stroke-width="0.5"/>
+        <text x="1065" y="24" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="700">125%</text>
+      </g>
+
+      <g transform="translate(0, 88)">
+        <text x="0" y="20" font-size="11" font-weight="600" fill="#412402">每层:</text>
+        <rect x="120" y="6" width="55" height="28" fill="#FAC775" stroke="#BA7517" stroke-width="0.5"/>
+        <text x="148" y="24" font-size="11" fill="#412402" text-anchor="middle" font-weight="700">1.4</text>
+        <rect x="940" y="6" width="400" height="28" fill="#F0997B" stroke="#A32D2D" stroke-width="0.5"/>
+        <text x="1140" y="24" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="700">200%（最慢）</text>
+      </g>
+
+      <text x="120" y="148" font-size="11" fill="#5f5e5a">← 显存维度 →</text>
+      <text x="940" y="148" font-size="11" fill="#5f5e5a">← 时间维度 →</text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 何时开                                           -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 1560)">
+    <rect x="0" y="0" width="1360" height="380" rx="8" fill="#FFFFFF" stroke="#534AB7" stroke-width="1"/>
+    <rect x="0" y="0" width="6" height="380" rx="2" fill="#534AB7"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#26215C">何时开 / 不开 gradient checkpointing</text>
+    <line x1="22" y1="44" x2="280" y2="44" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <!-- 三个场景 -->
+    <g transform="translate(40, 70)">
+      <!-- 场景 1: 必须开 -->
+      <g>
+        <rect x="0" y="0" width="416" height="280" rx="6" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.8"/>
+        <text x="20" y="26" font-size="14" font-weight="700" fill="#501313">必须开</text>
+        <line x1="20" y1="38" x2="120" y2="38" stroke="#F09595" stroke-width="0.6"/>
+
+        <text x="20" y="62" font-size="12" font-weight="600" fill="#501313">7B+ 模型 RL 训练</text>
+        <text x="20" y="80" font-size="11.5" fill="#444441">激活值 + 优化器 + 参数 = OOM</text>
+        <text x="20" y="98" font-size="11.5" fill="#444441">不开根本跑不起来</text>
+
+        <text x="20" y="128" font-size="12" font-weight="600" fill="#501313">长 sequence 训练</text>
+        <text x="20" y="146" font-size="11.5" fill="#444441">seq=8192 或 16K 时</text>
+        <text x="20" y="164" font-size="11.5" fill="#444441">激活值随 seq 平方增长</text>
+
+        <text x="20" y="194" font-size="12" font-weight="600" fill="#501313">想加大 batch size</text>
+        <text x="20" y="212" font-size="11.5" fill="#444441">batch 翻倍 → 激活翻倍</text>
+        <text x="20" y="230" font-size="11.5" fill="#444441">不开 checkpoint 没空间</text>
+
+        <text x="20" y="262" font-size="11" fill="#A32D2D" font-style="italic">verl 大模型 RL 默认开启</text>
+      </g>
+
+      <!-- 场景 2: 可选 -->
+      <g transform="translate(432, 0)">
+        <rect x="0" y="0" width="416" height="280" rx="6" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.8"/>
+        <text x="20" y="26" font-size="14" font-weight="700" fill="#412402">可选（看情况）</text>
+        <line x1="20" y1="38" x2="180" y2="38" stroke="#FAC775" stroke-width="0.6"/>
+
+        <text x="20" y="62" font-size="12" font-weight="600" fill="#412402">3B 以下模型 + 短 seq</text>
+        <text x="20" y="80" font-size="11.5" fill="#444441">激活不大，显存压力小</text>
+        <text x="20" y="98" font-size="11.5" fill="#444441">开了换来 25% 时间损失</text>
+        <text x="20" y="116" font-size="11.5" fill="#444441">不开能跑就别开</text>
+
+        <text x="20" y="148" font-size="12" font-weight="600" fill="#412402">显存还有冗余</text>
+        <text x="20" y="166" font-size="11.5" fill="#444441">用 nvidia-smi 看占用</text>
+        <text x="20" y="184" font-size="11.5" fill="#444441">如果 &lt; 60% 不用开</text>
+
+        <text x="20" y="214" font-size="12" font-weight="600" fill="#412402">推理阶段</text>
+        <text x="20" y="232" font-size="11.5" fill="#444441">推理不需要 backward</text>
+        <text x="20" y="250" font-size="11.5" fill="#444441">所以根本不需要存激活</text>
+      </g>
+
+      <!-- 场景 3: 不开 -->
+      <g transform="translate(864, 0)">
+        <rect x="0" y="0" width="416" height="280" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.8"/>
+        <text x="20" y="26" font-size="14" font-weight="700" fill="#04342C">不需要开</text>
+        <line x1="20" y1="38" x2="160" y2="38" stroke="#5DCAA5" stroke-width="0.6"/>
+
+        <text x="20" y="62" font-size="12" font-weight="600" fill="#04342C">推理服务</text>
+        <text x="20" y="80" font-size="11.5" fill="#444441">vLLM rollout 阶段</text>
+        <text x="20" y="98" font-size="11.5" fill="#444441">没 backward → 无激活保留</text>
+
+        <text x="20" y="128" font-size="12" font-weight="600" fill="#04342C">小模型 SFT</text>
+        <text x="20" y="146" font-size="11.5" fill="#444441">1B 以下 + 短 seq</text>
+        <text x="20" y="164" font-size="11.5" fill="#444441">显存绰绰有余</text>
+
+        <text x="20" y="194" font-size="12" font-weight="600" fill="#04342C">追求最快迭代速度</text>
+        <text x="20" y="212" font-size="11.5" fill="#444441">在显存够的前提下</text>
+        <text x="20" y="230" font-size="11.5" fill="#444441">不开能省 25% 训练时间</text>
+
+        <text x="20" y="262" font-size="11" fill="#04342C" font-style="italic">空间足够时优先选不开</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 总结                                             -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 1960)">
+    <rect x="0" y="0" width="1360" height="220" rx="6" fill="#FFFFFF" stroke="#888780" stroke-width="0.6"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#1a1a1a">一句话记忆</text>
+    <line x1="22" y1="40" x2="280" y2="40" stroke="#d4d2c7" stroke-width="0.6"/>
+
+    <g transform="translate(22, 60)" font-size="12.5">
+      <text x="0" y="0" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">本质：</tspan>
+        <tspan>用算力（多一次 forward）换显存（少存激活）· 在大模型训练里几乎是免费午餐</tspan>
+      </text>
+      <text x="0" y="24" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">类比：</tspan>
+        <tspan>看书做笔记 · 不开像每页都做详细笔记（笔记本爆炸）· 开像只在每章开头做笔记（要回看就重读那章）</tspan>
+      </text>
+      <text x="0" y="48" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">为什么是免费午餐：</tspan>
+        <tspan>大模型 GPU 算力其实有富余（数据加载、通信也占时间），把空闲算力用来重算激活，等于不花钱省显存</tspan>
+      </text>
+      <text x="0" y="80" fill="#444441">
+        <tspan font-weight="700" fill="#04342C">配合 verl 的其他机制：</tspan>
+      </text>
+      <text x="0" y="100" fill="#444441">
+        <tspan>· remove_padding 减少无效 token 的激活</tspan>
+        <tspan dx="40">· FSDP 切分参数</tspan>
+        <tspan dx="40">· activation_checkpoint 省激活</tspan>
+        <tspan dx="40">· offload_optimizer 把优化器扔 CPU</tspan>
+      </text>
+      <text x="0" y="124" fill="#5f5e5a" font-style="italic">
+        这些机制合起来才能让 7B+ 模型在 80GB 卡上跑起来 · 缺一不可
+      </text>
+
+      <text x="0" y="160" fill="#444441">
+        <tspan font-weight="700" fill="#A32D2D">verl 配置：</tspan>
+        <tspan font-family="ui-monospace, monospace">enable_gradient_checkpointing: True</tspan>
+        <tspan> · 默认就是 True · 不需要主动改</tspan>
+      </text>
+    </g>
+  </g>
+
+</svg>

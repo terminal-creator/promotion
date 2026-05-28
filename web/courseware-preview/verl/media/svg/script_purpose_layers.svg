@@ -1,0 +1,392 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1480 2400" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Helvetica Neue', sans-serif">
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FAFAF7"/>
+      <stop offset="100%" stop-color="#F3F2EC"/>
+    </linearGradient>
+
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-thin" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect width="1480" height="2400" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="60" y="58" font-size="28" font-weight="600" fill="#1a1a1a" letter-spacing="-0.4">verl 训练脚本的七层目的</text>
+  <text x="60" y="86" font-size="14" fill="#6b6b66" font-style="italic">几十个参数看起来杂乱 · 按"它在解决什么问题"分类 · 一切都清晰了</text>
+  <line x1="60" y1="100" x2="1420" y2="100" stroke="#d4d2c7" stroke-width="0.8"/>
+
+  <!-- ============================================== -->
+  <!-- 七个层次速览                                     -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 120)">
+    <rect x="0" y="0" width="1360" height="240" rx="6" fill="#FFFFFF" stroke="#534AB7" stroke-width="0.8"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#26215C">七个层次速览（按重要性递减）</text>
+    <line x1="22" y1="40" x2="320" y2="40" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <g transform="translate(22, 60)" font-size="13">
+      <text x="0" y="0" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">① 算法骨架：</tspan>
+        <tspan>这次训练用什么算法、训什么模型、用什么数据 → </tspan>
+        <tspan fill="#5f5e5a" font-style="italic">没有这些根本启动不了</tspan>
+      </text>
+      <text x="0" y="22" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">② 硬件适配：</tspan>
+        <tspan>GPU 还是 NPU、几节点几卡、特殊机型（GB200）的 workaround → </tspan>
+        <tspan fill="#5f5e5a" font-style="italic">配错了会立刻挂</tspan>
+      </text>
+      <text x="0" y="44" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">③ 训练规模：</tspan>
+        <tspan>batch、step、长度、采样数 → </tspan>
+        <tspan fill="#5f5e5a" font-style="italic">决定一个 step 处理多少数据</tspan>
+      </text>
+      <text x="0" y="66" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">④ 学习目标：</tspan>
+        <tspan>lr、KL coef、entropy、loss 类型 → </tspan>
+        <tspan fill="#5f5e5a" font-style="italic">控制 actor 怎么"学"</tspan>
+      </text>
+      <text x="0" y="88" fill="#444441">
+        <tspan font-weight="700" fill="#A32D2D">⑤ 显存合规：</tspan>
+        <tspan>offload、gradient checkpointing、TP、FSDP → </tspan>
+        <tspan fill="#5f5e5a" font-style="italic">让模型能塞下卡</tspan>
+      </text>
+      <text x="0" y="110" fill="#444441">
+        <tspan font-weight="700" fill="#04342C">⑥ 性能优化：</tspan>
+        <tspan>动态 batch、remove padding、balance batch → </tspan>
+        <tspan fill="#5f5e5a" font-style="italic">让 GPU 跑满，不浪费</tspan>
+      </text>
+      <text x="0" y="132" fill="#444441">
+        <tspan font-weight="700" fill="#854F0B">⑦ 运维观察：</tspan>
+        <tspan>日志、project name、save freq、test freq → </tspan>
+        <tspan fill="#5f5e5a" font-style="italic">让实验可追踪可恢复</tspan>
+      </text>
+
+      <text x="0" y="172" font-size="12" fill="#5f5e5a" font-style="italic">
+        关键认识：①②③④是"训练本身的事" · ⑤⑥是"在物理硬件上能跑起来"的事 · ⑦是"科研记录"的事
+      </text>
+      <text x="0" y="190" font-size="12" fill="#5f5e5a" font-style="italic">
+        新手痛点：以为复杂 RLHF 训练 90% 在调①④（算法）· 实际上 90% 工程时间花在⑤⑥（让它跑起来不 OOM）
+      </text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- ① 算法骨架                                      -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 380)">
+    <rect x="0" y="0" width="1360" height="240" rx="8" fill="#FFFFFF" stroke="#534AB7" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="240" rx="2" fill="#534AB7"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#26215C">① 算法骨架 · 决定训练的"主体"是什么</text>
+    <text x="22" y="56" font-size="12.5" fill="#534AB7">这一组是"必填项"——没有就根本没法启动</text>
+
+    <g transform="translate(40, 80)" font-size="12">
+      <!-- 算法选择 -->
+      <text x="0" y="0" font-weight="700" fill="#26215C">算法</text>
+      <text x="160" y="0" font-family="ui-monospace, monospace" fill="#444441">algorithm.adv_estimator=grpo</text>
+      <text x="540" y="0" fill="#5f5e5a">→ 决定走 GRPO 而非 PPO（关键开关）</text>
+
+      <text x="0" y="22" font-weight="700" fill="#26215C"></text>
+      <text x="160" y="22" font-family="ui-monospace, monospace" fill="#444441">use_kl_in_reward=False</text>
+      <text x="540" y="22" fill="#5f5e5a">→ KL 不进 reward，进 loss（更稳定）</text>
+
+      <!-- 模型 -->
+      <text x="0" y="56" font-weight="700" fill="#26215C">模型</text>
+      <text x="160" y="56" font-family="ui-monospace, monospace" fill="#444441">model.path=Qwen/Qwen3-8B</text>
+      <text x="540" y="56" fill="#5f5e5a">→ actor / ref / rollout 共享同一份基座</text>
+
+      <!-- 数据 -->
+      <text x="0" y="90" font-weight="700" fill="#26215C">数据</text>
+      <text x="160" y="90" font-family="ui-monospace, monospace" fill="#444441">data.train_files / val_files</text>
+      <text x="540" y="90" fill="#5f5e5a">→ GSM8K + MATH 两个 parquet 混合</text>
+
+      <text x="0" y="120" font-size="12.5" fill="#26215C" font-weight="700">这层的全部使命：</text>
+      <text x="200" y="120" fill="#444441">告诉框架"我要用 GRPO 训 Qwen3-8B 在数学题上"——一句话能概括的事</text>
+
+      <text x="0" y="150" font-size="11.5" fill="#5f5e5a" font-style="italic">
+        改这一层 = 切到不同实验（换算法、换模型、换数据集）· 其他六层不一定要动
+      </text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- ② 硬件适配                                      -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 640)">
+    <rect x="0" y="0" width="1360" height="280" rx="8" fill="#FFFFFF" stroke="#0F6E56" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="280" rx="2" fill="#0F6E56"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#04342C">② 硬件适配 · 让代码能在这台机器上跑</text>
+    <text x="22" y="56" font-size="12.5" fill="#0F6E56">这一组是"环境检测和兼容性补丁"——和算法无关，纯工程</text>
+
+    <g transform="translate(40, 80)" font-size="12">
+      <text x="0" y="0" font-weight="700" fill="#04342C">设备类型</text>
+      <text x="160" y="0" font-family="ui-monospace, monospace" fill="#444441">DEVICE=gpu | npu</text>
+      <text x="540" y="0" fill="#5f5e5a">→ 自动 detect torch_npu，决定走哪个分支</text>
+
+      <text x="0" y="22" font-weight="700" fill="#04342C">推理后端</text>
+      <text x="160" y="22" font-family="ui-monospace, monospace" fill="#444441">INFER_BACKEND=vllm | sglang | trtllm</text>
+      <text x="540" y="22" fill="#5f5e5a">→ rollout 用哪个推理框架</text>
+
+      <text x="0" y="44" font-weight="700" fill="#04342C">集群规模</text>
+      <text x="160" y="44" font-family="ui-monospace, monospace" fill="#444441">NNODES, NGPUS_PER_NODE</text>
+      <text x="540" y="44" fill="#5f5e5a">→ 总卡数 = NNODES × NGPUS_PER_NODE</text>
+
+      <text x="0" y="78" font-weight="700" fill="#04342C">机型补丁</text>
+      <text x="160" y="78" font-family="ui-monospace, monospace" fill="#444441">MACHINE=gb200</text>
+      <text x="540" y="78" fill="#5f5e5a">→ Blackwell 特殊处理（enforce_eager、flashinfer 等）</text>
+
+      <text x="0" y="100" font-weight="700" fill="#04342C">NPU 环境</text>
+      <text x="160" y="100" font-family="ui-monospace, monospace" fill="#444441">HCCL_*, ASCEND_*</text>
+      <text x="540" y="100" fill="#5f5e5a">→ Ascend 特有的网络/调度环境变量</text>
+
+      <text x="0" y="148" font-size="12.5" fill="#04342C" font-weight="700">这层的全部使命：</text>
+      <text x="200" y="148" fill="#444441">让同一份脚本在 GPU/NPU、A100/H100/GB200、单机/多机上都能跑起来</text>
+
+      <text x="0" y="180" font-size="11.5" fill="#5f5e5a" font-style="italic">
+        本质：硬件碎片化的代价 · 同一个算法在不同硬件上需要不同 backend、不同环境变量、不同 workaround
+      </text>
+      <text x="0" y="200" font-size="11.5" fill="#5f5e5a" font-style="italic">
+        新手提示：用同事跑通过的脚本，先别动这层 · 改这层最容易踩 obscure 的兼容性坑
+      </text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- ③ 训练规模                                      -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 940)">
+    <rect x="0" y="0" width="1360" height="280" rx="8" fill="#FFFFFF" stroke="#BA7517" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="280" rx="2" fill="#BA7517"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#412402">③ 训练规模 · 一个 step 处理多少数据</text>
+    <text x="22" y="56" font-size="12.5" fill="#854F0B">这一组决定"工作量"——影响训练速度和样本效率</text>
+
+    <g transform="translate(40, 80)" font-size="12">
+      <text x="0" y="0" font-weight="700" fill="#412402">每步 prompt 数</text>
+      <text x="180" y="0" font-family="ui-monospace, monospace" fill="#444441">train_batch_size=1024</text>
+      <text x="540" y="0" fill="#5f5e5a">→ 越大 reward 估计越稳，但 rollout/训练越慢</text>
+
+      <text x="0" y="22" font-weight="700" fill="#412402">每 prompt response 数</text>
+      <text x="180" y="22" font-family="ui-monospace, monospace" fill="#444441">rollout.n=5</text>
+      <text x="540" y="22" fill="#5f5e5a">→ GRPO 组内比较的样本数（核心参数）</text>
+
+      <text x="0" y="44" font-weight="700" fill="#412402">实际生成总数</text>
+      <text x="180" y="44" fill="#444441">1024 × 5 = 5120 条 response / step</text>
+
+      <text x="0" y="78" font-weight="700" fill="#412402">PPO mini-batch</text>
+      <text x="180" y="78" font-family="ui-monospace, monospace" fill="#444441">ppo_mini_batch_size=256</text>
+      <text x="540" y="78" fill="#5f5e5a">→ actor 更新时一次梯度的样本数</text>
+
+      <text x="0" y="100" font-weight="700" fill="#412402">prompt 长度</text>
+      <text x="180" y="100" font-family="ui-monospace, monospace" fill="#444441">max_prompt_length=1024</text>
+
+      <text x="0" y="122" font-weight="700" fill="#412402">response 长度</text>
+      <text x="180" y="122" font-family="ui-monospace, monospace" fill="#444441">max_response_length=2048</text>
+      <text x="540" y="122" fill="#5f5e5a">→ rollout 最多生成多少 token</text>
+
+      <text x="0" y="156" font-weight="700" fill="#412402">总 epoch</text>
+      <text x="180" y="156" font-family="ui-monospace, monospace" fill="#444441">total_epochs=15</text>
+
+      <text x="0" y="190" font-size="12.5" fill="#412402" font-weight="700">这层的全部使命：</text>
+      <text x="200" y="190" fill="#444441">告诉框架"每个 step 跑多少数据，跑多少 step"</text>
+
+      <text x="0" y="220" font-size="11.5" fill="#5f5e5a" font-style="italic">
+        平衡考虑：batch 越大 → 梯度噪声越小，但 rollout 时间越长 · 单 step 时间也越长 · 实验迭代变慢
+      </text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- ④ 学习目标                                      -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 1240)">
+    <rect x="0" y="0" width="1360" height="200" rx="8" fill="#FFFFFF" stroke="#185FA5" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="200" rx="2" fill="#185FA5"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#042C53">④ 学习目标 · 控制 actor 怎么"学"</text>
+    <text x="22" y="56" font-size="12.5" fill="#185FA5">这一组是"算法旋钮"——影响最终模型质量</text>
+
+    <g transform="translate(40, 80)" font-size="12">
+      <text x="0" y="0" font-weight="700" fill="#042C53">学习率</text>
+      <text x="160" y="0" font-family="ui-monospace, monospace" fill="#444441">actor_lr=1e-6</text>
+      <text x="440" y="0" fill="#5f5e5a">→ GRPO 8B 常用，太大易崩，太小学不动</text>
+
+      <text x="0" y="22" font-weight="700" fill="#042C53">KL 系数</text>
+      <text x="160" y="22" font-family="ui-monospace, monospace" fill="#444441">kl_loss_coef=0.001</text>
+      <text x="440" y="22" fill="#5f5e5a">→ 约束 actor 不要漂离 ref 太远</text>
+
+      <text x="0" y="44" font-weight="700" fill="#042C53">熵奖励</text>
+      <text x="160" y="44" font-family="ui-monospace, monospace" fill="#444441">entropy_coeff=0</text>
+      <text x="440" y="44" fill="#5f5e5a">→ 0 表示不鼓励额外探索（LLM RL 常用）</text>
+
+      <text x="0" y="66" font-weight="700" fill="#042C53">KL 类型</text>
+      <text x="160" y="66" font-family="ui-monospace, monospace" fill="#444441">kl_loss_type=low_var_kl</text>
+      <text x="440" y="66" fill="#5f5e5a">→ 低方差 KL 估计，比简单近似更稳</text>
+
+      <text x="0" y="100" font-size="12.5" fill="#042C53" font-weight="700">这层的全部使命：</text>
+      <text x="200" y="100" fill="#444441">告诉 actor"学多快、约束多严、要不要探索"——RL 算法的核心调参</text>
+
+      <text x="0" y="130" font-size="11.5" fill="#5f5e5a" font-style="italic">
+        RL 训练里这层是最难调的 · 但通常 verl example 给的默认值就接近最优 · 不要轻易改
+      </text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- ⑤ 显存合规                                      -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 1460)">
+    <rect x="0" y="0" width="1360" height="320" rx="8" fill="#FFFFFF" stroke="#A32D2D" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="320" rx="2" fill="#A32D2D"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#501313">⑤ 显存合规 · 让大模型塞进卡</text>
+    <text x="22" y="56" font-size="12.5" fill="#791F1F">这一组是"省显存技巧"——决定训练能不能启动（OOM 还是不 OOM）</text>
+
+    <g transform="translate(40, 80)" font-size="12">
+      <text x="0" y="0" font-weight="700" fill="#501313">梯度检查点</text>
+      <text x="180" y="0" font-family="ui-monospace, monospace" fill="#444441">enable_gradient_checkpointing=True</text>
+      <text x="640" y="0" fill="#5f5e5a">→ 用算力换显存 · 激活值只存少数</text>
+
+      <text x="0" y="22" font-weight="700" fill="#501313">参数 offload</text>
+      <text x="180" y="22" font-family="ui-monospace, monospace" fill="#444441">fsdp_config.param_offload</text>
+      <text x="640" y="22" fill="#5f5e5a">→ NPU 默认开 · GPU 默认关 · 把参数推 CPU</text>
+
+      <text x="0" y="44" font-weight="700" fill="#501313">优化器 offload</text>
+      <text x="180" y="44" font-family="ui-monospace, monospace" fill="#444441">fsdp_config.optimizer_offload</text>
+      <text x="640" y="44" fill="#5f5e5a">→ 优化器状态推 CPU（Adam 占参数 4 倍）</text>
+
+      <text x="0" y="66" font-weight="700" fill="#501313">Ref 参数 offload</text>
+      <text x="180" y="66" font-family="ui-monospace, monospace" fill="#444441">ref.fsdp_config.param_offload=True</text>
+      <text x="640" y="66" fill="#5f5e5a">→ ref 永远 offload（colocate 时给 actor 让位）</text>
+
+      <text x="0" y="100" font-weight="700" fill="#501313">vLLM 显存比例</text>
+      <text x="180" y="100" font-family="ui-monospace, monospace" fill="#444441">rollout_gpu_mem_util=0.6</text>
+      <text x="640" y="100" fill="#5f5e5a">→ KV pool 占多少 · colocate 必须保守</text>
+
+      <text x="0" y="122" font-weight="700" fill="#501313">vLLM TP 度</text>
+      <text x="180" y="122" font-family="ui-monospace, monospace" fill="#444441">rollout_tp=2</text>
+      <text x="640" y="122" fill="#5f5e5a">→ 模型大就切多卡装下</text>
+
+      <text x="0" y="144" font-weight="700" fill="#501313">FSDP 序列并行</text>
+      <text x="180" y="144" font-family="ui-monospace, monospace" fill="#444441">ulysses_sequence_parallel_size=1</text>
+      <text x="640" y="144" fill="#5f5e5a">→ 长 seq 时切 2/4 减少激活显存</text>
+
+      <text x="0" y="178" font-size="12.5" fill="#501313" font-weight="700">这层的全部使命：</text>
+      <text x="200" y="178" fill="#444441">每个开关都在解决"显存爆炸"的某个具体来源</text>
+
+      <text x="0" y="210" font-size="12" fill="#444441">
+        <tspan font-weight="700" fill="#501313">显存压力分布：</tspan>
+        <tspan>参数（FSDP 切）+ 优化器（offload 给 CPU）+ 激活值（gradient checkpointing）+ KV pool（mem_util 控制）</tspan>
+      </text>
+      <text x="0" y="232" font-size="11.5" fill="#5f5e5a" font-style="italic">
+        遇到 OOM 的诊断顺序：先看哪一项爆 → 调对应的开关 · 不要无脑减小 batch
+      </text>
+      <text x="0" y="252" font-size="11.5" fill="#A32D2D" font-style="italic">
+        新手 90% 的工程时间花在调这一层 · 改算法之前先把这层调通
+      </text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- ⑥ 性能优化                                      -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 1800)">
+    <rect x="0" y="0" width="1360" height="240" rx="8" fill="#FFFFFF" stroke="#0F6E56" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="240" rx="2" fill="#0F6E56"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#04342C">⑥ 性能优化 · 让 GPU 跑满不浪费</text>
+    <text x="22" y="56" font-size="12.5" fill="#0F6E56">这一组是"吞吐量优化"——决定训练快不快（不 OOM 但慢半拍）</text>
+
+    <g transform="translate(40, 80)" font-size="12">
+      <text x="0" y="0" font-weight="700" fill="#04342C">动态 batch</text>
+      <text x="180" y="0" font-family="ui-monospace, monospace" fill="#444441">use_dynamic_bsz=True</text>
+      <text x="540" y="0" fill="#5f5e5a">→ 按 token 数打包，避免长尾浪费</text>
+
+      <text x="0" y="22" font-weight="700" fill="#04342C">单卡 token 上限</text>
+      <text x="180" y="22" font-family="ui-monospace, monospace" fill="#444441">ppo_max_token_len_per_gpu=24576</text>
+      <text x="540" y="22" fill="#5f5e5a">→ 每个 micro batch 最多塞多少 token</text>
+
+      <text x="0" y="44" font-weight="700" fill="#04342C">移除 padding</text>
+      <text x="180" y="44" font-family="ui-monospace, monospace" fill="#444441">use_remove_padding=True</text>
+      <text x="540" y="44" fill="#5f5e5a">→ 多样本拼一条 + 块对角 mask</text>
+
+      <text x="0" y="66" font-weight="700" fill="#04342C">batch 平衡</text>
+      <text x="180" y="66" font-family="ui-monospace, monospace" fill="#444441">trainer.balance_batch=True</text>
+      <text x="540" y="66" fill="#5f5e5a">→ 跨卡按 token 数重新分配，消除步调不一致</text>
+
+      <text x="0" y="100" font-size="12.5" fill="#04342C" font-weight="700">这层的全部使命：</text>
+      <text x="200" y="100" fill="#444441">RL 数据长尾分布很严重 · 不优化的话 GPU 利用率打 4 折</text>
+
+      <text x="0" y="130" font-size="11.5" fill="#5f5e5a" font-style="italic">
+        和⑤的区别：⑤是"能不能跑起来"（OOM 边界）· ⑥是"跑得快不快"（GPU 利用率）
+      </text>
+      <text x="0" y="150" font-size="11.5" fill="#5f5e5a" font-style="italic">
+        实战观察：开了⑥这套优化，吞吐能从 30% 利用率提升到 80%+ · 1 倍多的提速
+      </text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- ⑦ 运维观察                                      -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 2060)">
+    <rect x="0" y="0" width="1360" height="160" rx="8" fill="#FFFFFF" stroke="#888780" stroke-width="0.8"/>
+    <rect x="0" y="0" width="6" height="160" rx="2" fill="#888780"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#1a1a1a">⑦ 运维观察 · 让实验可追踪可恢复</text>
+    <text x="22" y="56" font-size="12.5" fill="#5f5e5a">这一组是"基础设施"——和算法/性能都无关，但忘了会很惨</text>
+
+    <g transform="translate(40, 80)" font-size="12">
+      <text x="0" y="0" font-weight="700" fill="#1a1a1a">日志</text>
+      <text x="120" y="0" font-family="ui-monospace, monospace" fill="#444441">trainer.logger=['console','wandb']</text>
+      <text x="540" y="0" fill="#5f5e5a">→ 训练曲线送到 wandb，方便对比实验</text>
+
+      <text x="0" y="22" font-weight="700" fill="#1a1a1a">实验名</text>
+      <text x="120" y="22" font-family="ui-monospace, monospace" fill="#444441">project_name / experiment_name</text>
+      <text x="540" y="22" fill="#5f5e5a">→ wandb 上的实验标识</text>
+
+      <text x="0" y="44" font-weight="700" fill="#1a1a1a">保存</text>
+      <text x="120" y="44" font-family="ui-monospace, monospace" fill="#444441">save_freq=20, test_freq=5</text>
+      <text x="540" y="44" fill="#5f5e5a">→ 每 20 step 存 checkpoint，每 5 step 验证</text>
+
+      <text x="0" y="78" font-size="11.5" fill="#5f5e5a" font-style="italic">
+        新手提醒：experiment_name 默认带时间戳是好习惯 · 不会覆盖之前实验的 checkpoint 和日志
+      </text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 底部：工程哲学                                    -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 2240)">
+    <rect x="0" y="0" width="1360" height="140" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.8"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#26215C">理解这个分类后的工程哲学</text>
+    <line x1="22" y1="40" x2="450" y2="40" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <g transform="translate(22, 60)" font-size="12.5">
+      <text x="0" y="0" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">"可调旋钮"和"基础设施"是分开的：</tspan>
+        <tspan>真正影响模型质量的是 ① + ④（算法 + 学习目标）· ⑤⑥是"前置任务"必须做对才能开始调算法</tspan>
+      </text>
+      <text x="0" y="24" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">改的频率反过来：</tspan>
+        <tspan>调实验时 ①③④ 改得多 · ②⑤⑥⑦ 一旦调通就基本不动 · 但调通它们可能花你 3 天</tspan>
+      </text>
+      <text x="0" y="48" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">为什么 verl 比 TRL 复杂：</tspan>
+        <tspan>TRL 的⑤⑥写死在框架里没法调 · 7B+ 直接 OOM；verl 把每个旋钮都暴露出来 · 复杂但可扩展</tspan>
+      </text>
+      <text x="0" y="76" fill="#5f5e5a" font-style="italic">
+        新手心态：先用 verl example 配置跑通（⑤⑥都帮你调好了）· 跑通后再去碰 ①③④ · 别一上来就 fork 改 yaml
+      </text>
+    </g>
+  </g>
+
+</svg>

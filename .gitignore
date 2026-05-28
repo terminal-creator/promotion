@@ -1,0 +1,30 @@
+# 依赖
+node_modules/
+server/node_modules/
+
+# 运行时数据
+channels.db
+channels.db-journal
+channels.db-wal
+channels.db-shm
+uploads/qr/*
+!uploads/qr/.gitkeep
+
+# 日志
+*.log
+.pm2/
+logs/
+
+# 环境
+.env
+.env.local
+
+# 编辑器
+.vscode/
+.idea/
+.DS_Store
+
+# 缓存
+.cache/
+*.swp
+*.swo

@@ -1,0 +1,417 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1480 2780" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Helvetica Neue', sans-serif">
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FAFAF7"/>
+      <stop offset="100%" stop-color="#F3F2EC"/>
+    </linearGradient>
+
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-thin" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect width="1480" height="2780" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="60" y="58" font-size="28" font-weight="600" fill="#1a1a1a" letter-spacing="-0.4">verl = Ray 上面包的 4 层抽象</text>
+  <text x="60" y="86" font-size="14" fill="#6b6b66" font-style="italic">每一层各司其职 · 少一层都跑不动 7B+ RLHF · 这就是为什么 verl 比 TRL 复杂</text>
+  <line x1="60" y1="100" x2="1420" y2="100" stroke="#d4d2c7" stroke-width="0.8"/>
+
+  <!-- ============================================== -->
+  <!-- 总览：完整栈                                     -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 120)">
+    <rect x="0" y="0" width="1360" height="800" rx="8" fill="#FFFFFF" stroke="#d4d2c7" stroke-width="0.8"/>
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#1a1a1a">完整软件栈 · 从硬件到用户脚本</text>
+    <line x1="22" y1="44" x2="500" y2="44" stroke="#d4d2c7" stroke-width="0.6"/>
+
+    <text x="22" y="68" font-size="12" fill="#5f5e5a">从下往上看：每一层只关心紧邻下层提供的接口 · verl 占据了中间四层（紫色）</text>
+
+    <!-- 9 层栈 -->
+    <g transform="translate(120, 90)">
+      <!-- Layer 9: 用户脚本 -->
+      <g transform="translate(0, 0)">
+        <rect x="0" y="0" width="1120" height="60" rx="6" fill="#FAFAF7" stroke="#888780" stroke-width="0.8"/>
+        <text x="20" y="28" font-size="13" font-weight="700" fill="#1a1a1a">用户脚本（你写的部分）</text>
+        <text x="20" y="46" font-size="11" font-family="ui-monospace, monospace" fill="#5f5e5a">run_qwen3_8b_fsdp.sh · yaml 配置 · 自定义 reward 函数</text>
+        <text x="1140" y="36" font-size="10.5" fill="#5f5e5a" font-style="italic">几十到几百行</text>
+      </g>
+
+      <!-- Layer 8: 算法逻辑 -->
+      <g transform="translate(0, 70)">
+        <rect x="0" y="0" width="1120" height="60" rx="6" fill="#F8F7F2" stroke="#534AB7" stroke-width="0.8"/>
+        <text x="20" y="28" font-size="13" font-weight="700" fill="#26215C">算法逻辑（verl 提供）</text>
+        <text x="20" y="46" font-size="11" font-family="ui-monospace, monospace" fill="#534AB7">GRPO/PPO loss · advantage 估计 · KL 计算</text>
+        <text x="1140" y="36" font-size="10.5" fill="#5f5e5a" font-style="italic">~500 行</text>
+      </g>
+
+      <!-- Layer 7: Trainer (verl 第4层) -->
+      <g transform="translate(0, 140)">
+        <rect x="0" y="0" width="1120" height="60" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+        <text x="20" y="28" font-size="13" font-weight="700" fill="#26215C">verl 第 4 层 · Trainer（顺序编排）</text>
+        <text x="20" y="46" font-size="11" font-family="ui-monospace, monospace" fill="#534AB7">RayPPOTrainer.fit() · 用顺序代码描述算法 · driver 端跑</text>
+        <text x="1140" y="36" font-size="10.5" fill="#26215C" font-weight="700">~1000 行</text>
+      </g>
+
+      <!-- Layer 6: ShardingManager (verl 第3层) -->
+      <g transform="translate(0, 210)">
+        <rect x="0" y="0" width="1120" height="60" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+        <text x="20" y="28" font-size="13" font-weight="700" fill="#26215C">verl 第 3 层 · ShardingManager（reshard 协调）</text>
+        <text x="20" y="46" font-size="11" font-family="ui-monospace, monospace" fill="#534AB7">vLLM TP 布局 ↔ FSDP 训练布局的转换 · 这是 verl 最难也最值钱的部分</text>
+        <text x="1140" y="36" font-size="10.5" fill="#26215C" font-weight="700">~2000 行</text>
+      </g>
+
+      <!-- Layer 5: WorkerGroup (verl 第2层) -->
+      <g transform="translate(0, 280)">
+        <rect x="0" y="0" width="1120" height="60" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+        <text x="20" y="28" font-size="13" font-weight="700" fill="#26215C">verl 第 2 层 · WorkerGroup（远程调用代理）</text>
+        <text x="20" y="46" font-size="11" font-family="ui-monospace, monospace" fill="#534AB7">把 N 个 actor 包装成 1 个对象 · 自动 dispatch / collect · 让 driver 写单机代码</text>
+        <text x="1140" y="36" font-size="10.5" fill="#26215C" font-weight="700">~800 行</text>
+      </g>
+
+      <!-- Layer 4: Worker (verl 第1层) -->
+      <g transform="translate(0, 350)">
+        <rect x="0" y="0" width="1120" height="60" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+        <text x="20" y="28" font-size="13" font-weight="700" fill="#26215C">verl 第 1 层 · Worker 类（@ray.remote 装饰）</text>
+        <text x="20" y="46" font-size="11" font-family="ui-monospace, monospace" fill="#534AB7">ActorWorker / RefWorker / RewardWorker · 给计算引擎套上 Ray 外壳</text>
+        <text x="1140" y="36" font-size="10.5" fill="#26215C" font-weight="700">~1500 行</text>
+      </g>
+
+      <!-- Layer 3: Ray -->
+      <g transform="translate(0, 420)">
+        <rect x="0" y="0" width="1120" height="60" rx="6" fill="#FAEEDA" stroke="#BA7517" stroke-width="1.2"/>
+        <text x="20" y="28" font-size="13" font-weight="700" fill="#412402">Ray（分布式 Python 运行时）</text>
+        <text x="20" y="46" font-size="11" font-family="ui-monospace, monospace" fill="#854F0B">@ray.remote · ray.get · object store · scheduler · placement group</text>
+        <text x="1140" y="36" font-size="10.5" fill="#5f5e5a" font-style="italic">第三方</text>
+      </g>
+
+      <!-- Layer 2: 计算引擎 -->
+      <g transform="translate(0, 490)">
+        <rect x="0" y="0" width="1120" height="60" rx="6" fill="#FAECE7" stroke="#D85A30" stroke-width="0.8"/>
+        <text x="20" y="28" font-size="13" font-weight="700" fill="#4A1B0C">计算引擎</text>
+        <text x="20" y="46" font-size="11" font-family="ui-monospace, monospace" fill="#993C1D">vLLM（推理）· FSDP（训练）· Megatron-LM · Transformers</text>
+        <text x="1140" y="36" font-size="10.5" fill="#5f5e5a" font-style="italic">第三方</text>
+      </g>
+
+      <!-- Layer 1: PyTorch -->
+      <g transform="translate(0, 560)">
+        <rect x="0" y="0" width="1120" height="60" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.8"/>
+        <text x="20" y="28" font-size="13" font-weight="700" fill="#04342C">PyTorch + CUDA</text>
+        <text x="20" y="46" font-size="11" font-family="ui-monospace, monospace" fill="#0F6E56">tensor 计算 · autograd · NCCL 通信</text>
+        <text x="1140" y="36" font-size="10.5" fill="#5f5e5a" font-style="italic">第三方</text>
+      </g>
+
+      <!-- Layer 0: 硬件 -->
+      <g transform="translate(0, 630)">
+        <rect x="0" y="0" width="1120" height="60" rx="6" fill="#F1EFE8" stroke="#888780" stroke-width="0.8"/>
+        <text x="20" y="28" font-size="13" font-weight="700" fill="#1a1a1a">硬件</text>
+        <text x="20" y="46" font-size="11" font-family="ui-monospace, monospace" fill="#5f5e5a">GPU + InfiniBand 网络</text>
+      </g>
+    </g>
+
+    <!-- 右侧标注 verl 范围 -->
+    <g transform="translate(40, 230)">
+      <line x1="0" y1="0" x2="0" y2="280" stroke="#534AB7" stroke-width="3"/>
+      <line x1="-8" y1="0" x2="8" y2="0" stroke="#534AB7" stroke-width="3"/>
+      <line x1="-8" y1="280" x2="8" y2="280" stroke="#534AB7" stroke-width="3"/>
+      <text x="-12" y="140" font-size="13" font-weight="700" fill="#26215C" text-anchor="middle" transform="rotate(-90 -12 140)">verl 范围</text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 一句话核心                                       -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 940)">
+    <rect x="0" y="0" width="1360" height="120" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#26215C">一句话核心</text>
+    <line x1="22" y1="40" x2="280" y2="40" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <g transform="translate(22, 60)" font-size="13">
+      <text x="0" y="0" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">verl 不是"实现了 RLHF"</tspan>
+        <tspan>，verl 是 </tspan>
+        <tspan font-weight="700" fill="#26215C">"把 RLHF 算法翻译成 Ray 上能跑的形态"</tspan>
+      </text>
+      <text x="0" y="24" fill="#444441">
+        算法本身（GRPO loss）就几十行 · verl 90% 的代码都在做"翻译"——分布式调度、内存布局转换、数据切分聚合
+      </text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 详细展开：4 层 verl 各做什么                       -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 1080)">
+    <rect x="0" y="0" width="1360" height="1100" rx="8" fill="#FFFFFF" stroke="#534AB7" stroke-width="1.2"/>
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#26215C">verl 4 层抽象逐一展开 · 每层在 Ray 上加了什么</text>
+    <line x1="22" y1="44" x2="540" y2="44" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <!-- 第 1 层 Worker -->
+    <g transform="translate(40, 80)">
+      <rect x="0" y="0" width="1280" height="240" rx="6" fill="#F8F7F2" stroke="#534AB7" stroke-width="0.6"/>
+      <text x="20" y="28" font-size="14" font-weight="700" fill="#26215C">第 1 层 · Worker（最浅，~1500 行）</text>
+      <line x1="20" y1="40" x2="320" y2="40" stroke="#CECBF6" stroke-width="0.6"/>
+
+      <!-- 左：没有 verl 怎么写 -->
+      <g transform="translate(20, 56)">
+        <text x="0" y="0" font-size="11.5" font-weight="700" fill="#A32D2D">裸 Ray 写法（你得自己写）：</text>
+        <rect x="0" y="10" width="600" height="160" rx="4" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.4"/>
+        <g transform="translate(14, 30)" font-family="ui-monospace, monospace" font-size="10.5">
+          <text x="0" y="0" fill="#534AB7">@ray.remote(num_gpus=1)</text>
+          <text x="0" y="16" fill="#444441">class MyWorker:</text>
+          <text x="0" y="32" fill="#444441">    def __init__(self):</text>
+          <text x="0" y="48" fill="#444441">        self.model = load_with_fsdp()</text>
+          <text x="0" y="64" fill="#444441">    def generate(self, batch):</text>
+          <text x="0" y="80" fill="#444441">        return vllm_generate(batch)</text>
+          <text x="0" y="96" fill="#444441">    def update(self, batch):</text>
+          <text x="0" y="112" fill="#444441">        return fsdp_train(batch)</text>
+          <text x="0" y="136" fill="#888780"># 加新方法要手写各种切分逻辑</text>
+        </g>
+      </g>
+
+      <!-- 右：verl 写法 -->
+      <g transform="translate(660, 56)">
+        <text x="0" y="0" font-size="11.5" font-weight="700" fill="#04342C">verl 写法（多了 dispatch_mode 声明）：</text>
+        <rect x="0" y="10" width="600" height="160" rx="4" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.4"/>
+        <g transform="translate(14, 30)" font-family="ui-monospace, monospace" font-size="10.5">
+          <text x="0" y="0" fill="#444441">class ActorWorker(Worker):</text>
+          <text x="0" y="20" fill="#A32D2D">  @register(dispatch_mode=DP_PROTO)</text>
+          <text x="0" y="36" fill="#444441">  def generate_sequences(self, batch):</text>
+          <text x="0" y="52" fill="#444441">      return self.rollout.generate(batch)</text>
+          <text x="0" y="76" fill="#A32D2D">  @register(dispatch_mode=DP_PROTO)</text>
+          <text x="0" y="92" fill="#444441">  def update_actor(self, batch):</text>
+          <text x="0" y="108" fill="#444441">      return self.actor.train(batch)</text>
+          <text x="0" y="132" fill="#888780"># dispatch_mode 让上层自动 fan-out</text>
+        </g>
+      </g>
+
+      <!-- 价值 -->
+      <g transform="translate(20, 230)">
+        <text x="0" y="0" font-size="11.5" fill="#444441"><tspan font-weight="700" fill="#26215C">这层的价值：</tspan> 给计算引擎（vLLM/FSDP）套上 Ray 外壳，并且声明"每个方法该怎么 fan-out"</text>
+      </g>
+    </g>
+
+    <!-- 第 2 层 WorkerGroup -->
+    <g transform="translate(40, 340)">
+      <rect x="0" y="0" width="1280" height="240" rx="6" fill="#F8F7F2" stroke="#534AB7" stroke-width="1"/>
+      <text x="20" y="28" font-size="14" font-weight="700" fill="#26215C">第 2 层 · WorkerGroup（重要抽象，~800 行）</text>
+      <line x1="20" y1="40" x2="320" y2="40" stroke="#CECBF6" stroke-width="0.6"/>
+
+      <!-- 左：裸 Ray -->
+      <g transform="translate(20, 56)">
+        <text x="0" y="0" font-size="11.5" font-weight="700" fill="#A32D2D">裸 Ray 写法（驱动端样板代码）：</text>
+        <rect x="0" y="10" width="600" height="160" rx="4" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.4"/>
+        <g transform="translate(14, 30)" font-family="ui-monospace, monospace" font-size="10.5">
+          <text x="0" y="0" fill="#888780"># 创建 64 个 worker</text>
+          <text x="0" y="16" fill="#444441">workers = [W.remote() for _ in range(64)]</text>
+          <text x="0" y="40" fill="#888780"># 每次调用都要手写：</text>
+          <text x="0" y="56" fill="#444441">shards = split(batch, 64)</text>
+          <text x="0" y="72" fill="#444441">futures = [w.gen.remote(s)</text>
+          <text x="0" y="88" fill="#444441">           for w,s in zip(workers,shards)]</text>
+          <text x="0" y="104" fill="#444441">results = ray.get(futures)</text>
+          <text x="0" y="120" fill="#444441">result = concat(results)</text>
+          <text x="0" y="144" fill="#888780"># 100 行 driver 代码光做 fan-out</text>
+        </g>
+      </g>
+
+      <!-- 右：verl -->
+      <g transform="translate(660, 56)">
+        <text x="0" y="0" font-size="11.5" font-weight="700" fill="#04342C">verl 写法（一行搞定）：</text>
+        <rect x="0" y="10" width="600" height="160" rx="4" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.4"/>
+        <g transform="translate(14, 30)" font-family="ui-monospace, monospace" font-size="10.5">
+          <text x="0" y="0" fill="#888780"># 创建 WorkerGroup</text>
+          <text x="0" y="16" fill="#444441">actor_wg = ActorWG(...)</text>
+          <text x="0" y="40" fill="#888780"># 调用 = 自动切分+发 RPC+聚合</text>
+          <text x="0" y="60" fill="#444441">result = actor_wg.generate_sequences(</text>
+          <text x="0" y="76" fill="#444441">    batch)</text>
+          <text x="0" y="100" fill="#888780"># 上面这一行内部:</text>
+          <text x="0" y="116" fill="#888780"># 1. 查 dispatch_mode</text>
+          <text x="0" y="132" fill="#888780"># 2. 切 batch + 发 64 个 RPC</text>
+          <text x="0" y="148" fill="#888780"># 3. ray.get + concat</text>
+        </g>
+      </g>
+
+      <g transform="translate(20, 230)">
+        <text x="0" y="0" font-size="11.5" fill="#444441"><tspan font-weight="700" fill="#26215C">这层的价值：</tspan> 把"对一组 actor 的调用"伪装成单机方法调用 · 让 driver 写顺序算法代码</text>
+      </g>
+    </g>
+
+    <!-- 第 3 层 ShardingManager -->
+    <g transform="translate(40, 600)">
+      <rect x="0" y="0" width="1280" height="240" rx="6" fill="#F8F7F2" stroke="#534AB7" stroke-width="1.2"/>
+      <text x="20" y="28" font-size="14" font-weight="700" fill="#26215C">第 3 层 · ShardingManager（最难的部分，~2000 行）★</text>
+      <line x1="20" y1="40" x2="380" y2="40" stroke="#CECBF6" stroke-width="0.6"/>
+
+      <text x="20" y="60" font-size="12" fill="#534AB7">这是 Ray 完全没有的概念 · 也是 verl 区别于 TRL/DeepSpeed-Chat 的核心</text>
+
+      <!-- 流程示意 -->
+      <g transform="translate(20, 80)">
+        <!-- 阶段 1: vLLM TP=8 -->
+        <rect x="0" y="0" width="220" height="60" rx="4" fill="#FAECE7" stroke="#D85A30" stroke-width="0.8"/>
+        <text x="110" y="22" font-size="11" font-weight="700" fill="#4A1B0C" text-anchor="middle">vLLM 阶段</text>
+        <text x="110" y="38" font-size="10" fill="#993C1D" text-anchor="middle">TP=8 布局</text>
+        <text x="110" y="52" font-size="10" fill="#993C1D" text-anchor="middle">+ KV pool 50GB</text>
+
+        <!-- 箭头 reshard -->
+        <line x1="225" y1="30" x2="285" y2="30" stroke="#534AB7" stroke-width="2" marker-end="url(#arrow)"/>
+        <text x="255" y="22" font-size="10" fill="#534AB7" text-anchor="middle" font-weight="700">reshard</text>
+
+        <!-- ShardingManager 操作 -->
+        <rect x="290" y="0" width="660" height="60" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+        <text x="300" y="18" font-size="10.5" font-weight="700" fill="#26215C">ShardingManager 做的事：</text>
+        <text x="300" y="34" font-size="10" fill="#534AB7">1. vLLM 释放 KV pool · 2. gather TP 切片 · 3. reshape 成 FSDP flat 布局</text>
+        <text x="300" y="50" font-size="10" fill="#534AB7">4. distribute 给 64 卡 · 5. 优化器从 CPU 拉回 GPU · 6. 同步屏障</text>
+
+        <line x1="955" y1="30" x2="1015" y2="30" stroke="#534AB7" stroke-width="2" marker-end="url(#arrow)"/>
+
+        <!-- 阶段 2: FSDP -->
+        <rect x="1020" y="0" width="240" height="60" rx="4" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.8"/>
+        <text x="1140" y="22" font-size="11" font-weight="700" fill="#412402" text-anchor="middle">FSDP 阶段</text>
+        <text x="1140" y="38" font-size="10" fill="#854F0B" text-anchor="middle">fsdp_size=64 布局</text>
+        <text x="1140" y="52" font-size="10" fill="#854F0B" text-anchor="middle">+ 优化器 + 激活</text>
+      </g>
+
+      <text x="20" y="170" font-size="11.5" fill="#444441"><tspan font-weight="700" fill="#26215C">为什么必要：</tspan> Ray 不知道 vLLM 和 FSDP 的内存布局怎么转换 · 没有这层就只能 disaggregate（分卡跑）</text>
+
+      <text x="20" y="190" font-size="11.5" fill="#444441"><tspan font-weight="700" fill="#26215C">为什么最难：</tspan> 涉及 weight 物理布局、显存释放顺序、分布式同步 · 写错就 OOM 或挂死</text>
+
+      <text x="20" y="220" font-size="11.5" fill="#444441"><tspan font-weight="700" fill="#26215C">这层的价值：</tspan> 让"同一组 GPU 在不同阶段扮演不同角色"成为可能 · colocate 显存利用率 +50%</text>
+    </g>
+
+    <!-- 第 4 层 Trainer -->
+    <g transform="translate(40, 860)">
+      <rect x="0" y="0" width="1280" height="220" rx="6" fill="#F8F7F2" stroke="#534AB7" stroke-width="0.8"/>
+      <text x="20" y="28" font-size="14" font-weight="700" fill="#26215C">第 4 层 · Trainer（顶层编排，~1000 行）</text>
+      <line x1="20" y1="40" x2="280" y2="40" stroke="#CECBF6" stroke-width="0.6"/>
+
+      <!-- 算法伪代码 -->
+      <g transform="translate(20, 56)">
+        <text x="0" y="0" font-size="11.5" font-weight="700" fill="#26215C">RayPPOTrainer.fit() 长这样（接近 RLHF 论文里的伪代码）：</text>
+        <rect x="0" y="10" width="1240" height="120" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.4"/>
+        <g transform="translate(14, 30)" font-family="ui-monospace, monospace" font-size="11">
+          <text x="0" y="0" fill="#444441">for step in range(num_steps):</text>
+          <text x="0" y="18" fill="#444441">    responses = self.actor_wg.generate_sequences(prompts)        </text>
+          <text x="540" y="18" fill="#888780"># Layer 2 处理 fan-out</text>
+          <text x="0" y="36" fill="#444441">    ref_logp = self.ref_wg.compute_log_prob(responses)            </text>
+          <text x="540" y="36" fill="#888780"># Layer 2</text>
+          <text x="0" y="54" fill="#444441">    rewards  = self.reward_wg.score(responses)                    </text>
+          <text x="540" y="54" fill="#888780"># Layer 2</text>
+          <text x="0" y="72" fill="#444441">    advantages = compute_grpo_advantage(rewards, ref_logp)        </text>
+          <text x="540" y="72" fill="#888780"># 算法层</text>
+          <text x="0" y="90" fill="#A32D2D">    self.sharding_manager.rollout_to_train()                      </text>
+          <text x="540" y="90" fill="#888780"># Layer 3 的关键调用</text>
+        </g>
+      </g>
+
+      <text x="20" y="200" font-size="11.5" fill="#444441"><tspan font-weight="700" fill="#26215C">这层的价值：</tspan> 算法工程师可以读懂这段代码 —— 它就是 RLHF 论文伪代码加几句 reshard</text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 类比：web 开发栈                                  -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 2200)">
+    <rect x="0" y="0" width="1360" height="280" rx="8" fill="#FFFFFF" stroke="#888780" stroke-width="0.6"/>
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#1a1a1a">类比理解 · 像 web 开发的栈</text>
+    <line x1="22" y1="44" x2="380" y2="44" stroke="#d4d2c7" stroke-width="0.6"/>
+
+    <g transform="translate(40, 70)">
+      <!-- Web 栈 -->
+      <text x="0" y="0" font-size="13" font-weight="700" fill="#1a1a1a">Web 开发栈：</text>
+
+      <g transform="translate(0, 20)">
+        <rect x="0" y="0" width="600" height="36" rx="4" fill="#FAFAF7" stroke="#888780" stroke-width="0.6"/>
+        <text x="14" y="22" font-size="11" fill="#444441">业务代码（"用户登录跳首页"）</text>
+
+        <rect x="0" y="42" width="600" height="36" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.8"/>
+        <text x="14" y="64" font-size="11" font-weight="700" fill="#26215C">Django（ORM、模板、路由、auth）</text>
+
+        <rect x="0" y="84" width="600" height="36" rx="4" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.8"/>
+        <text x="14" y="106" font-size="11" fill="#412402">WSGI / gunicorn（Python web 接口）</text>
+
+        <rect x="0" y="126" width="600" height="36" rx="4" fill="#F1EFE8" stroke="#888780" stroke-width="0.6"/>
+        <text x="14" y="148" font-size="11" fill="#5f5e5a">TCP/IP（网络协议）</text>
+      </g>
+
+      <!-- RLHF 栈 -->
+      <text x="700" y="0" font-size="13" font-weight="700" fill="#1a1a1a">RLHF 训练栈（对应关系）：</text>
+
+      <g transform="translate(700, 20)">
+        <rect x="0" y="0" width="600" height="36" rx="4" fill="#FAFAF7" stroke="#888780" stroke-width="0.6"/>
+        <text x="14" y="22" font-size="11" fill="#444441">用户脚本（"训 Qwen 在 GSM8K 上"）</text>
+
+        <rect x="0" y="42" width="600" height="36" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.8"/>
+        <text x="14" y="64" font-size="11" font-weight="700" fill="#26215C">verl（4 层抽象 · 把算法翻译成 Ray 调度）</text>
+
+        <rect x="0" y="84" width="600" height="36" rx="4" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.8"/>
+        <text x="14" y="106" font-size="11" fill="#412402">Ray（分布式 Python 运行时）</text>
+
+        <rect x="0" y="126" width="600" height="36" rx="4" fill="#F1EFE8" stroke="#888780" stroke-width="0.6"/>
+        <text x="14" y="148" font-size="11" fill="#5f5e5a">PyTorch + CUDA（tensor 计算）</text>
+      </g>
+    </g>
+
+    <text x="40" y="240" font-size="12" fill="#5f5e5a" font-style="italic">
+      verl 之于 Ray，就像 Django 之于 gunicorn —— 上层框架在底层运行时之上，封装领域特化的工程模式
+    </text>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 总结                                             -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 2500)">
+    <rect x="0" y="0" width="1360" height="260" rx="8" fill="#FFFFFF" stroke="#534AB7" stroke-width="1"/>
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#26215C">少任何一层都跑不动 7B+ RLHF</text>
+    <line x1="22" y1="44" x2="500" y2="44" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <g transform="translate(40, 70)" font-size="12">
+      <!-- Header -->
+      <rect x="0" y="0" width="1280" height="32" fill="#F1EFE8"/>
+      <text x="14" y="20" font-weight="700" fill="#444441">缺失的层</text>
+      <text x="280" y="20" font-weight="700" fill="#444441">后果</text>
+
+      <g transform="translate(0, 32)">
+        <rect x="0" y="0" width="1280" height="32" fill="#FFFFFF" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="14" y="20" font-weight="600" fill="#26215C">没有 Trainer</text>
+        <text x="280" y="20" fill="#444441">算法逻辑淹没在分布式调用里 · driver 代码会膨胀几倍 · 难以维护</text>
+      </g>
+
+      <g transform="translate(0, 64)">
+        <rect x="0" y="0" width="1280" height="32" fill="#F8F7F2" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="14" y="20" font-weight="600" fill="#26215C">没有 ShardingManager</text>
+        <text x="280" y="20" fill="#A32D2D">必须 actor 和 rollout 分开两套 GPU（disaggregate）· 显存利用率打 5 折</text>
+      </g>
+
+      <g transform="translate(0, 96)">
+        <rect x="0" y="0" width="1280" height="32" fill="#FFFFFF" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="14" y="20" font-weight="600" fill="#26215C">没有 WorkerGroup</text>
+        <text x="280" y="20" fill="#444441">每次方法调用都要手写切分/聚合 · driver 代码 100 行变 500 行</text>
+      </g>
+
+      <g transform="translate(0, 128)">
+        <rect x="0" y="0" width="1280" height="32" fill="#F8F7F2" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="14" y="20" font-weight="600" fill="#26215C">没有 Worker（@ray.remote）</text>
+        <text x="280" y="20" fill="#444441">vLLM/FSDP 没法被 Ray 调度 · 退化成单机程序</text>
+      </g>
+
+      <g transform="translate(0, 160)">
+        <rect x="0" y="0" width="1280" height="32" fill="#FCEBEB" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="14" y="20" font-weight="600" fill="#A32D2D">没有 Ray</text>
+        <text x="280" y="20" fill="#A32D2D" font-weight="700">所有分布式基础设施得自己造 · 至少多写 5000 行底层代码</text>
+      </g>
+
+      <text x="0" y="220" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">读 verl 源码的快速定位法：</tspan>
+      </text>
+      <text x="0" y="240" fill="#5f5e5a" font-style="italic">
+        看到 .remote() = Layer 1（Ray RPC）· 看到 _wg.xxx() = Layer 2 · 看到 sharding_manager = Layer 3 · 看到 trainer.fit() = Layer 4
+      </text>
+    </g>
+  </g>
+
+</svg>

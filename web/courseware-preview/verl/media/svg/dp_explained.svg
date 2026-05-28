@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1480 920" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Helvetica Neue', sans-serif">
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FAFAF7"/>
+      <stop offset="100%" stop-color="#F3F2EC"/>
+    </linearGradient>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect width="1480" height="920" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="60" y="58" font-size="28" font-weight="600" fill="#1a1a1a" letter-spacing="-0.4">Data Parallel · 最朴素的并行</text>
+  <text x="60" y="86" font-size="14" fill="#6b6b66" font-style="italic">每卡完整一份模型 · batch 切 N 份并行算 · 反传后 all-reduce 同步梯度</text>
+  <line x1="60" y1="100" x2="1420" y2="100" stroke="#d4d2c7" stroke-width="0.8"/>
+
+  <!-- Stage label -->
+  <text x="60" y="148" font-size="12" font-weight="700" fill="#888780" letter-spacing="1.8">▸ 4 GPU · 7B MODEL · BATCH = 32</text>
+
+  <!-- Batch -->
+  <g>
+    <text x="60" y="200" font-size="14" font-weight="700" fill="#1a1a1a">① BATCH 切 4 份 · 每卡 8 条</text>
+    <rect x="60" y="220" width="1340" height="64" rx="4" fill="#FFFFFF" stroke="#A8A6A0" stroke-width="1.2"/>
+    <g font-size="11" fill="#444441">
+      <line x1="395" y1="220" x2="395" y2="284" stroke="#A8A6A0" stroke-width="1" stroke-dasharray="3 3"/>
+      <line x1="730" y1="220" x2="730" y2="284" stroke="#A8A6A0" stroke-width="1" stroke-dasharray="3 3"/>
+      <line x1="1065" y1="220" x2="1065" y2="284" stroke="#A8A6A0" stroke-width="1" stroke-dasharray="3 3"/>
+
+      <text x="227" y="244" text-anchor="middle" font-weight="600" fill="#0055FF">batch[0:8]</text>
+      <text x="227" y="266" text-anchor="middle">→ GPU 0</text>
+      <text x="562" y="244" text-anchor="middle" font-weight="600" fill="#0055FF">batch[8:16]</text>
+      <text x="562" y="266" text-anchor="middle">→ GPU 1</text>
+      <text x="897" y="244" text-anchor="middle" font-weight="600" fill="#0055FF">batch[16:24]</text>
+      <text x="897" y="266" text-anchor="middle">→ GPU 2</text>
+      <text x="1232" y="244" text-anchor="middle" font-weight="600" fill="#0055FF">batch[24:32]</text>
+      <text x="1232" y="266" text-anchor="middle">→ GPU 3</text>
+    </g>
+  </g>
+
+  <!-- 4 GPUs · each with full model -->
+  <g>
+    <text x="60" y="330" font-size="14" font-weight="700" fill="#1a1a1a">② 每卡持有<tspan fill="#993C1D" font-weight="700"> 完整一份 7B 模型</tspan> · 显存 = 14 GB × 4</text>
+
+    <g>
+      <!-- GPU 0 -->
+      <rect x="60" y="360" width="320" height="220" rx="8" fill="#FFFFFF" stroke="#A8A6A0" stroke-width="1.4"/>
+      <text x="80" y="390" font-size="11" font-weight="700" fill="#888780" letter-spacing="1.5">GPU 0</text>
+      <rect x="80" y="404" width="280" height="40" rx="3" fill="#F0F6FF" stroke="#0055FF" stroke-width="1"/>
+      <text x="220" y="429" font-size="12" font-weight="600" fill="#0055FF" text-anchor="middle">7B model · 14 GB (BF16)</text>
+      <rect x="80" y="454" width="280" height="28" rx="3" fill="#FFF7EC" stroke="#993C1D" stroke-width="0.8"/>
+      <text x="220" y="473" font-size="11" font-weight="600" fill="#993C1D" text-anchor="middle">grad · 14 GB</text>
+      <rect x="80" y="490" width="280" height="28" rx="3" fill="#FFF7EC" stroke="#993C1D" stroke-width="0.8"/>
+      <text x="220" y="509" font-size="11" font-weight="600" fill="#993C1D" text-anchor="middle">Adam state · 56 GB (fp32)</text>
+      <text x="80" y="546" font-size="11" fill="#5f5e5a">forward(batch[0:8])</text>
+      <text x="80" y="564" font-size="11" fill="#5f5e5a">backward → 本地梯度</text>
+    </g>
+
+    <g transform="translate(340 0)">
+      <rect x="60" y="360" width="320" height="220" rx="8" fill="#FFFFFF" stroke="#A8A6A0" stroke-width="1.4"/>
+      <text x="80" y="390" font-size="11" font-weight="700" fill="#888780" letter-spacing="1.5">GPU 1</text>
+      <rect x="80" y="404" width="280" height="40" rx="3" fill="#F0F6FF" stroke="#0055FF" stroke-width="1"/>
+      <text x="220" y="429" font-size="12" font-weight="600" fill="#0055FF" text-anchor="middle">7B model · 14 GB</text>
+      <rect x="80" y="454" width="280" height="28" rx="3" fill="#FFF7EC" stroke="#993C1D" stroke-width="0.8"/>
+      <text x="220" y="473" font-size="11" font-weight="600" fill="#993C1D" text-anchor="middle">grad · 14 GB</text>
+      <rect x="80" y="490" width="280" height="28" rx="3" fill="#FFF7EC" stroke="#993C1D" stroke-width="0.8"/>
+      <text x="220" y="509" font-size="11" font-weight="600" fill="#993C1D" text-anchor="middle">Adam state · 56 GB</text>
+      <text x="80" y="546" font-size="11" fill="#5f5e5a">forward(batch[8:16])</text>
+      <text x="80" y="564" font-size="11" fill="#5f5e5a">backward → 本地梯度</text>
+    </g>
+
+    <g transform="translate(680 0)">
+      <rect x="60" y="360" width="320" height="220" rx="8" fill="#FFFFFF" stroke="#A8A6A0" stroke-width="1.4"/>
+      <text x="80" y="390" font-size="11" font-weight="700" fill="#888780" letter-spacing="1.5">GPU 2</text>
+      <rect x="80" y="404" width="280" height="40" rx="3" fill="#F0F6FF" stroke="#0055FF" stroke-width="1"/>
+      <text x="220" y="429" font-size="12" font-weight="600" fill="#0055FF" text-anchor="middle">7B model · 14 GB</text>
+      <rect x="80" y="454" width="280" height="28" rx="3" fill="#FFF7EC" stroke="#993C1D" stroke-width="0.8"/>
+      <text x="220" y="473" font-size="11" font-weight="600" fill="#993C1D" text-anchor="middle">grad · 14 GB</text>
+      <rect x="80" y="490" width="280" height="28" rx="3" fill="#FFF7EC" stroke="#993C1D" stroke-width="0.8"/>
+      <text x="220" y="509" font-size="11" font-weight="600" fill="#993C1D" text-anchor="middle">Adam state · 56 GB</text>
+      <text x="80" y="546" font-size="11" fill="#5f5e5a">forward(batch[16:24])</text>
+      <text x="80" y="564" font-size="11" fill="#5f5e5a">backward → 本地梯度</text>
+    </g>
+
+    <g transform="translate(1020 0)">
+      <rect x="60" y="360" width="320" height="220" rx="8" fill="#FFFFFF" stroke="#A8A6A0" stroke-width="1.4"/>
+      <text x="80" y="390" font-size="11" font-weight="700" fill="#888780" letter-spacing="1.5">GPU 3</text>
+      <rect x="80" y="404" width="280" height="40" rx="3" fill="#F0F6FF" stroke="#0055FF" stroke-width="1"/>
+      <text x="220" y="429" font-size="12" font-weight="600" fill="#0055FF" text-anchor="middle">7B model · 14 GB</text>
+      <rect x="80" y="454" width="280" height="28" rx="3" fill="#FFF7EC" stroke="#993C1D" stroke-width="0.8"/>
+      <text x="220" y="473" font-size="11" font-weight="600" fill="#993C1D" text-anchor="middle">grad · 14 GB</text>
+      <rect x="80" y="490" width="280" height="28" rx="3" fill="#FFF7EC" stroke="#993C1D" stroke-width="0.8"/>
+      <text x="220" y="509" font-size="11" font-weight="600" fill="#993C1D" text-anchor="middle">Adam state · 56 GB</text>
+      <text x="80" y="546" font-size="11" fill="#5f5e5a">forward(batch[24:32])</text>
+      <text x="80" y="564" font-size="11" fill="#5f5e5a">backward → 本地梯度</text>
+    </g>
+  </g>
+
+  <!-- All-reduce arrows -->
+  <g>
+    <text x="60" y="630" font-size="14" font-weight="700" fill="#1a1a1a">③ AllReduce 同步梯度 · 4 卡梯度求平均 · 然后 optimizer.step()</text>
+    <line x1="220" y1="660" x2="1235" y2="660" stroke="#0055FF" stroke-width="2.5"/>
+    <line x1="220" y1="595" x2="220" y2="660" stroke="#0055FF" stroke-width="1.4" stroke-dasharray="3 3"/>
+    <line x1="560" y1="595" x2="560" y2="660" stroke="#0055FF" stroke-width="1.4" stroke-dasharray="3 3"/>
+    <line x1="900" y1="595" x2="900" y2="660" stroke="#0055FF" stroke-width="1.4" stroke-dasharray="3 3"/>
+    <line x1="1235" y1="595" x2="1235" y2="660" stroke="#0055FF" stroke-width="1.4" stroke-dasharray="3 3"/>
+    <circle cx="220" cy="660" r="5" fill="#0055FF"/>
+    <circle cx="560" cy="660" r="5" fill="#0055FF"/>
+    <circle cx="900" cy="660" r="5" fill="#0055FF"/>
+    <circle cx="1235" cy="660" r="5" fill="#0055FF"/>
+    <text x="727" y="688" font-size="13" font-weight="700" fill="#0055FF" text-anchor="middle">NCCL all_reduce(grad) · 1 round-trip</text>
+  </g>
+
+  <!-- Insight panel -->
+  <rect x="60" y="720" width="1340" height="140" rx="8" fill="#FFFFFF" stroke="#0055FF" stroke-width="1.4"/>
+  <text x="80" y="754" font-size="12" font-weight="700" fill="#0055FF" letter-spacing="1.8">▸ 一句话结论</text>
+  <text x="80" y="784" font-size="16" font-weight="600" fill="#1a1a1a">DP 实现简单 · 但<tspan fill="#993C1D" font-weight="700">每卡完整复制模型 · 显存吃满</tspan> · 70B+ 跑不动</text>
+  <text x="80" y="812" font-size="13" fill="#444441">·  FSDP / ZeRO 是 DP 的 <tspan font-weight="700">"省显存版"</tspan> · 把 param / grad / opt-state 切到不同卡上 · 用时 all-gather 临时拼回</text>
+  <text x="80" y="836" font-size="13" fill="#444441">·  verl 里 DP 维度 = world_size / (TP × PP × EP × CP) · <tspan font-weight="700">"剩下的就是 DP"</tspan> · 隐式存在</text>
+
+  <text x="60" y="900" font-size="11" font-weight="600" fill="#888780" letter-spacing="2">VERL · CH 2.2 · DATA PARALLEL</text>
+</svg>

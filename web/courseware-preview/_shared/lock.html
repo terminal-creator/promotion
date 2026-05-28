@@ -1,0 +1,24 @@
+<!-- 课件预览·锁屏 · 复制粘贴到预览页最末尾。
+     可加 class="cwp-lock cwp-lock--light" 切换亮色主题。
+     占位字段：
+       {{LOCK_TAG}}   – 12 字内角标，例如 "本章完整版 · 12 个互动模块"
+       {{LOCK_TITLE}} – 标题，可含 <em>……</em>
+       {{LOCK_SUB}}   – 一句话副标
+       {{LOCK_META}}  – 多个 <span class="it">…</span> 标签
+-->
+<section class="cwp-lock" aria-label="报名解锁">
+  <div class="cwp-lock__fade"></div>
+  <div class="cwp-lock__panel">
+    <div class="cwp-lock__card">
+      <span class="cwp-lock__tag">{{LOCK_TAG}}</span>
+      <h3 class="cwp-lock__title">{{LOCK_TITLE}}</h3>
+      <p class="cwp-lock__sub">{{LOCK_SUB}}</p>
+      <div class="cwp-lock__meta">{{LOCK_META}}</div>
+      <a class="cwp-lock__cta" href="#enroll" data-cwp-action="enroll">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/><circle cx="12" cy="16.5" r="1.2" fill="currentColor"/></svg>
+        报名解锁完整章节
+      </a>
+      <div class="cwp-lock__hint">已报名同学请联系班主任开通课件权限</div>
+    </div>
+  </div>
+</section>

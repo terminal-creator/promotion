@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1480 1180" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Helvetica Neue', sans-serif">
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FAFAF7"/>
+      <stop offset="100%" stop-color="#F3F2EC"/>
+    </linearGradient>
+
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-thin" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-big" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect width="1480" height="1180" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="60" y="60" font-size="28" font-weight="600" fill="#1a1a1a" letter-spacing="-0.4">五层架构 · 落到 execution pattern 上的位置</text>
+  <text x="60" y="88" font-size="14" fill="#6b6b66" font-style="italic">left to right · 算法视图 → 物理放置 → GPU 上的实际执行 · 每个 Layer 对应它"起作用"的环节</text>
+  <line x1="60" y1="102" x2="1420" y2="102" stroke="#d4d2c7" stroke-width="0.8"/>
+
+  <!-- ====================================================== -->
+  <!-- TOP COLUMN HEADERS (3 panels)                            -->
+  <!-- ====================================================== -->
+  <g font-size="13" font-weight="600" fill="#5f5e5a" letter-spacing="0.5">
+    <text x="200" y="138" text-anchor="middle">Dataflow Graph D</text>
+    <text x="500" y="138" text-anchor="middle">Placement</text>
+    <text x="1000" y="138" text-anchor="middle">Execution Pattern</text>
+  </g>
+
+  <!-- ====================================================== -->
+  <!-- PANEL 1 · Dataflow Graph (left)                          -->
+  <!-- ====================================================== -->
+  <g transform="translate(80, 160)">
+    <rect x="0" y="0" width="240" height="500" rx="6" fill="#FFFFFF" stroke="#d4d2c7" stroke-width="0.8"/>
+
+    <!-- Gen node (top) -->
+    <circle cx="120" cy="60" r="32" fill="#FAECE7" stroke="#D85A30" stroke-width="1.2"/>
+    <text x="120" y="65" font-size="13" fill="#4A1B0C" text-anchor="middle" font-weight="500">Gen</text>
+
+    <!-- Three middle nodes container (dashed) -->
+    <rect x="14" y="170" width="212" height="90" rx="6" fill="none" stroke="#b4b2a9" stroke-width="0.8" stroke-dasharray="4 3"/>
+    <circle cx="50"  cy="215" r="28" fill="#E6F1FB" stroke="#378ADD" stroke-width="1.2"/>
+    <text x="50"  y="219" font-size="12" fill="#042C53" text-anchor="middle" font-weight="500">Ref</text>
+    <circle cx="120" cy="215" r="28" fill="#EAF3DE" stroke="#639922" stroke-width="1.2"/>
+    <text x="120" y="219" font-size="12" fill="#173404" text-anchor="middle" font-weight="500">RM</text>
+    <circle cx="190" cy="215" r="28" fill="#FAEEDA" stroke="#BA7517" stroke-width="1.2"/>
+    <text x="190" y="219" font-size="12" fill="#412402" text-anchor="middle" font-weight="500">Value</text>
+
+    <!-- Bottom training nodes container -->
+    <rect x="14" y="350" width="212" height="100" rx="6" fill="none" stroke="#b4b2a9" stroke-width="0.8" stroke-dasharray="4 3"/>
+    <circle cx="70"  cy="400" r="32" fill="#FAECE7" stroke="#D85A30" stroke-width="1.2"/>
+    <text x="70" y="397" font-size="11" fill="#4A1B0C" text-anchor="middle" font-weight="500">Actor</text>
+    <text x="70" y="412" font-size="11" fill="#4A1B0C" text-anchor="middle" font-weight="500">Training</text>
+    <circle cx="170" cy="400" r="32" fill="#FAEEDA" stroke="#BA7517" stroke-width="1.2"/>
+    <text x="170" y="397" font-size="11" fill="#412402" text-anchor="middle" font-weight="500">Critic</text>
+    <text x="170" y="412" font-size="11" fill="#412402" text-anchor="middle" font-weight="500">Training</text>
+
+    <!-- Edges: Gen -> three middle -->
+    <path d="M 100 88 Q 60 130 50 187" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#arrow-thin)"/>
+    <path d="M 120 92 L 120 187" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#arrow-thin)"/>
+    <path d="M 140 88 Q 180 130 190 187" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#arrow-thin)"/>
+
+    <!-- Edges: middle -> training -->
+    <path d="M 50 243 Q 50 320 70 368" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#arrow-thin)"/>
+    <path d="M 110 240 Q 90 310 75 368" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#arrow-thin)"/>
+    <path d="M 190 243 Q 190 320 175 368" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#arrow-thin)"/>
+    <path d="M 130 240 Q 150 310 165 368" stroke="#888780" stroke-width="1" fill="none" marker-end="url(#arrow-thin)"/>
+
+    <text x="120" y="478" font-size="11" fill="#888780" text-anchor="middle" font-style="italic">逻辑算法图 · 谁依赖谁</text>
+  </g>
+
+  <!-- big arrow connector 1 -->
+  <path d="M 332 410 L 388 410" stroke="#5f5e5a" stroke-width="2" fill="none" marker-end="url(#arrow-big)"/>
+
+  <!-- ====================================================== -->
+  <!-- PANEL 2 · Placement table (middle)                       -->
+  <!-- ====================================================== -->
+  <g transform="translate(400, 160)">
+    <rect x="0" y="0" width="200" height="500" rx="6" fill="#FFFFFF" stroke="#d4d2c7" stroke-width="0.8"/>
+
+    <!-- Placement rows -->
+    <g transform="translate(20, 40)">
+      <rect x="0"  y="0"  width="160" height="32" rx="4" fill="#FAECE7" stroke="#D85A30" stroke-width="0.8"/>
+      <text x="14" y="20" font-size="12" fill="#4A1B0C" font-family="ui-monospace, 'SF Mono', monospace">Actor → A:0–1</text>
+
+      <rect x="0"  y="44" width="160" height="32" rx="4" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.8"/>
+      <text x="14" y="64" font-size="12" fill="#412402" font-family="ui-monospace, 'SF Mono', monospace">Critic → B:2–3</text>
+
+      <rect x="0"  y="88" width="160" height="32" rx="4" fill="#E6F1FB" stroke="#378ADD" stroke-width="0.8"/>
+      <text x="14" y="108" font-size="12" fill="#042C53" font-family="ui-monospace, 'SF Mono', monospace">Ref → C:4–5</text>
+
+      <rect x="0"  y="132" width="160" height="32" rx="4" fill="#EAF3DE" stroke="#639922" stroke-width="0.8"/>
+      <text x="14" y="152" font-size="12" fill="#173404" font-family="ui-monospace, 'SF Mono', monospace">RM → C:4–5</text>
+    </g>
+
+    <text x="100" y="260" font-size="11.5" fill="#5f5e5a" text-anchor="middle" font-weight="500">把模型放到机器</text>
+    <text x="100" y="278" font-size="11.5" fill="#5f5e5a" text-anchor="middle" font-weight="500">colocate 与否</text>
+
+    <!-- caption -->
+    <text x="100" y="478" font-size="11" fill="#888780" text-anchor="middle" font-style="italic">启动时配置 · 决定能否并行</text>
+  </g>
+
+  <!-- big arrow connector 2 -->
+  <path d="M 612 410 L 668 410" stroke="#5f5e5a" stroke-width="2" fill="none" marker-end="url(#arrow-big)"/>
+
+  <!-- ====================================================== -->
+  <!-- PANEL 3 · Execution Pattern (right, the big one)        -->
+  <!-- ====================================================== -->
+  <g transform="translate(680, 160)">
+    <rect x="0" y="0" width="740" height="500" rx="6" fill="#FFFFFF" stroke="#d4d2c7" stroke-width="0.8"/>
+
+    <!-- Top blue label: sequential dependency -->
+    <rect x="170" y="14" width="430" height="28" rx="4" fill="#185FA5"/>
+    <text x="385" y="33" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="500">Computation with dependencies executes sequentially</text>
+
+    <!-- Machine A -->
+    <g transform="translate(20, 70)">
+      <text x="-2" y="50" font-size="11" fill="#5f5e5a" text-anchor="middle" font-weight="600" transform="rotate(-90 -2 50)">Machine A</text>
+      <!-- GPU 0 -->
+      <rect x="20" y="6"  width="30" height="32" rx="3" fill="#FFFFFF" stroke="#888780" stroke-width="0.8"/>
+      <text x="35" y="27" font-size="12" fill="#444441" text-anchor="middle">0</text>
+      <line x1="50" y1="22" x2="100" y2="22" stroke="#b4b2a9" stroke-width="0.8"/>
+      <rect x="100" y="6"  width="80" height="32" rx="3" fill="#FAECE7" stroke="#D85A30" stroke-width="1"/>
+      <text x="140" y="27" font-size="12" fill="#4A1B0C" text-anchor="middle">Gen</text>
+      <line x1="180" y1="22" x2="430" y2="22" stroke="#b4b2a9" stroke-width="0.8"/>
+      <rect x="430" y="6"  width="120" height="32" rx="3" fill="#FAECE7" stroke="#D85A30" stroke-width="1"/>
+      <text x="490" y="27" font-size="12" fill="#4A1B0C" text-anchor="middle">Actor Training</text>
+      <line x1="550" y1="22" x2="650" y2="22" stroke="#b4b2a9" stroke-width="0.8" marker-end="url(#arrow-thin)"/>
+
+      <!-- GPU 1 -->
+      <rect x="20" y="48" width="30" height="32" rx="3" fill="#FFFFFF" stroke="#888780" stroke-width="0.8"/>
+      <text x="35" y="69" font-size="12" fill="#444441" text-anchor="middle">1</text>
+      <line x1="50" y1="64" x2="100" y2="64" stroke="#b4b2a9" stroke-width="0.8"/>
+      <rect x="100" y="48" width="80" height="32" rx="3" fill="#FAECE7" stroke="#D85A30" stroke-width="1"/>
+      <text x="140" y="69" font-size="12" fill="#4A1B0C" text-anchor="middle">Gen</text>
+      <line x1="180" y1="64" x2="430" y2="64" stroke="#b4b2a9" stroke-width="0.8"/>
+      <rect x="430" y="48" width="120" height="32" rx="3" fill="#FAECE7" stroke="#D85A30" stroke-width="1"/>
+      <text x="490" y="69" font-size="12" fill="#4A1B0C" text-anchor="middle">Actor Training</text>
+      <line x1="550" y1="64" x2="650" y2="64" stroke="#b4b2a9" stroke-width="0.8" marker-end="url(#arrow-thin)"/>
+
+      <!-- dashed grouping for parallel Gen -->
+      <rect x="92" y="-2" width="96" height="92" rx="5" fill="none" stroke="#534AB7" stroke-width="0.8" stroke-dasharray="4 3"/>
+      <!-- dashed grouping for parallel Actor Training -->
+      <rect x="422" y="-2" width="136" height="92" rx="5" fill="none" stroke="#534AB7" stroke-width="0.8" stroke-dasharray="4 3"/>
+    </g>
+
+    <!-- Machine B -->
+    <g transform="translate(20, 200)">
+      <text x="-2" y="50" font-size="11" fill="#5f5e5a" text-anchor="middle" font-weight="600" transform="rotate(-90 -2 50)">Machine B</text>
+      <!-- GPU 2 -->
+      <rect x="20" y="6"  width="30" height="32" rx="3" fill="#FFFFFF" stroke="#888780" stroke-width="0.8"/>
+      <text x="35" y="27" font-size="12" fill="#444441" text-anchor="middle">2</text>
+      <line x1="50" y1="22" x2="290" y2="22" stroke="#b4b2a9" stroke-width="0.8"/>
+      <rect x="290" y="6"  width="90" height="32" rx="3" fill="#FAEEDA" stroke="#BA7517" stroke-width="1"/>
+      <text x="335" y="27" font-size="12" fill="#412402" text-anchor="middle">Value</text>
+      <line x1="380" y1="22" x2="430" y2="22" stroke="#b4b2a9" stroke-width="0.8"/>
+      <rect x="430" y="6"  width="120" height="32" rx="3" fill="#FAEEDA" stroke="#BA7517" stroke-width="1"/>
+      <text x="490" y="27" font-size="12" fill="#412402" text-anchor="middle">Critic Training</text>
+      <line x1="550" y1="22" x2="650" y2="22" stroke="#b4b2a9" stroke-width="0.8" marker-end="url(#arrow-thin)"/>
+
+      <!-- GPU 3 -->
+      <rect x="20" y="48" width="30" height="32" rx="3" fill="#FFFFFF" stroke="#888780" stroke-width="0.8"/>
+      <text x="35" y="69" font-size="12" fill="#444441" text-anchor="middle">3</text>
+      <line x1="50" y1="64" x2="290" y2="64" stroke="#b4b2a9" stroke-width="0.8"/>
+      <rect x="290" y="48" width="90" height="32" rx="3" fill="#FAEEDA" stroke="#BA7517" stroke-width="1"/>
+      <text x="335" y="69" font-size="12" fill="#412402" text-anchor="middle">Value</text>
+      <line x1="380" y1="64" x2="430" y2="64" stroke="#b4b2a9" stroke-width="0.8"/>
+      <rect x="430" y="48" width="120" height="32" rx="3" fill="#FAEEDA" stroke="#BA7517" stroke-width="1"/>
+      <text x="490" y="69" font-size="12" fill="#412402" text-anchor="middle">Critic Training</text>
+      <line x1="550" y1="64" x2="650" y2="64" stroke="#b4b2a9" stroke-width="0.8" marker-end="url(#arrow-thin)"/>
+
+      <!-- dashed grouping for parallel Value -->
+      <rect x="282" y="-2" width="106" height="92" rx="5" fill="none" stroke="#534AB7" stroke-width="0.8" stroke-dasharray="4 3"/>
+      <!-- dashed grouping for parallel Critic Training -->
+      <rect x="422" y="-2" width="136" height="92" rx="5" fill="none" stroke="#534AB7" stroke-width="0.8" stroke-dasharray="4 3"/>
+    </g>
+
+    <!-- Machine C -->
+    <g transform="translate(20, 340)">
+      <text x="-2" y="50" font-size="11" fill="#5f5e5a" text-anchor="middle" font-weight="600" transform="rotate(-90 -2 50)">Machine C</text>
+      <!-- GPU 4 -->
+      <rect x="20" y="6"  width="30" height="32" rx="3" fill="#FFFFFF" stroke="#888780" stroke-width="0.8"/>
+      <text x="35" y="27" font-size="12" fill="#444441" text-anchor="middle">4</text>
+      <line x1="50" y1="22" x2="290" y2="22" stroke="#b4b2a9" stroke-width="0.8"/>
+      <line x1="380" y1="22" x2="650" y2="22" stroke="#b4b2a9" stroke-width="0.8" marker-end="url(#arrow-thin)"/>
+
+      <!-- GPU 5 -->
+      <rect x="20" y="48" width="30" height="32" rx="3" fill="#FFFFFF" stroke="#888780" stroke-width="0.8"/>
+      <text x="35" y="69" font-size="12" fill="#444441" text-anchor="middle">5</text>
+      <line x1="50" y1="64" x2="290" y2="64" stroke="#b4b2a9" stroke-width="0.8"/>
+      <line x1="380" y1="64" x2="650" y2="64" stroke="#b4b2a9" stroke-width="0.8" marker-end="url(#arrow-thin)"/>
+
+      <!-- Ref + RM colocated, sequential -->
+      <rect x="290" y="6"  width="44" height="74" rx="3" fill="#E6F1FB" stroke="#378ADD" stroke-width="1"/>
+      <text x="312" y="48" font-size="12" fill="#042C53" text-anchor="middle">Ref</text>
+      <rect x="334" y="6"  width="44" height="74" rx="3" fill="#EAF3DE" stroke="#639922" stroke-width="1"/>
+      <text x="356" y="48" font-size="12" fill="#173404" text-anchor="middle">RM</text>
+
+      <!-- dashed grouping for colocated sequential -->
+      <rect x="282" y="-2" width="106" height="92" rx="5" fill="none" stroke="#A32D2D" stroke-width="0.8" stroke-dasharray="4 3"/>
+    </g>
+
+    <!-- Bottom red label: colocated sequential -->
+    <rect x="200" y="450" width="370" height="28" rx="4" fill="#A32D2D"/>
+    <text x="385" y="469" font-size="12" fill="#FFFFFF" text-anchor="middle" font-weight="500">Colocated models execute sequentially</text>
+
+    <!-- annotation lines from labels to dashed groups -->
+    <path d="M 380 42 L 482 68" stroke="#185FA5" stroke-width="0.6" stroke-dasharray="3 2" fill="none"/>
+    <path d="M 390 42 L 138 68" stroke="#185FA5" stroke-width="0.6" stroke-dasharray="3 2" fill="none"/>
+    <path d="M 320 450 L 335 432" stroke="#A32D2D" stroke-width="0.6" stroke-dasharray="3 2" fill="none"/>
+  </g>
+
+  <!-- ====================================================== -->
+  <!-- LAYER ANNOTATIONS · the heart of this diagram            -->
+  <!-- All five layer cards arranged around the panels          -->
+  <!-- ====================================================== -->
+
+  <!-- ===== LAYER 1 · Trainer (top, spans across) ===== -->
+  <g transform="translate(60, 700)">
+    <rect x="0" y="0" width="1360" height="60" rx="6" fill="#FFFFFF" stroke="#2C2C2A" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="60" rx="2" fill="#2C2C2A"/>
+    <text x="22" y="26" font-size="13" font-weight="700" fill="#1a1a1a">LAYER 1 · Trainer</text>
+    <text x="22" y="46" font-size="12" fill="#5f5e5a">读 yaml → ray.init() → 按 Placement 表创建 WorkerGroup → 调 fit() · 它建立了整张 execution pattern 的"骨架"，但每 step 不再参与</text>
+    <!-- pointer to Placement panel -->
+    <path d="M 440 0 L 440 -40" stroke="#2C2C2A" stroke-width="1" stroke-dasharray="3 2" fill="none"/>
+    <text x="448" y="-20" font-size="10.5" fill="#2C2C2A" font-style="italic">在 init 时读取 Placement 表</text>
+  </g>
+
+  <!-- ===== LAYER 2 · Single Controller (sequence arrows) ===== -->
+  <g transform="translate(60, 780)">
+    <rect x="0" y="0" width="660" height="80" rx="6" fill="#FFFFFF" stroke="#534AB7" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="80" rx="2" fill="#534AB7"/>
+    <text x="22" y="26" font-size="13" font-weight="700" fill="#26215C">LAYER 2 · Single Controller</text>
+    <text x="22" y="46" font-size="12" fill="#534AB7">在 driver 单进程按 dataflow graph 顺序发出调用 — 它对应"算法逻辑"那条横向时间线</text>
+    <text x="22" y="66" font-size="11.5" fill="#7F77DD" font-style="italic">作用范围：Execution Pattern 里的横向顺序（Gen → Value/Ref/RM → Training）</text>
+
+    <!-- pointer up to top blue label of execution pattern -->
+    <path d="M 660 30 Q 760 30 800 -10" stroke="#534AB7" stroke-width="1" stroke-dasharray="3 2" fill="none" marker-end="url(#arrow-thin)"/>
+  </g>
+
+  <!-- ===== LAYER 3 · WorkerGroup (parallel fan-out) ===== -->
+  <g transform="translate(740, 780)">
+    <rect x="0" y="0" width="680" height="80" rx="6" fill="#FFFFFF" stroke="#0F6E56" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="80" rx="2" fill="#0F6E56"/>
+    <text x="22" y="26" font-size="13" font-weight="700" fill="#04342C">LAYER 3 · WorkerGroup（dispatch / fan-out）</text>
+    <text x="22" y="46" font-size="12" fill="#0F6E56">把一次 _wg.xxx() 翻译成对同阶段多 GPU 的并行 RPC — 它对应"并行执行"的纵向维度</text>
+    <text x="22" y="66" font-size="11.5" fill="#1D9E75" font-style="italic">作用范围：Execution Pattern 里紫色虚线框（同 stage 不同 GPU 并行）</text>
+
+    <!-- pointer up to one of the dashed parallel boxes -->
+    <path d="M 200 0 Q 200 -30 320 -90" stroke="#0F6E56" stroke-width="1" stroke-dasharray="3 2" fill="none" marker-end="url(#arrow-thin)"/>
+  </g>
+
+  <!-- ===== LAYER 4 · Worker / Engine (the boxes themselves) ===== -->
+  <g transform="translate(60, 880)">
+    <rect x="0" y="0" width="660" height="100" rx="6" fill="#FFFFFF" stroke="#993C1D" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="100" rx="2" fill="#993C1D"/>
+    <text x="22" y="26" font-size="13" font-weight="700" fill="#4A1B0C">LAYER 4 · Worker / Engine</text>
+    <text x="22" y="46" font-size="12" fill="#993C1D">每个 GPU 上的 Ray actor · 内含 vLLM/SGLang（推理）+ FSDP/Megatron（训练）</text>
+    <text x="22" y="66" font-size="11.5" fill="#D85A30" font-style="italic">作用范围：Execution Pattern 里每一个彩色方块（Gen / Value / Ref / RM / Actor Training / Critic Training）</text>
+    <text x="22" y="86" font-size="11" fill="#712B13">Ref &amp; RM 同机时由这一层串行调度（红色虚线框区域）</text>
+  </g>
+
+  <!-- ===== LAYER 5 · Data / Reward / Loss (extension, called from Worker) ===== -->
+  <g transform="translate(740, 880)">
+    <rect x="0" y="0" width="680" height="100" rx="6" fill="#FFFFFF" stroke="#BA7517" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="100" rx="2" fill="#BA7517"/>
+    <text x="22" y="26" font-size="13" font-weight="700" fill="#412402">LAYER 5 · Data / Reward / Loss（可插拔）</text>
+    <text x="22" y="46" font-size="12" fill="#854F0B">具体 reward 怎么算、loss 怎么写、数据怎么读 — 嵌在每个彩色方块"内部"被调用</text>
+    <text x="22" y="66" font-size="11.5" fill="#BA7517" font-style="italic">作用范围：彩色方块内部的算法策略（不在图上，是方块的"实现"）</text>
+    <text x="22" y="86" font-size="11" fill="#633806">换 reward 函数 / 改 GRPO loss 公式 = 只动这层，其他四层不变</text>
+  </g>
+
+  <!-- ====================================================== -->
+  <!-- BOTTOM SUMMARY · how to read the whole thing             -->
+  <!-- ====================================================== -->
+  <g transform="translate(60, 1010)">
+    <rect x="0" y="0" width="1360" height="140" rx="6" fill="#FFFFFF" stroke="#d4d2c7" stroke-width="0.8"/>
+
+    <text x="22" y="28" font-size="14" font-weight="600" fill="#1a1a1a">一句话总览</text>
+    <line x1="22" y1="40" x2="200" y2="40" stroke="#d4d2c7" stroke-width="0.8"/>
+
+    <text x="22" y="64" font-size="12.5" fill="#444441">
+      <tspan font-weight="600" fill="#2C2C2A">Layer 1</tspan> 把 dataflow graph 翻译成 placement，
+      <tspan font-weight="600" fill="#534AB7">Layer 2</tspan> 沿"横向时间线"按算法顺序触发每一阶段，
+      <tspan font-weight="600" fill="#0F6E56">Layer 3</tspan> 在每一阶段把调用扇出到"纵向并行的多 GPU"，
+    </text>
+    <text x="22" y="86" font-size="12.5" fill="#444441">
+      <tspan font-weight="600" fill="#993C1D">Layer 4</tspan> 是图上每一个具体的彩色方块（在 GPU 上真正执行 Gen / Training / Value / Ref / RM），
+      <tspan font-weight="600" fill="#BA7517">Layer 5</tspan> 是方块"里面"实际调用的策略函数。
+    </text>
+
+    <text x="22" y="116" font-size="12" fill="#5f5e5a" font-style="italic">
+      关键洞察：横向（顺序）由 Layer 2 决定，纵向（并行）由 Layer 1 的 placement + Layer 3 的 dispatch 共同决定 —
+    </text>
+    <text x="22" y="132" font-size="12" fill="#5f5e5a" font-style="italic">
+      所以同样一段 controller 代码，在不同 placement 配置下能跑出完全不同的并行/串行模式（如 Ref &amp; RM colocate 就强制串行）。
+    </text>
+  </g>
+
+</svg>

@@ -1,0 +1,25 @@
+{
+  "name": "llmpromotion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "S5 · 2026 大模型冲刺营 · 渠道专属链接生成系统（自包含可独立部署）",
+  "scripts": {
+    "install:all": "cd server && npm ci",
+    "init-db": "node server/db.js --init",
+    "start": "pm2 start ecosystem.config.js",
+    "stop": "pm2 stop llmpromotion",
+    "restart": "pm2 restart llmpromotion",
+    "reload": "pm2 reload llmpromotion",
+    "logs": "pm2 logs llmpromotion",
+    "status": "pm2 status",
+    "dev": "cd server && node app.js",
+    "check": "node scripts/content-check.js",
+    "build:styles": "node scripts/build-styles.js",
+    "deploy:check": "npm run build:styles && npm run check && npm run install:all"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "author": "S5 2026 大模型冲刺营",
+  "license": "UNLICENSED"
+}

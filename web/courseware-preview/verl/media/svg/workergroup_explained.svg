@@ -1,0 +1,362 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1480 1980" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Helvetica Neue', sans-serif">
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FAFAF7"/>
+      <stop offset="100%" stop-color="#F3F2EC"/>
+    </linearGradient>
+
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-thin" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect width="1480" height="1980" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="60" y="58" font-size="28" font-weight="600" fill="#1a1a1a" letter-spacing="-0.4">WorkerGroup 究竟是什么</text>
+  <text x="60" y="86" font-size="14" fill="#6b6b66" font-style="italic">不是进程 · 不是容器 · 它是一个 Python 代理对象 · 把单机调用翻译成分布式 fan-out</text>
+  <line x1="60" y1="100" x2="1420" y2="100" stroke="#d4d2c7" stroke-width="0.8"/>
+
+  <!-- ============================================== -->
+  <!-- 一句话定义                                       -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 120)">
+    <rect x="0" y="0" width="1360" height="100" rx="6" fill="#FFFFFF" stroke="#0F6E56" stroke-width="0.8"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#04342C">一句话定义</text>
+    <text x="22" y="54" font-size="13" fill="#444441">
+      WorkerGroup 是一个 <tspan font-weight="700" fill="#04342C">Python 类的实例</tspan>，
+      存在于 <tspan font-weight="700" fill="#04342C">driver 进程的内存里</tspan>，
+      内部持有 N 个 Ray actor handle（指向远程 worker）
+    </text>
+    <text x="22" y="78" font-size="12.5" fill="#5f5e5a" font-style="italic">
+      它的全部价值是：让 driver 写 <tspan font-family="ui-monospace, monospace">actor_wg.generate(batch)</tspan> 这样的单机风格代码，背后自动 fan-out 到 64 个 worker
+    </text>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 内部结构展开                                     -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 240)">
+    <rect x="0" y="0" width="1360" height="540" rx="8" fill="#FFFFFF" stroke="#d4d2c7" stroke-width="0.8"/>
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#1a1a1a">把 WorkerGroup 这个对象解剖开</text>
+    <line x1="22" y1="44" x2="500" y2="44" stroke="#d4d2c7" stroke-width="0.6"/>
+
+    <!-- 左侧：WorkerGroup 对象 -->
+    <g transform="translate(40, 80)">
+      <rect x="0" y="0" width="600" height="420" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1.4"/>
+      <text x="20" y="28" font-size="14" font-weight="700" fill="#04342C">actor_wg（一个 Python 对象，存在于 driver 内存）</text>
+      <line x1="20" y1="40" x2="380" y2="40" stroke="#5DCAA5" stroke-width="0.6"/>
+
+      <!-- 内部字段 -->
+      <g transform="translate(20, 60)">
+        <text x="0" y="0" font-size="12" font-weight="700" fill="#04342C">内部字段：</text>
+
+        <!-- worker handles -->
+        <rect x="0" y="14" width="560" height="120" rx="6" fill="#FFFFFF" stroke="#0F6E56" stroke-width="0.6"/>
+        <text x="14" y="34" font-size="12" font-family="ui-monospace, monospace" fill="#04342C">self.workers = [</text>
+        <text x="34" y="52" font-size="11" font-family="ui-monospace, monospace" fill="#444441">ActorWorker.handle(rank=0, gpu=node0:0),</text>
+        <text x="34" y="68" font-size="11" font-family="ui-monospace, monospace" fill="#444441">ActorWorker.handle(rank=1, gpu=node0:1),</text>
+        <text x="34" y="84" font-size="11" font-family="ui-monospace, monospace" fill="#444441">ActorWorker.handle(rank=2, gpu=node0:2),</text>
+        <text x="34" y="100" font-size="11" font-family="ui-monospace, monospace" fill="#888780">  ⋯ (61 个省略) ⋯</text>
+        <text x="34" y="116" font-size="11" font-family="ui-monospace, monospace" fill="#444441">ActorWorker.handle(rank=63, gpu=node7:7),</text>
+        <text x="14" y="132" font-size="12" font-family="ui-monospace, monospace" fill="#04342C">]</text>
+
+        <text x="0" y="160" font-size="11.5" fill="#5f5e5a" font-style="italic">这只是引用 · 真实的 worker 进程在远端 GPU 节点上</text>
+
+        <!-- dispatch table -->
+        <rect x="0" y="178" width="560" height="156" rx="6" fill="#FFFFFF" stroke="#0F6E56" stroke-width="0.6"/>
+        <text x="14" y="198" font-size="12" font-family="ui-monospace, monospace" fill="#04342C">self.dispatch_table = {</text>
+        <text x="34" y="216" font-size="11" font-family="ui-monospace, monospace" fill="#444441"><tspan fill="#04342C">"generate_sequences"</tspan>: DP_COMPUTE_PROTO,</text>
+        <text x="34" y="232" font-size="11" font-family="ui-monospace, monospace" fill="#444441"><tspan fill="#04342C">"compute_log_prob"</tspan>:   DP_COMPUTE_PROTO,</text>
+        <text x="34" y="248" font-size="11" font-family="ui-monospace, monospace" fill="#444441"><tspan fill="#04342C">"update_actor"</tspan>:       DP_COMPUTE_PROTO,</text>
+        <text x="34" y="264" font-size="11" font-family="ui-monospace, monospace" fill="#444441"><tspan fill="#04342C">"load_checkpoint"</tspan>:    ONE_TO_ALL,</text>
+        <text x="34" y="280" font-size="11" font-family="ui-monospace, monospace" fill="#444441"><tspan fill="#04342C">"save_checkpoint"</tspan>:    ONE_TO_ALL,</text>
+        <text x="14" y="298" font-size="12" font-family="ui-monospace, monospace" fill="#04342C">}</text>
+
+        <text x="0" y="326" font-size="11.5" fill="#5f5e5a" font-style="italic">这张表由 worker class 上的 @register 装饰器自动生成</text>
+      </g>
+    </g>
+
+    <!-- 右侧：dispatch 方法的工作流程 -->
+    <g transform="translate(680, 80)">
+      <rect x="0" y="0" width="640" height="420" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="1.4"/>
+      <text x="20" y="28" font-size="14" font-weight="700" fill="#412402">当 driver 调用 actor_wg.generate_sequences(batch)</text>
+      <line x1="20" y1="40" x2="380" y2="40" stroke="#FAC775" stroke-width="0.6"/>
+
+      <!-- Steps -->
+      <g transform="translate(20, 60)">
+        <!-- Step 1 -->
+        <g transform="translate(0, 0)">
+          <circle cx="14" cy="14" r="11" fill="#BA7517"/>
+          <text x="14" y="18" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">1</text>
+          <text x="36" y="14" font-size="12" font-weight="600" fill="#412402">查 dispatch_table</text>
+          <text x="36" y="30" font-size="11.5" fill="#444441" font-family="ui-monospace, monospace">"generate_sequences" → DP_COMPUTE_PROTO</text>
+        </g>
+
+        <!-- Step 2 -->
+        <g transform="translate(0, 56)">
+          <circle cx="14" cy="14" r="11" fill="#BA7517"/>
+          <text x="14" y="18" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">2</text>
+          <text x="36" y="14" font-size="12" font-weight="600" fill="#412402">按 dispatch 模式切分输入</text>
+          <text x="36" y="30" font-size="11.5" fill="#444441">DP_COMPUTE_PROTO → 把 batch.shape[0] 平均切 64 份</text>
+          <text x="36" y="46" font-size="11" fill="#5f5e5a" font-style="italic">batch[0:8] → worker 0, batch[8:16] → worker 1, ...</text>
+        </g>
+
+        <!-- Step 3 -->
+        <g transform="translate(0, 124)">
+          <circle cx="14" cy="14" r="11" fill="#BA7517"/>
+          <text x="14" y="18" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">3</text>
+          <text x="36" y="14" font-size="12" font-weight="600" fill="#412402">并发发送 64 个 Ray RPC</text>
+          <text x="36" y="30" font-size="11.5" fill="#444441" font-family="ui-monospace, monospace">futures = [w.generate.remote(shard_i)</text>
+          <text x="36" y="46" font-size="11.5" fill="#444441" font-family="ui-monospace, monospace">           for w, shard_i in zip(workers, shards)]</text>
+        </g>
+
+        <!-- Step 4 -->
+        <g transform="translate(0, 192)">
+          <circle cx="14" cy="14" r="11" fill="#BA7517"/>
+          <text x="14" y="18" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">4</text>
+          <text x="36" y="14" font-size="12" font-weight="600" fill="#412402">阻塞等待所有 RPC 返回</text>
+          <text x="36" y="30" font-size="11.5" fill="#444441" font-family="ui-monospace, monospace">results = ray.get(futures)</text>
+          <text x="36" y="46" font-size="11" fill="#5f5e5a" font-style="italic">这一步是同步点 · 最慢的 worker 决定整体时间</text>
+        </g>
+
+        <!-- Step 5 -->
+        <g transform="translate(0, 260)">
+          <circle cx="14" cy="14" r="11" fill="#BA7517"/>
+          <text x="14" y="18" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">5</text>
+          <text x="36" y="14" font-size="12" font-weight="600" fill="#412402">按 dispatch 模式聚合结果</text>
+          <text x="36" y="30" font-size="11.5" fill="#444441" font-family="ui-monospace, monospace">return concat(results, dim=0)</text>
+          <text x="36" y="46" font-size="11" fill="#5f5e5a" font-style="italic">DP 模式下 → torch.cat 拼回完整 batch · 还原成 driver 期望的形状</text>
+        </g>
+
+        <!-- 总结 -->
+        <g transform="translate(0, 326)">
+          <rect x="0" y="0" width="600" height="36" rx="4" fill="#FFFFFF" stroke="#BA7517" stroke-width="0.8"/>
+          <text x="14" y="22" font-size="12" fill="#444441">这五步发生在 <tspan font-weight="700" fill="#412402">driver 进程内</tspan> · 总耗时 = step 4 的等待时间（worker 真正干活的时间）</text>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 关键机制：装饰器                                  -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 800)">
+    <rect x="0" y="0" width="1360" height="500" rx="8" fill="#FFFFFF" stroke="#534AB7" stroke-width="0.8"/>
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#26215C">关键机制 · @register 装饰器自动建表</text>
+    <line x1="22" y1="44" x2="500" y2="44" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <text x="22" y="68" font-size="12.5" fill="#444441">这就是 verl 的精妙设计：dispatch_table 不是手写的，是从 worker class 自动扫描出来的</text>
+
+    <!-- 左：worker class 的代码 -->
+    <g transform="translate(40, 90)">
+      <text x="0" y="0" font-size="13" font-weight="700" fill="#1a1a1a">用户在 worker 类上写：</text>
+
+      <rect x="0" y="14" width="600" height="290" rx="6" fill="#F8F7F2" stroke="#534AB7" stroke-width="0.6"/>
+      <g transform="translate(20, 36)" font-family="ui-monospace, 'SF Mono', monospace" font-size="11.5">
+        <text x="0" y="0" fill="#534AB7">class</text>
+        <text x="44" y="0" fill="#26215C">ActorWorker</text>
+        <text x="138" y="0" fill="#444441">(Worker):</text>
+
+        <text x="0" y="32" fill="#A32D2D">    @register(dispatch_mode=DP_COMPUTE_PROTO)</text>
+        <text x="0" y="48" fill="#444441">    def generate_sequences(self, batch):</text>
+        <text x="0" y="64" fill="#888780">        # 用 vLLM 做推理</text>
+        <text x="0" y="80" fill="#444441">        ...</text>
+
+        <text x="0" y="112" fill="#A32D2D">    @register(dispatch_mode=DP_COMPUTE_PROTO)</text>
+        <text x="0" y="128" fill="#444441">    def update_actor(self, batch):</text>
+        <text x="0" y="144" fill="#888780">        # FSDP forward + backward</text>
+        <text x="0" y="160" fill="#444441">        ...</text>
+
+        <text x="0" y="192" fill="#A32D2D">    @register(dispatch_mode=ONE_TO_ALL)</text>
+        <text x="0" y="208" fill="#444441">    def load_checkpoint(self, path):</text>
+        <text x="0" y="224" fill="#888780">        # 所有 worker 收到一样的 path</text>
+        <text x="0" y="240" fill="#444441">        ...</text>
+      </g>
+    </g>
+
+    <!-- 中间箭头 -->
+    <g transform="translate(660, 230)">
+      <line x1="0" y1="0" x2="60" y2="0" stroke="#534AB7" stroke-width="2" marker-end="url(#arrow)"/>
+      <text x="30" y="-10" font-size="11" fill="#534AB7" text-anchor="middle">扫描</text>
+      <text x="30" y="20" font-size="11" fill="#534AB7" text-anchor="middle">建表</text>
+    </g>
+
+    <!-- 右：WorkerGroup 自动生成的代理方法 -->
+    <g transform="translate(740, 90)">
+      <text x="0" y="0" font-size="13" font-weight="700" fill="#1a1a1a">WorkerGroup 自动生成同名代理方法：</text>
+
+      <rect x="0" y="14" width="600" height="290" rx="6" fill="#F8F7F2" stroke="#0F6E56" stroke-width="0.6"/>
+      <g transform="translate(20, 36)" font-family="ui-monospace, 'SF Mono', monospace" font-size="11.5">
+        <text x="0" y="0" fill="#0F6E56">class</text>
+        <text x="40" y="0" fill="#04342C">ActorWorkerGroup</text>
+        <text x="170" y="0" fill="#444441">(WorkerGroup):</text>
+
+        <text x="0" y="32" fill="#888780">    # 自动生成（用户不写）</text>
+
+        <text x="0" y="56" fill="#444441">    def generate_sequences(self, batch):</text>
+        <text x="0" y="72" fill="#04342C">        return self._dispatch(</text>
+        <text x="0" y="88" fill="#04342C">            "generate_sequences",</text>
+        <text x="0" y="104" fill="#04342C">            batch,</text>
+        <text x="0" y="120" fill="#04342C">            mode=DP_COMPUTE_PROTO)</text>
+
+        <text x="0" y="152" fill="#444441">    def update_actor(self, batch):</text>
+        <text x="0" y="168" fill="#04342C">        return self._dispatch(...)</text>
+
+        <text x="0" y="200" fill="#444441">    def load_checkpoint(self, path):</text>
+        <text x="0" y="216" fill="#04342C">        return self._dispatch(</text>
+        <text x="0" y="232" fill="#04342C">            "load_checkpoint",</text>
+        <text x="0" y="248" fill="#04342C">            path,</text>
+        <text x="0" y="264" fill="#04342C">            mode=ONE_TO_ALL)</text>
+      </g>
+    </g>
+
+    <!-- 底部说明 -->
+    <g transform="translate(40, 410)">
+      <rect x="0" y="0" width="1280" height="74" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.6"/>
+      <text x="14" y="22" font-size="12.5" fill="#444441"><tspan font-weight="700" fill="#26215C">这就是 verl 的"声明式"设计：</tspan>用户在 worker 上声明每个方法的 dispatch_mode，WorkerGroup 自动扫描装饰器、自动生成代理方法</text>
+      <text x="14" y="44" font-size="12" fill="#444441">加新方法时，只需在 worker 上加 @register · driver 端立刻能调用 · 不需要修改 WorkerGroup 代码</text>
+      <text x="14" y="62" font-size="11.5" fill="#5f5e5a" font-style="italic">这是 single controller 模式能"假装单机"的核心实现机制 · 算法层完全不用关心切分和 RPC</text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 几种 dispatch 模式                                -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 1320)">
+    <rect x="0" y="0" width="1360" height="380" rx="8" fill="#FFFFFF" stroke="#d4d2c7" stroke-width="0.8"/>
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#1a1a1a">常见的 dispatch_mode（决定 fan-out 行为）</text>
+    <line x1="22" y1="44" x2="500" y2="44" stroke="#d4d2c7" stroke-width="0.6"/>
+
+    <!-- 表格 -->
+    <g transform="translate(40, 70)" font-size="12">
+      <!-- Header -->
+      <rect x="0" y="0" width="1280" height="32" fill="#F1EFE8"/>
+      <text x="14" y="20" font-weight="700" fill="#444441">dispatch_mode</text>
+      <text x="240" y="20" font-weight="700" fill="#444441">输入处理</text>
+      <text x="540" y="20" font-weight="700" fill="#444441">输出处理</text>
+      <text x="780" y="20" font-weight="700" fill="#444441">典型用途</text>
+      <text x="1080" y="20" font-weight="700" fill="#444441">何时用</text>
+
+      <!-- DP_COMPUTE_PROTO -->
+      <g transform="translate(0, 32)">
+        <rect x="0" y="0" width="1280" height="50" fill="#FFFFFF" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="14" y="20" font-weight="600" fill="#04342C">DP_COMPUTE_PROTO</text>
+        <text x="240" y="20" fill="#444441">batch 沿第 0 维切 N 份</text>
+        <text x="540" y="20" fill="#444441">torch.cat 拼回</text>
+        <text x="780" y="20" fill="#444441">数据并行的算法函数</text>
+        <text x="1080" y="20" fill="#444441">99% 的训练/推理方法</text>
+        <text x="240" y="38" font-size="11" fill="#5f5e5a" font-style="italic">每 worker 处理 batch 的 1/N</text>
+        <text x="780" y="38" font-size="11" fill="#5f5e5a" font-style="italic">generate / forward / update</text>
+      </g>
+
+      <!-- ONE_TO_ALL -->
+      <g transform="translate(0, 82)">
+        <rect x="0" y="0" width="1280" height="50" fill="#F8F7F2" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="14" y="20" font-weight="600" fill="#04342C">ONE_TO_ALL</text>
+        <text x="240" y="20" fill="#444441">完全广播</text>
+        <text x="540" y="20" fill="#444441">取第 0 个返回值</text>
+        <text x="780" y="20" fill="#444441">每个 worker 收到一样的输入</text>
+        <text x="1080" y="20" fill="#444441">全局指令</text>
+        <text x="240" y="38" font-size="11" fill="#5f5e5a" font-style="italic">每个 worker 收到完整 input</text>
+        <text x="780" y="38" font-size="11" fill="#5f5e5a" font-style="italic">load_checkpoint / save / set_lr</text>
+      </g>
+
+      <!-- ALL_TO_ALL -->
+      <g transform="translate(0, 132)">
+        <rect x="0" y="0" width="1280" height="50" fill="#FFFFFF" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="14" y="20" font-weight="600" fill="#04342C">ALL_TO_ALL</text>
+        <text x="240" y="20" fill="#444441">输入是 list[N] · 各对一份</text>
+        <text x="540" y="20" fill="#444441">收集成 list[N]</text>
+        <text x="780" y="20" fill="#444441">每个 worker 收到不同输入</text>
+        <text x="1080" y="20" fill="#444441">已切分好的数据</text>
+        <text x="240" y="38" font-size="11" fill="#5f5e5a" font-style="italic">输入已经是 list 形式</text>
+        <text x="780" y="38" font-size="11" fill="#5f5e5a" font-style="italic">init / 预处理后的精确分发</text>
+      </g>
+
+      <!-- DP_PROTO_CONCAT -->
+      <g transform="translate(0, 182)">
+        <rect x="0" y="0" width="1280" height="50" fill="#F8F7F2" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="14" y="20" font-weight="600" fill="#04342C">DP_PROTO_CONCAT</text>
+        <text x="240" y="20" fill="#444441">batch 切 N 份</text>
+        <text x="540" y="20" fill="#444441">不拼接（保持 list）</text>
+        <text x="780" y="20" fill="#444441">需要每个 worker 单独输出</text>
+        <text x="1080" y="20" fill="#444441">指标聚合等</text>
+        <text x="240" y="38" font-size="11" fill="#5f5e5a" font-style="italic">和上面区别在 reduce</text>
+        <text x="780" y="38" font-size="11" fill="#5f5e5a" font-style="italic">收集每 worker 独立结果</text>
+      </g>
+
+      <!-- 总结 -->
+      <g transform="translate(0, 248)">
+        <rect x="0" y="0" width="1280" height="46" rx="6" fill="#E1F5EE" stroke="#1D9E75" stroke-width="0.6"/>
+        <text x="14" y="22" font-size="12" fill="#444441"><tspan font-weight="700" fill="#04342C">读 verl 源码的实战技巧：</tspan>盯住 worker 类上的 @register 装饰器，就能直接看出每个方法在 driver 端怎么被调度</text>
+        <text x="14" y="38" font-size="11.5" fill="#5f5e5a" font-style="italic">verl/single_controller/base/decorator.py 里定义了所有 dispatch_mode 的具体实现</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 物理位置示意                                     -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 1720)">
+    <rect x="0" y="0" width="1360" height="240" rx="8" fill="#FFFFFF" stroke="#d4d2c7" stroke-width="0.8"/>
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#1a1a1a">物理位置示意 · WorkerGroup 在 driver 那边，worker 在 GPU 节点那边</text>
+    <line x1="22" y1="44" x2="600" y2="44" stroke="#d4d2c7" stroke-width="0.6"/>
+
+    <!-- Driver 端 -->
+    <g transform="translate(40, 80)">
+      <rect x="0" y="0" width="500" height="120" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+      <text x="20" y="24" font-size="13" font-weight="700" fill="#26215C">Driver 进程（head node）</text>
+
+      <g transform="translate(20, 38)" font-size="11">
+        <rect x="0" y="0" width="220" height="22" rx="3" fill="#FFFFFF" stroke="#534AB7" stroke-width="0.5"/>
+        <text x="110" y="14" text-anchor="middle" fill="#26215C">actor_wg</text>
+
+        <rect x="230" y="0" width="220" height="22" rx="3" fill="#FFFFFF" stroke="#534AB7" stroke-width="0.5"/>
+        <text x="340" y="14" text-anchor="middle" fill="#26215C">ref_wg</text>
+
+        <rect x="0" y="28" width="220" height="22" rx="3" fill="#FFFFFF" stroke="#534AB7" stroke-width="0.5"/>
+        <text x="110" y="42" text-anchor="middle" fill="#26215C">reward_wg</text>
+
+        <text x="0" y="74" font-size="11" fill="#534AB7" font-style="italic">三个对象 · 总占用 driver 内存几 MB</text>
+      </g>
+    </g>
+
+    <!-- 箭头：RPC -->
+    <g transform="translate(560, 130)">
+      <line x1="0" y1="0" x2="100" y2="0" stroke="#888780" stroke-width="2" marker-end="url(#arrow)"/>
+      <text x="50" y="-8" font-size="11" fill="#888780" text-anchor="middle">Ray RPC</text>
+      <text x="50" y="18" font-size="11" fill="#888780" text-anchor="middle">通过网络</text>
+    </g>
+
+    <!-- GPU 节点端 -->
+    <g transform="translate(700, 80)">
+      <rect x="0" y="0" width="620" height="120" rx="6" fill="#FAECE7" stroke="#D85A30" stroke-width="1"/>
+      <text x="20" y="24" font-size="13" font-weight="700" fill="#4A1B0C">GPU 节点（8 节点 × 8 卡 = 64 GPU）</text>
+
+      <g transform="translate(20, 38)" font-size="10.5">
+        <text x="0" y="14" fill="#993C1D">每张 GPU 上 3 个 Ray actor 进程：</text>
+
+        <g transform="translate(0, 22)">
+          <rect x="0" y="0" width="180" height="22" rx="3" fill="#FFFFFF" stroke="#D85A30" stroke-width="0.5"/>
+          <text x="90" y="14" text-anchor="middle" fill="#4A1B0C">ActorWorker · 64 个</text>
+
+          <rect x="190" y="0" width="180" height="22" rx="3" fill="#FFFFFF" stroke="#D85A30" stroke-width="0.5"/>
+          <text x="280" y="14" text-anchor="middle" fill="#4A1B0C">RefWorker · 64 个</text>
+
+          <rect x="380" y="0" width="180" height="22" rx="3" fill="#FFFFFF" stroke="#D85A30" stroke-width="0.5"/>
+          <text x="470" y="14" text-anchor="middle" fill="#4A1B0C">RewardWorker · 64 个</text>
+        </g>
+
+        <text x="0" y="68" font-size="11" fill="#993C1D" font-style="italic">192 个真实 Python 进程 · 持有模型 · 占用 GPU 显存</text>
+      </g>
+    </g>
+
+  </g>
+
+</svg>

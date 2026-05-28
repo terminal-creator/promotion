@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 4 章 · 异步 Rollout · 预览 | Agentic RL</title>
+<meta name="chapter" content="4">
+<link rel="stylesheet" href="../_agentic-rl-shared/shared/shared.css">
+<link rel="stylesheet" href="../_agentic-rl-shared/assets/css/tailwind.css">
+<link rel="stylesheet" href="../_agentic-rl-shared/assets/vendor/katex/katex.min.css">
+<script src="../_agentic-rl-shared/assets/vendor/katex/katex.min.js"></script>
+<link rel="stylesheet" href="../_shared/lock.css">
+<script defer src="../_agentic-rl-shared/assets/vendor/icons/lucide-local.js"></script>
+<style>
+  /* ============ ch4 · 6 道闸门导航条 ============ */
+  .gates {
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px;
+    margin-top: 24px;
+  }
+  .gates a {
+    text-decoration: none; padding: 12px 10px; background: #fff;
+    border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    transition: all .2s; cursor: pointer;
+  }
+  .gates a:hover { background: var(--accent-soft); transform: translateY(-2px); }
+  .gates .ix { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--accent); letter-spacing: .1em; }
+  .gates .nm { font-size: 13px; color: var(--text); font-weight: 600; margin-top: 4px; }
+  .gates .sub { font-size: 10px; color: var(--text-muted); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+  @media (max-width: 900px) { .gates { grid-template-columns: repeat(3, 1fr); } }
+
+  /* ============ §2 入口闸门：probe 表 ============ */
+  .probe-tbl {
+    width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  }
+  .probe-tbl th, .probe-tbl td {
+    padding: 8px 6px; text-align: left; border-bottom: 1px solid var(--border-soft);
+  }
+  .probe-tbl th {
+    background: #F4F5F7; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+    color: var(--text-muted); font-size: 10px;
+  }
+  .probe-tbl .gid { font-weight: 700; color: var(--text); }
+  .probe-tbl .metric-cell { position: relative; padding-right: 28px; min-width: 76px; }
+  .probe-tbl .metric-val {
+    position: relative; z-index: 2; font-variant-numeric: tabular-nums;
+    color: var(--text); transition: color .4s;
+  }
+  .probe-tbl .metric-bar {
+    position: absolute; left: 0; bottom: 6px; height: 3px; background: var(--accent);
+    width: 0; transition: width .8s cubic-bezier(.2,.7,.2,1);
+  }
+  .probe-tbl .pool-tag {
+    display: inline-block; padding: 3px 8px; font-size: 10px; font-weight: 600;
+    background: #E5E7EB; color: var(--text-muted);
+    transition: background .6s, color .6s;
+    opacity: 0; transform: translateX(-4px);
+    transition: opacity .4s, transform .4s, background .6s, color .6s;
+  }
+  .pool-main_rl    { background: rgba(0,85,255,0.12)   !important; color: var(--accent)  !important; }
+  .pool-replay     { background: rgba(100,116,139,0.18) !important; color: #475569       !important; }
+  .pool-curriculum { background: rgba(217,119,6,0.15)  !important; color: #D97706       !important; }
+  .pool-cold_start { background: rgba(220,38,38,0.12)  !important; color: var(--danger)  !important; }
+  .pool-eval_shadow{ background: rgba(124,58,237,0.12) !important; color: #7C3AED       !important; }
+
+  .probe-controls {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    padding: 12px 16px; background: #0f1116; color: #fff;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  }
+  .probe-controls .btn-play {
+    padding: 6px 14px; background: var(--accent); color: #fff; border: 0; cursor: pointer;
+    font-family: inherit; font-size: 11px; letter-spacing: .04em;
+  }
+  .probe-controls .btn-play:hover { background: #0044CC; }
+  .probe-controls .step-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: #444; display: inline-block;
+    transition: background .4s;
+  }
+  .probe-controls .step-dot.on { background: var(--success); animation: pulseDot 1.2s infinite; }
+  @keyframes pulseDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.18); } }
+
+  /* dual budget pie */
+  .bud-pies { display: grid; grid-template-columns: 1fr 60px 1fr; gap: 14px; align-items: center; margin-top: 18px; }
+  .bud-pies .arrow {
+    font-family: 'JetBrains Mono', monospace; font-size: 22px; color: var(--accent);
+    text-align: center; opacity: .6;
+  }
+  .bud-pie-wrap { background: #fff; padding: 14px; border: 1px solid var(--border); }
+  .bud-pie-wrap .ttl { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-muted); letter-spacing: .08em; }
+  .bud-pie-wrap .nm  { font-size: 14px; font-weight: 600; margin-top: 2px; }
+  .bud-pie-svg { display: block; margin: 8px auto; width: 160px; height: 160px; }
+  .bud-pie-legend { font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+  .bud-pie-legend .row { display: flex; justify-content: space-between; padding: 2px 0; }
+  .bud-pie-legend .sw { display: inline-block; width: 9px; height: 9px; margin-right: 6px; }
+  .bud-pie-legend .nm { color: var(--text); }
+  .bud-pie-legend .v  { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  @media (max-width: 760px) {
+    .bud-pies { grid-template-columns: 1fr; }
+    .bud-pies .arrow { transform: rotate(90deg); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="container">
+    <div class="eyebrow"><span class="pulse"></span><span>第 4 章 · CHAPTER 04 · ROLLOUT · ASYNC · 6 GATES · 预览版</span></div>
+    <h1>
+      20,000 条 case · 4,000 rollout/round。<br>
+      <span class="accent">一笔有限算力 · 穿过 6 道闸门 · 变成一次梯度。</span>
+    </h1>
+    <p class="lead">
+      异步 rollout 不是「工程加速器」，而是一条算力流水线——
+      从 case bucket 入口的 <strong>budget 决策</strong>，到 worker pool 的 <strong>异步调度</strong>，
+      再到 partial/staleness 两种 <strong>管线污染</strong>，最后由 6 桶 learner queue 做 <strong>出口纠偏</strong>。
+    </p>
+
+    <div class="gates">
+      <a href="#enroll" data-cwp-action="enroll"><div class="ix">GATE 01 🔒</div><div class="nm">起点</div><div class="sub">20K · 4K budget</div></a>
+      <a href="#g2"><div class="ix">GATE 02 ▼</div><div class="nm">入口闸门</div><div class="sub">probe → 5 池</div></a>
+      <a href="#enroll" data-cwp-action="enroll"><div class="ix">GATE 03 🔒</div><div class="nm">异步管线</div><div class="sub">3 模式 · 9 节点</div></a>
+      <a href="#enroll" data-cwp-action="enroll"><div class="ix">GATE 04 🔒</div><div class="nm">管线污染</div><div class="sub">partial · staleness</div></a>
+      <a href="#enroll" data-cwp-action="enroll"><div class="ix">GATE 05 🔒</div><div class="nm">出口闸门</div><div class="sub">6 桶 quota</div></a>
+      <a href="#enroll" data-cwp-action="enroll"><div class="ix">GATE 06 🔒</div><div class="nm">闭环</div><div class="sub">bucket 状态迁移</div></a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ §2 · 入口闸门 · probe → 池 → budget（核心动画） ============ -->
+<section class="block reveal" id="g2" style="background:rgba(255,255,255,0.5);">
+  <div class="container">
+    <div class="sec-label">SECTION 2 · GATE 02 · 入口闸门 · 互动演示</div>
+    <h2>三步走 · 分桶 → probe → 池 → budget 重分配</h2>
+    <p class="sec-desc">probe rollout 不是正式训练，是<strong>数据体检</strong>。每个 bucket 抽 100-300 条，K=2 采样，得到 5 个核心指标 → 自动落入 5 个 pool → rollout budget 按学习价值重新分配。<strong>点 ▶ 播放</strong>看 9 行表填充 + 双饼图重分配的全过程。</p>
+
+    <div class="card" style="margin-top:24px;padding:0;overflow:hidden;">
+      <div class="probe-controls">
+        <button class="btn-play" id="probe-play">▶ 播放完整 probe 流程</button>
+        <button class="btn-play" id="probe-reset" style="background:transparent;border:1px solid #444;">↻ Reset</button>
+        <span style="opacity:.6;">step:</span>
+        <span class="step-dot" id="step-1"></span><span>① 分桶</span>
+        <span class="step-dot" id="step-2"></span><span>② probe 指标</span>
+        <span class="step-dot" id="step-3"></span><span>③ 落入 pool</span>
+        <span style="opacity:.6;margin-left:auto;" id="probe-status">就绪</span>
+      </div>
+      <div style="padding:16px;overflow-x:auto;">
+        <table class="probe-tbl" id="probe-tbl">
+          <thead>
+            <tr>
+              <th>bucket</th>
+              <th>count</th>
+              <th>orig%</th>
+              <th>reward_mean</th>
+              <th>std</th>
+              <th>p_good</th>
+              <th>coverage</th>
+              <th>stale</th>
+              <th>诊断 → pool</th>
+            </tr>
+          </thead>
+          <tbody id="probe-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <h3 style="margin:28px 0 12px;font-size:17px;">step ③ 结果：rollout budget 重分配 · 原始 vs 调度后</h3>
+
+    <div class="bud-pies" id="bud-pies">
+      <div class="bud-pie-wrap">
+        <div class="ttl">RAW 原始占比</div>
+        <div class="nm">如果按业务比例</div>
+        <svg class="bud-pie-svg" id="pie-raw" viewBox="0 0 100 100"></svg>
+        <div class="bud-pie-legend" id="legend-raw"></div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="bud-pie-wrap">
+        <div class="ttl">SCHEDULED 调度后</div>
+        <div class="nm">按 probe 学习价值</div>
+        <svg class="bud-pie-svg" id="pie-sched" viewBox="0 0 100 100"></svg>
+        <div class="bud-pie-legend" id="legend-sched"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 锁屏 ============ -->
+<section class="cwp-lock cwp-lock--light" aria-label="报名解锁">
+  <div class="cwp-lock__fade"></div>
+  <div class="cwp-lock__panel">
+    <div class="cwp-lock__card">
+      <span class="cwp-lock__tag">本章完整版 · 9 节 · 6 道闸门 · 4 个核心动画</span>
+      <h3 class="cwp-lock__title">解锁剩余 <em>8 节</em> · 含 K=4 时间轴 / partial+staleness / LearnerQueueBoard</h3>
+      <p class="cwp-lock__sub">
+        §1 起点（短任务/长任务/工具缺失三堵墙）· §3 三层责任 · §4 三种调度模式可播放时间轴 · §5 9 节点异步拓扑 · §6 partial + staleness 污染 · §7 LearnerQueueBoard · §8 prefix branching · packing · §9 bucket 状态迁移闭环。
+      </p>
+      <div class="cwp-lock__meta">
+        <span class="it"><b>9</b> · 小节</span>
+        <span class="it"><b>6</b> · GATE</span>
+        <span class="it"><b>K=4</b> 时间轴动画</span>
+        <span class="it"><b>5</b> 池 budget 重分配</span>
+      </div>
+      <a class="cwp-lock__cta" href="#enroll" data-cwp-action="enroll">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/><circle cx="12" cy="16.5" r="1.2" fill="currentColor"/></svg>
+        报名解锁完整章节
+      </a>
+      <div class="cwp-lock__hint">已报名同学请联系班主任开通课件权限</div>
+    </div>
+  </div>
+</section>
+
+<script>
+/* ============ §2 自包含 JS：从源 ch4.html 1267-1442 摘出，仅保留 probe 相关 ============ */
+const CASE_HEX = {
+  G01:'#94A3B8', G02:'#0055FF', G03:'#0EA5A4', G04:'#D97706',
+  G05:'#64748B', G06:'#DC2626', G07:'#7C3AED', G08:'#6D28D9',
+  OTH:'#A1A1AA'
+};
+function caseHex(id) { return CASE_HEX[id] || '#999'; }
+
+function tween(el, from, to, dur, fmt) {
+  fmt = fmt || (v => v.toFixed(0));
+  const t0 = performance.now();
+  function step(now) {
+    const p = Math.min(1, (now - t0) / dur);
+    const e = 1 - Math.pow(1 - p, 3);
+    el.textContent = fmt(from + (to - from) * e);
+    if (p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+const PROBE_DATA = [
+  { id:'G01', name:'未出库订单取消',    count:2400, pct:12.0, mean:0.96, std:0.01, pgood:0.98, cov:0.95, stale:0.02, pool:'replay',      diag:'全高已掌握',     budget:60  },
+  { id:'G05', name:'标准退货政策解释',  count:5200, pct:26.0, mean:0.90, std:0.02, pgood:0.91, cov:0.78, stale:0.01, pool:'replay',      diag:'全高弱信号',     budget:160 },
+  { id:'G02', name:'破损商品退款',      count:3100, pct:15.5, mean:0.55, std:0.29, pgood:0.31, cov:0.72, stale:0.08, pool:'main_rl',     diag:'主 RL',          budget:850 },
+  { id:'G03', name:'跨境物流延迟',      count:2600, pct:13.0, mean:0.52, std:0.25, pgood:0.12, cov:0.61, stale:0.24, pool:'main_rl',     diag:'主 RL · 长任务', budget:650 },
+  { id:'G04', name:'部分发货 / 拆单',   count:1200, pct: 6.0, mean:0.13, std:0.04, pgood:0.02, cov:0.38, stale:0.41, pool:'curriculum',  diag:'curriculum',     budget:500 },
+  { id:'G06', name:'高频退款 / 补发',   count:1500, pct: 7.5, mean:0.48, std:0.27, pgood:0.22, cov:0.67, stale:0.28, pool:'main_rl',     diag:'主 RL · 风控',   budget:500 },
+  { id:'G07', name:'B2B VAT 发票',     count: 700, pct: 3.5, mean:0.25, std:0.03, pgood:0.00, cov:0.21, stale:0.13, pool:'cold_start',  diag:'工具缺失',       budget:200 },
+  { id:'G08', name:'已发货地址变更',    count:1300, pct: 6.5, mean:0.50, std:0.23, pgood:0.18, cov:0.58, stale:0.35, pool:'main_rl',     diag:'主 RL · 慢',     budget:400 },
+  { id:'OTH',name:'其他长尾',           count:2000, pct:10.0, mean:0.36, std:0.18, pgood:0.08, cov:0.44, stale:0.20, pool:'eval_shadow', diag:'探索池',         budget:680 },
+];
+const POOL_LABEL = {
+  main_rl:'main_rl', replay:'replay', curriculum:'curriculum',
+  cold_start:'cold_start', eval_shadow:'eval_shadow',
+};
+
+(function renderProbeTable() {
+  const body = document.getElementById('probe-body');
+  body.innerHTML = PROBE_DATA.map(b => `
+    <tr data-id="${b.id}">
+      <td><span class="gid" style="color:${caseHex(b.id)};">${b.id}</span> <span style="color:var(--text-muted);">${b.name}</span></td>
+      <td>${b.count.toLocaleString()}</td>
+      <td>${b.pct.toFixed(1)}%</td>
+      <td class="metric-cell"><span class="metric-val" data-v="${b.mean}">—</span><span class="metric-bar" data-w="${b.mean*100}"></span></td>
+      <td class="metric-cell"><span class="metric-val" data-v="${b.std}">—</span><span class="metric-bar" data-w="${b.std*100/0.3}"></span></td>
+      <td class="metric-cell"><span class="metric-val" data-v="${b.pgood}">—</span><span class="metric-bar" data-w="${b.pgood*100}"></span></td>
+      <td class="metric-cell"><span class="metric-val" data-v="${b.cov}">—</span><span class="metric-bar" data-w="${b.cov*100}"></span></td>
+      <td class="metric-cell"><span class="metric-val" data-v="${b.stale}">—</span><span class="metric-bar" data-w="${b.stale*100/0.5}" style="background:var(--warn);"></span></td>
+      <td><span class="pool-tag pool-${b.pool}" data-pool="${b.pool}">${b.diag} → ${POOL_LABEL[b.pool]}</span></td>
+    </tr>
+  `).join('');
+})();
+
+let probeStep = 0;
+function runProbe() {
+  if (probeStep > 3) return;
+  const sd = i => document.getElementById('step-'+i);
+  const status = document.getElementById('probe-status');
+
+  if (probeStep === 0) {
+    sd(1).classList.add('on');
+    status.textContent = '① 分桶完成';
+    probeStep = 1;
+    setTimeout(runProbe, 900);
+  } else if (probeStep === 1) {
+    sd(2).classList.add('on');
+    status.textContent = '② 跑 probe rollout · K=2 · 9 bucket × 200 case';
+    document.querySelectorAll('.probe-tbl .metric-val').forEach((el, i) => {
+      const v = parseFloat(el.dataset.v);
+      setTimeout(() => tween(el, 0, v, 600, x => x.toFixed(2)), i * 25);
+    });
+    document.querySelectorAll('.probe-tbl .metric-bar').forEach((el, i) => {
+      setTimeout(() => { el.style.width = Math.min(100, parseFloat(el.dataset.w)) + '%'; }, i * 25);
+    });
+    probeStep = 2;
+    setTimeout(runProbe, 1600);
+  } else if (probeStep === 2) {
+    sd(3).classList.add('on');
+    status.textContent = '③ 自动落入 5 个 pool · budget 重分配';
+    document.querySelectorAll('.probe-tbl .pool-tag').forEach((el, i) => {
+      setTimeout(() => { el.style.opacity = '1'; el.style.transform = 'translateX(0)'; }, i * 70);
+    });
+    setTimeout(() => renderBudgetPie('pie-sched', 'legend-sched', PROBE_DATA.map(b => ({ id:b.id, w:b.budget })), 4000), 200);
+    probeStep = 3;
+    setTimeout(() => { status.textContent = '✓ 完整 probe → 池 → budget 已重分配'; }, 1200);
+  }
+}
+
+function renderBudgetPie(svgId, legendId, items, total) {
+  const svg = document.getElementById(svgId);
+  let acc = 0; let html = '';
+  items.forEach(d => {
+    const a0 = acc / total * Math.PI * 2 - Math.PI/2;
+    acc += d.w;
+    const a1 = acc / total * Math.PI * 2 - Math.PI/2;
+    const r = 46;
+    const x0 = 50 + r*Math.cos(a0), y0 = 50 + r*Math.sin(a0);
+    const x1 = 50 + r*Math.cos(a1), y1 = 50 + r*Math.sin(a1);
+    const large = (a1 - a0) > Math.PI ? 1 : 0;
+    html += `<path d="M50,50 L${x0.toFixed(2)},${y0.toFixed(2)} A${r},${r} 0 ${large} 1 ${x1.toFixed(2)},${y1.toFixed(2)} z" fill="${caseHex(d.id)}" stroke="#fff" stroke-width="0.5" style="opacity:0;animation:fadeUp .45s ease forwards;animation-delay:${items.indexOf(d)*60}ms;"></path>`;
+  });
+  svg.innerHTML = html;
+  const lg = document.getElementById(legendId);
+  lg.innerHTML = items.map(d => `
+    <div class="row"><span><span class="sw" style="background:${caseHex(d.id)};"></span><span class="nm">${d.id}</span></span><span class="v">${d.w}${legendId==='legend-raw'?' rl':''}</span></div>
+  `).join('');
+}
+
+renderBudgetPie('pie-raw', 'legend-raw', PROBE_DATA.map(b => ({ id:b.id, w:Math.round(b.pct*40) })), 4000);
+document.getElementById('pie-sched').innerHTML = '<text x="50" y="52" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="6" fill="#bbb">点 ▶ 播放</text>';
+document.getElementById('legend-sched').innerHTML = '<div style="color:#bbb;font-style:italic;">probe 跑完后填充…</div>';
+
+document.getElementById('probe-play').addEventListener('click', () => {
+  document.getElementById('probe-reset').click();
+  setTimeout(runProbe, 100);
+});
+document.getElementById('probe-reset').addEventListener('click', () => {
+  probeStep = 0;
+  [1,2,3].forEach(i => document.getElementById('step-'+i).classList.remove('on'));
+  document.getElementById('probe-status').textContent = '就绪';
+  document.querySelectorAll('.probe-tbl .metric-val').forEach(el => el.textContent = '—');
+  document.querySelectorAll('.probe-tbl .metric-bar').forEach(el => el.style.width = '0');
+  document.querySelectorAll('.probe-tbl .pool-tag').forEach(el => { el.style.opacity = '0'; el.style.transform = 'translateX(-4px)'; });
+  document.getElementById('pie-sched').innerHTML = '<text x="50" y="52" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="6" fill="#bbb">点 ▶ 播放</text>';
+  document.getElementById('legend-sched').innerHTML = '<div style="color:#bbb;font-style:italic;">probe 跑完后填充…</div>';
+});
+</script>
+<script src="../_shared/lock.js"></script>
+</body>
+</html>

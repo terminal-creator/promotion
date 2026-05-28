@@ -1,0 +1,154 @@
+/* ================================================================
+   课件预览·解锁遮罩 · S5 2026 · 统一组件
+   用法：把 <div class="cwp-lock">…</div> 放在被预览内容的末尾，
+   它会渲染一段 fade-out 渐变 + 锁屏卡片。靠 .cwp-fade-host 的颜色
+   变量给 fade 取色（不指定就用黑）。
+   ================================================================ */
+:root {
+  --cwp-lock-bg: #000;
+  --cwp-lock-fg: #f5f5f7;
+  --cwp-lock-accent: #FFD400;
+  --cwp-lock-accent-ink: #0a0a0a;
+  --cwp-lock-card-bg: rgba(10,10,10,0.92);
+  --cwp-lock-card-line: rgba(255,255,255,0.16);
+  --cwp-lock-sub: rgba(245,245,247,0.62);
+}
+.cwp-lock {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter Tight','Noto Sans SC','PingFang SC',system-ui,sans-serif;
+  color: var(--cwp-lock-fg);
+  isolation: isolate;
+}
+.cwp-lock__fade {
+  height: 280px;
+  margin-top: -280px;        /* 把渐变压在前面内容上面 */
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0)   0%,
+    var(--cwp-lock-bg) 78%,
+    var(--cwp-lock-bg) 100%
+  );
+  pointer-events: none;
+  position: relative;
+  z-index: 2;
+}
+.cwp-lock__panel {
+  background: var(--cwp-lock-bg);
+  padding: 56px 24px 80px;
+  text-align: center;
+  position: relative;
+  z-index: 3;
+}
+.cwp-lock__panel::before {
+  content: "";
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: radial-gradient(ellipse 600px 240px at 50% 30%, #000 30%, transparent 70%);
+          mask-image: radial-gradient(ellipse 600px 240px at 50% 30%, #000 30%, transparent 70%);
+  pointer-events: none;
+}
+.cwp-lock__card {
+  position: relative;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 36px 32px;
+  background: var(--cwp-lock-card-bg);
+  border: 1px solid var(--cwp-lock-card-line);
+  border-radius: 18px;
+  backdrop-filter: blur(8px);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04),
+    0 30px 80px -20px rgba(0,0,0,0.5);
+}
+.cwp-lock__tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid var(--cwp-lock-accent);
+  color: var(--cwp-lock-accent);
+  border-radius: 999px;
+  font-size: 12px; font-weight: 600;
+  letter-spacing: 0.06em;
+}
+.cwp-lock__tag::before {
+  content: "";
+  width: 6px; height: 6px;
+  background: var(--cwp-lock-accent);
+  border-radius: 50%;
+  box-shadow: 0 0 12px var(--cwp-lock-accent);
+}
+.cwp-lock__title {
+  margin: 18px 0 10px;
+  font-size: clamp(22px, 3.4vw, 30px);
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.cwp-lock__title em {
+  font-style: normal;
+  color: var(--cwp-lock-accent);
+}
+.cwp-lock__sub {
+  margin: 0 auto 26px;
+  max-width: 480px;
+  color: var(--cwp-lock-sub);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.cwp-lock__meta {
+  display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
+  margin: 18px 0 26px;
+}
+.cwp-lock__meta .it {
+  font-size: 12px;
+  color: var(--cwp-lock-sub);
+  padding: 6px 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 999px;
+}
+.cwp-lock__meta .it b { color: var(--cwp-lock-fg); font-weight: 700; }
+.cwp-lock__cta {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 14px 26px;
+  background: var(--cwp-lock-accent);
+  color: var(--cwp-lock-accent-ink);
+  font-weight: 800;
+  font-size: 15px;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  transition: transform .15s ease, box-shadow .15s ease;
+  box-shadow: 0 12px 32px -8px rgba(255,212,0,0.35);
+}
+.cwp-lock__cta:hover { transform: translateY(-1px); box-shadow: 0 16px 40px -8px rgba(255,212,0,0.55); }
+.cwp-lock__cta:active { transform: translateY(0); }
+.cwp-lock__cta svg { width: 18px; height: 18px; }
+.cwp-lock__hint {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--cwp-lock-sub);
+}
+
+/* 亮色主题课件用 .cwp-lock--light */
+.cwp-lock--light {
+  --cwp-lock-bg: #F4F5F7;
+  --cwp-lock-fg: #1A1D21;
+  --cwp-lock-accent: #0055FF;
+  --cwp-lock-accent-ink: #ffffff;
+  --cwp-lock-card-bg: rgba(255,255,255,0.96);
+  --cwp-lock-card-line: rgba(0,0,0,0.08);
+  --cwp-lock-sub: rgba(26,29,33,0.62);
+}
+.cwp-lock--light .cwp-lock__panel::before {
+  background-image:
+    linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px);
+}
+.cwp-lock--light .cwp-lock__cta { box-shadow: 0 12px 32px -8px rgba(0,85,255,0.35); }

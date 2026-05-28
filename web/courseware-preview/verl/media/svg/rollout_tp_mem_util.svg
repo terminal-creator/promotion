@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1480 2540" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Helvetica Neue', sans-serif">
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FAFAF7"/>
+      <stop offset="100%" stop-color="#F3F2EC"/>
+    </linearGradient>
+
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-thin" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect width="1480" height="2540" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="60" y="58" font-size="28" font-weight="600" fill="#1a1a1a" letter-spacing="-0.4">ROLLOUT_TP 和 ROLLOUT_GPU_MEM_UTIL · 两个正交的旋钮</text>
+  <text x="60" y="86" font-size="14" fill="#6b6b66" font-style="italic">colocate 模式下控制 rollout 阶段的核心参数 · 一个管"卡之间结构"，一个管"单卡内分配"</text>
+  <line x1="60" y1="100" x2="1420" y2="100" stroke="#d4d2c7" stroke-width="0.8"/>
+
+  <!-- ============================================== -->
+  <!-- 一句话定义                                       -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 120)">
+    <rect x="0" y="0" width="660" height="160" rx="8" fill="#FFFFFF" stroke="#0F6E56" stroke-width="1.4"/>
+    <rect x="0" y="0" width="6" height="160" rx="2" fill="#0F6E56"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#04342C">ROLLOUT_TP</text>
+    <text x="22" y="56" font-size="13" fill="#0F6E56">"rollout 实例怎么切"</text>
+    <line x1="22" y1="68" x2="200" y2="68" stroke="#5DCAA5" stroke-width="0.6"/>
+
+    <text x="22" y="92" font-size="12" fill="#444441">几张卡组成一个 vLLM 实例</text>
+    <text x="22" y="112" font-size="12" fill="#444441">DP 数 = 总卡数 / TP（自动决定）</text>
+    <text x="22" y="138" font-size="11.5" fill="#5f5e5a" font-style="italic">空间维度：卡之间怎么协作</text>
+  </g>
+
+  <g transform="translate(760, 120)">
+    <rect x="0" y="0" width="660" height="160" rx="8" fill="#FFFFFF" stroke="#BA7517" stroke-width="1.4"/>
+    <rect x="0" y="0" width="6" height="160" rx="2" fill="#BA7517"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#412402">ROLLOUT_GPU_MEM_UTIL</text>
+    <text x="22" y="56" font-size="13" fill="#854F0B">"rollout 实例占多少显存"</text>
+    <line x1="22" y1="68" x2="240" y2="68" stroke="#FAC775" stroke-width="0.6"/>
+
+    <text x="22" y="92" font-size="12" fill="#444441">vLLM 启动时预分配 KV pool 的比例</text>
+    <text x="22" y="112" font-size="12" fill="#444441">剩下的留给训练阶段（FSDP）</text>
+    <text x="22" y="138" font-size="11.5" fill="#5f5e5a" font-style="italic">单卡维度：一张卡内怎么分配</text>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 二维网格：正交性                                  -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 300)">
+    <rect x="0" y="0" width="1360" height="700" rx="8" fill="#FFFFFF" stroke="#d4d2c7" stroke-width="0.8"/>
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#1a1a1a">两个旋钮是正交的（互不影响）</text>
+    <line x1="22" y1="44" x2="500" y2="44" stroke="#d4d2c7" stroke-width="0.6"/>
+
+    <text x="22" y="64" font-size="12" fill="#5f5e5a">在二维网格上各自变化 · 7B 模型 / 64 卡 / 80GB 卡为例</text>
+
+    <!-- 二维网格 -->
+    <g transform="translate(140, 110)">
+      <!-- X 轴: TP -->
+      <text x="540" y="-30" font-size="14" font-weight="700" fill="#04342C" text-anchor="middle">ROLLOUT_TP（横轴：实例怎么切）</text>
+
+      <!-- Y 轴: MEM_UTIL -->
+      <text x="-100" y="280" font-size="14" font-weight="700" fill="#412402" text-anchor="middle" transform="rotate(-90 -100 280)">GPU_MEM_UTIL（纵轴：单卡占多少）</text>
+
+      <!-- X 标签 -->
+      <text x="120" y="0" font-size="12" fill="#04342C" text-anchor="middle" font-weight="600">TP=1</text>
+      <text x="120" y="14" font-size="10" fill="#5f5e5a" text-anchor="middle">64 实例</text>
+
+      <text x="360" y="0" font-size="12" fill="#04342C" text-anchor="middle" font-weight="600">TP=2</text>
+      <text x="360" y="14" font-size="10" fill="#5f5e5a" text-anchor="middle">32 实例</text>
+
+      <text x="600" y="0" font-size="12" fill="#04342C" text-anchor="middle" font-weight="600">TP=4</text>
+      <text x="600" y="14" font-size="10" fill="#5f5e5a" text-anchor="middle">16 实例</text>
+
+      <text x="840" y="0" font-size="12" fill="#04342C" text-anchor="middle" font-weight="600">TP=8</text>
+      <text x="840" y="14" font-size="10" fill="#5f5e5a" text-anchor="middle">8 实例</text>
+
+      <!-- Y 标签 -->
+      <text x="-10" y="120" font-size="12" fill="#412402" text-anchor="end" font-weight="600">UTIL=0.5</text>
+      <text x="-10" y="280" font-size="12" fill="#412402" text-anchor="end" font-weight="600">UTIL=0.7</text>
+      <text x="-10" y="440" font-size="12" fill="#412402" text-anchor="end" font-weight="600">UTIL=0.9</text>
+
+      <!-- 网格背景 -->
+      <rect x="0" y="40" width="960" height="480" rx="6" fill="#F8F7F2" stroke="#d4d2c7" stroke-width="0.5"/>
+
+      <!-- 网格单元 - 9 个组合 -->
+      <!-- TP=1 列 -->
+      <g transform="translate(20, 60)">
+        <!-- (TP=1, UTIL=0.5) -->
+        <rect x="0" y="0" width="200" height="140" rx="4" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.6"/>
+        <text x="100" y="20" font-size="11" font-weight="700" fill="#412402" text-anchor="middle">保守 + 高并行</text>
+        <text x="14" y="40" font-size="10" fill="#444441">实例数: 64</text>
+        <text x="14" y="56" font-size="10" fill="#444441">KV pool: 26 GB</text>
+        <text x="14" y="72" font-size="10" fill="#444441">训练预留: 40 GB</text>
+        <text x="14" y="92" font-size="10" fill="#5f5e5a" font-style="italic">实例最多但每个 KV 小</text>
+        <text x="14" y="108" font-size="10" fill="#5f5e5a" font-style="italic">rollout 慢, 训练宽松</text>
+        <text x="14" y="128" font-size="10.5" fill="#A32D2D">用途：调试 / 显存吃紧</text>
+
+        <!-- (TP=1, UTIL=0.7) - 甜蜜点 -->
+        <rect x="0" y="160" width="200" height="140" rx="4" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1.5"/>
+        <text x="100" y="180" font-size="11" font-weight="700" fill="#04342C" text-anchor="middle">★ 7B 推荐</text>
+        <text x="14" y="200" font-size="10" fill="#444441">实例数: 64</text>
+        <text x="14" y="216" font-size="10" fill="#444441">KV pool: 42 GB</text>
+        <text x="14" y="232" font-size="10" fill="#444441">训练预留: 24 GB</text>
+        <text x="14" y="252" font-size="10" fill="#5f5e5a" font-style="italic">7B 训练态 ~17GB ✓</text>
+        <text x="14" y="268" font-size="10" fill="#5f5e5a" font-style="italic">吞吐高，安全</text>
+        <text x="14" y="288" font-size="10.5" fill="#04342C" font-weight="700">用途：生产配置</text>
+
+        <!-- (TP=1, UTIL=0.9) -->
+        <rect x="0" y="320" width="200" height="140" rx="4" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.6"/>
+        <text x="100" y="340" font-size="11" font-weight="700" fill="#501313" text-anchor="middle">激进 + 高风险</text>
+        <text x="14" y="360" font-size="10" fill="#444441">实例数: 64</text>
+        <text x="14" y="376" font-size="10" fill="#444441">KV pool: 58 GB</text>
+        <text x="14" y="392" font-size="10" fill="#444441">训练预留: 8 GB</text>
+        <text x="14" y="412" font-size="10" fill="#5f5e5a" font-style="italic">rollout 最快</text>
+        <text x="14" y="428" font-size="10" fill="#A32D2D" font-style="italic">训练阶段 OOM 风险</text>
+        <text x="14" y="448" font-size="10.5" fill="#A32D2D">用途：纯推理服务</text>
+      </g>
+
+      <!-- TP=2 列 -->
+      <g transform="translate(260, 60)">
+        <rect x="0" y="0" width="200" height="140" rx="4" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.6"/>
+        <text x="14" y="40" font-size="10" fill="#444441">实例数: 32</text>
+        <text x="14" y="56" font-size="10" fill="#444441">KV pool: 33 GB</text>
+        <text x="14" y="72" font-size="10" fill="#444441">训练预留: 40 GB</text>
+        <text x="14" y="100" font-size="10" fill="#5f5e5a" font-style="italic">2 卡 TP 通信开销小</text>
+        <text x="14" y="116" font-size="10" fill="#5f5e5a" font-style="italic">实例数减半</text>
+
+        <rect x="0" y="160" width="200" height="140" rx="4" fill="#F8F7F2" stroke="#888780" stroke-width="0.6"/>
+        <text x="14" y="200" font-size="10" fill="#444441">实例数: 32</text>
+        <text x="14" y="216" font-size="10" fill="#444441">KV pool: 49 GB</text>
+        <text x="14" y="232" font-size="10" fill="#444441">训练预留: 24 GB</text>
+        <text x="14" y="260" font-size="10" fill="#5f5e5a" font-style="italic">长 context 13B 推荐</text>
+
+        <rect x="0" y="320" width="200" height="140" rx="4" fill="#F8F7F2" stroke="#888780" stroke-width="0.6"/>
+        <text x="14" y="360" font-size="10" fill="#444441">实例数: 32</text>
+        <text x="14" y="376" font-size="10" fill="#444441">KV pool: 65 GB</text>
+        <text x="14" y="392" font-size="10" fill="#444441">训练预留: 8 GB</text>
+        <text x="14" y="420" font-size="10" fill="#5f5e5a" font-style="italic">几乎无可用空间</text>
+      </g>
+
+      <!-- TP=4 列 -->
+      <g transform="translate(500, 60)">
+        <rect x="0" y="0" width="200" height="140" rx="4" fill="#F8F7F2" stroke="#888780" stroke-width="0.6"/>
+        <text x="14" y="40" font-size="10" fill="#444441">实例数: 16</text>
+        <text x="14" y="56" font-size="10" fill="#444441">KV pool: 25 GB</text>
+        <text x="14" y="72" font-size="10" fill="#444441">训练预留: 40 GB</text>
+        <text x="14" y="100" font-size="10" fill="#5f5e5a" font-style="italic">7B 不需要切这么多</text>
+
+        <rect x="0" y="160" width="200" height="140" rx="4" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.6"/>
+        <text x="14" y="180" font-size="11" font-weight="700" fill="#412402">★ 30B 推荐</text>
+        <text x="14" y="200" font-size="10" fill="#444441">实例数: 16</text>
+        <text x="14" y="216" font-size="10" fill="#444441">KV pool: 41 GB</text>
+        <text x="14" y="232" font-size="10" fill="#444441">训练预留: 24 GB</text>
+        <text x="14" y="260" font-size="10.5" fill="#412402" font-weight="700">30B 装得下</text>
+
+        <rect x="0" y="320" width="200" height="140" rx="4" fill="#F8F7F2" stroke="#888780" stroke-width="0.6"/>
+        <text x="14" y="360" font-size="10" fill="#444441">实例数: 16</text>
+        <text x="14" y="376" font-size="10" fill="#444441">KV pool: 57 GB</text>
+        <text x="14" y="392" font-size="10" fill="#444441">训练预留: 8 GB</text>
+      </g>
+
+      <!-- TP=8 列 -->
+      <g transform="translate(740, 60)">
+        <rect x="0" y="0" width="200" height="140" rx="4" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.6"/>
+        <text x="14" y="20" font-size="11" font-weight="700" fill="#412402">★ 70B 推荐</text>
+        <text x="14" y="40" font-size="10" fill="#444441">实例数: 8</text>
+        <text x="14" y="56" font-size="10" fill="#444441">KV pool: 22 GB</text>
+        <text x="14" y="72" font-size="10" fill="#444441">训练预留: 40 GB</text>
+        <text x="14" y="100" font-size="10" fill="#5f5e5a" font-style="italic">必须 TP=8 才装下 70B</text>
+        <text x="14" y="116" font-size="10.5" fill="#412402" font-weight="700">必选 colocate 70B</text>
+
+        <rect x="0" y="160" width="200" height="140" rx="4" fill="#F8F7F2" stroke="#888780" stroke-width="0.6"/>
+        <text x="14" y="200" font-size="10" fill="#444441">实例数: 8</text>
+        <text x="14" y="216" font-size="10" fill="#444441">KV pool: 38 GB</text>
+        <text x="14" y="232" font-size="10" fill="#444441">训练预留: 24 GB</text>
+
+        <rect x="0" y="320" width="200" height="140" rx="4" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.6"/>
+        <text x="14" y="360" font-size="10" fill="#444441">实例数: 8</text>
+        <text x="14" y="376" font-size="10" fill="#444441">KV pool: 54 GB</text>
+        <text x="14" y="392" font-size="10" fill="#444441">训练预留: 8 GB</text>
+        <text x="14" y="420" font-size="10" fill="#A32D2D" font-style="italic">disaggregate 才能用</text>
+      </g>
+    </g>
+
+    <!-- 箭头标注 -->
+    <g transform="translate(140, 600)">
+      <!-- 横向变化解释 -->
+      <line x1="0" y1="0" x2="960" y2="0" stroke="#04342C" stroke-width="1.5" marker-end="url(#arrow-thin)"/>
+      <text x="480" y="20" font-size="11.5" fill="#04342C" text-anchor="middle" font-weight="600">向右：实例数减少 · 单实例越大 · 模型切得越细 · 单卡参数越小</text>
+    </g>
+
+    <g transform="translate(140, 640)">
+      <text x="0" y="0" font-size="11.5" fill="#412402" font-weight="600">向下：KV pool 越大 · rollout 越快 · 但训练预留越小 → OOM 风险</text>
+    </g>
+
+    <!-- 纵向变化箭头 -->
+    <line x1="120" y1="170" x2="120" y2="500" stroke="#412402" stroke-width="1.5" stroke-dasharray="3 2" marker-end="url(#arrow-thin)"/>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 显存账本：三个场景                                -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 1020)">
+    <rect x="0" y="0" width="1360" height="500" rx="8" fill="#FFFFFF" stroke="#d4d2c7" stroke-width="0.8"/>
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#1a1a1a">三个场景的显存账本（80GB 单卡视角）</text>
+    <line x1="22" y1="44" x2="500" y2="44" stroke="#d4d2c7" stroke-width="0.6"/>
+
+    <!-- 场景 A: 7B -->
+    <g transform="translate(40, 80)">
+      <text x="0" y="0" font-size="14" font-weight="700" fill="#04342C">场景 A · 7B / 64 卡 / TP=1 / UTIL=0.7</text>
+      <text x="0" y="20" font-size="11" fill="#0F6E56">64 个 vLLM 实例（每卡独立）· 单卡装下整个 7B 模型</text>
+
+      <g transform="translate(0, 36)">
+        <rect x="0" y="0" width="1280" height="32" rx="3" fill="#FFFFFF" stroke="#d4d2c7" stroke-width="0.5"/>
+        <!-- 参数 14GB = 224px -->
+        <rect x="0" y="0" width="224" height="32" fill="#F0997B" stroke="#993C1D" stroke-width="0.5"/>
+        <text x="112" y="20" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="600">参数 14 GB</text>
+        <!-- KV pool 42GB = 672px -->
+        <rect x="224" y="0" width="672" height="32" fill="#F5C4B3" stroke="#D85A30" stroke-width="0.5"/>
+        <text x="560" y="20" font-size="11" fill="#4A1B0C" text-anchor="middle" font-weight="600">KV pool 42 GB（80×0.7 - 14）</text>
+        <!-- 训练预留 24GB = 384px -->
+        <rect x="896" y="0" width="384" height="32" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+        <text x="1088" y="20" font-size="11" fill="#412402" text-anchor="middle" font-weight="600">训练预留 24 GB</text>
+      </g>
+
+      <text x="0" y="92" font-size="11" fill="#04342C">7B 训练态总计 ~17 GB（参数+梯度+优化器 shard +激活）→ 24 GB 预留够用 ✓</text>
+    </g>
+
+    <!-- 场景 B: 30B -->
+    <g transform="translate(40, 200)">
+      <text x="0" y="0" font-size="14" font-weight="700" fill="#412402">场景 B · 30B / 64 卡 / TP=4 / UTIL=0.6</text>
+      <text x="0" y="20" font-size="11" fill="#854F0B">16 个 vLLM 实例（每实例 4 卡 TP）· 30B 模型 TP=4 → 单卡 15GB 参数</text>
+
+      <g transform="translate(0, 36)">
+        <rect x="0" y="0" width="1280" height="32" rx="3" fill="#FFFFFF" stroke="#d4d2c7" stroke-width="0.5"/>
+        <!-- 参数 15GB = 240px -->
+        <rect x="0" y="0" width="240" height="32" fill="#F0997B" stroke="#993C1D" stroke-width="0.5"/>
+        <text x="120" y="20" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="600">参数 shard 15 GB</text>
+        <!-- KV pool 33GB = 528px -->
+        <rect x="240" y="0" width="528" height="32" fill="#F5C4B3" stroke="#D85A30" stroke-width="0.5"/>
+        <text x="504" y="20" font-size="11" fill="#4A1B0C" text-anchor="middle" font-weight="600">KV pool 33 GB</text>
+        <!-- 训练预留 32GB = 512px -->
+        <rect x="768" y="0" width="512" height="32" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+        <text x="1024" y="20" font-size="11" fill="#412402" text-anchor="middle" font-weight="600">训练预留 32 GB</text>
+      </g>
+
+      <text x="0" y="92" font-size="11" fill="#412402">30B FSDP shard 训练态 ~30 GB · KV pool 收紧到 33 GB 给训练让出空间 ✓</text>
+    </g>
+
+    <!-- 场景 C: 70B -->
+    <g transform="translate(40, 320)">
+      <text x="0" y="0" font-size="14" font-weight="700" fill="#26215C">场景 C · 70B / 128 卡 / TP=8 / UTIL=0.55</text>
+      <text x="0" y="20" font-size="11" fill="#534AB7">16 个 vLLM 实例（每实例 8 卡 TP）· 必须 TP=8 才能切下 70B</text>
+
+      <g transform="translate(0, 36)">
+        <rect x="0" y="0" width="1280" height="32" rx="3" fill="#FFFFFF" stroke="#d4d2c7" stroke-width="0.5"/>
+        <!-- 参数 17.5GB = 280px -->
+        <rect x="0" y="0" width="280" height="32" fill="#F0997B" stroke="#993C1D" stroke-width="0.5"/>
+        <text x="140" y="20" font-size="11" fill="#FFFFFF" text-anchor="middle" font-weight="600">参数 shard 17.5 GB</text>
+        <!-- KV pool 26.5GB = 424px -->
+        <rect x="280" y="0" width="424" height="32" fill="#F5C4B3" stroke="#D85A30" stroke-width="0.5"/>
+        <text x="492" y="20" font-size="11" fill="#4A1B0C" text-anchor="middle" font-weight="600">KV pool 26.5 GB</text>
+        <!-- 训练预留 36GB = 576px -->
+        <rect x="704" y="0" width="576" height="32" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.5"/>
+        <text x="992" y="20" font-size="11" fill="#412402" text-anchor="middle" font-weight="600">训练预留 36 GB</text>
+      </g>
+
+      <text x="0" y="92" font-size="11" fill="#26215C">70B FSDP shard 跨 128 卡，单卡训练态较大，KV pool 必须再让 → UTIL=0.55</text>
+    </g>
+
+    <!-- 总结 -->
+    <g transform="translate(40, 440)">
+      <rect x="0" y="0" width="1280" height="40" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.6"/>
+      <text x="14" y="22" font-size="12" fill="#444441">规律：<tspan font-weight="700" fill="#26215C">模型越大 → TP 必须越大（装得下）</tspan> · <tspan font-weight="700" fill="#26215C">训练态越重 → UTIL 必须越小（让位）</tspan> · 两者各自独立调</text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 调参决策树                                       -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 1540)">
+    <rect x="0" y="0" width="1360" height="500" rx="8" fill="#FFFFFF" stroke="#534AB7" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="500" rx="2" fill="#534AB7"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#26215C">调参决策树</text>
+    <line x1="22" y1="44" x2="280" y2="44" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <!-- Step 1 -->
+    <g transform="translate(40, 80)">
+      <rect x="0" y="0" width="1280" height="100" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+      <text x="20" y="26" font-size="14" font-weight="700" fill="#04342C">Step 1 · 看模型大小定 ROLLOUT_TP</text>
+      <line x1="20" y1="38" x2="280" y2="38" stroke="#5DCAA5" stroke-width="0.6"/>
+
+      <g transform="translate(20, 50)" font-size="11.5">
+        <text x="0" y="14" fill="#444441">7-8B：<tspan font-weight="700" fill="#04342C">TP=1 或 2</tspan>（单卡装得下，TP 越小 DP 越多）</text>
+        <text x="320" y="14" fill="#444441">13B：<tspan font-weight="700" fill="#04342C">TP=2 或 4</tspan></text>
+        <text x="540" y="14" fill="#444441">30B：<tspan font-weight="700" fill="#04342C">TP=4</tspan></text>
+        <text x="700" y="14" fill="#444441">70B+：<tspan font-weight="700" fill="#04342C">TP=8（节点内）</tspan></text>
+
+        <text x="0" y="38" fill="#5f5e5a" font-style="italic">原则：装得下就 TP 小，装不下必须 TP 大 · TP 不能跨节点（带宽不够）</text>
+      </g>
+    </g>
+
+    <!-- Step 2 -->
+    <g transform="translate(40, 200)">
+      <rect x="0" y="0" width="1280" height="100" rx="6" fill="#FAEEDA" stroke="#BA7517" stroke-width="1"/>
+      <text x="20" y="26" font-size="14" font-weight="700" fill="#412402">Step 2 · 看共享情况定 ROLLOUT_GPU_MEM_UTIL</text>
+      <line x1="20" y1="38" x2="320" y2="38" stroke="#FAC775" stroke-width="0.6"/>
+
+      <g transform="translate(20, 50)" font-size="11.5">
+        <text x="0" y="14" fill="#444441">纯推理服务：<tspan font-weight="700" fill="#412402">0.9</tspan></text>
+        <text x="240" y="14" fill="#444441">disaggregate（独占）：<tspan font-weight="700" fill="#412402">0.85-0.9</tspan></text>
+        <text x="540" y="14" fill="#444441">colocate 轻量：<tspan font-weight="700" fill="#412402">0.7-0.8</tspan></text>
+        <text x="820" y="14" fill="#444441">colocate 重度：<tspan font-weight="700" fill="#412402">0.5-0.7</tspan></text>
+
+        <text x="0" y="38" fill="#5f5e5a" font-style="italic">原则：和训练共享越紧密 → UTIL 越保守 · 留给训练的 buffer 越大越安全</text>
+      </g>
+    </g>
+
+    <!-- Step 3 -->
+    <g transform="translate(40, 320)">
+      <rect x="0" y="0" width="1280" height="160" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+      <text x="20" y="26" font-size="14" font-weight="700" fill="#26215C">Step 3 · 跑起来根据症状微调</text>
+      <line x1="20" y1="38" x2="280" y2="38" stroke="#CECBF6" stroke-width="0.6"/>
+
+      <g transform="translate(20, 50)" font-size="11.5">
+        <text x="0" y="14" font-weight="700" fill="#26215C">症状 1：rollout 慢（占整 step &gt; 70%）</text>
+        <text x="0" y="32" fill="#444441">→ 加大 UTIL（0.7→0.8） · 或减小 TP 增加实例数</text>
+
+        <text x="0" y="60" font-weight="700" fill="#26215C">症状 2：训练阶段 OOM</text>
+        <text x="0" y="78" fill="#444441">→ 减小 UTIL（0.7→0.6） · 给 FSDP 更多 buffer</text>
+
+        <text x="640" y="14" font-weight="700" fill="#26215C">症状 3：rollout 阶段 OOM（长 prompt 来时）</text>
+        <text x="640" y="32" fill="#444441">→ 减小 UTIL · 或减小 max_response_length</text>
+
+        <text x="640" y="60" font-weight="700" fill="#26215C">症状 4：随机 OOM（看起来不该 OOM）</text>
+        <text x="640" y="78" fill="#444441">→ 增大 TP（实例少了 buffer 总量也少）</text>
+
+        <text x="0" y="114" font-size="12" fill="#A32D2D" font-weight="700">遇到 OOM 优先调 UTIL（影响最小）· 扛不住再调 TP（重启 vLLM 实例结构）</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 一句话区分                                       -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 2060)">
+    <rect x="0" y="0" width="1360" height="460" rx="8" fill="#FFFFFF" stroke="#888780" stroke-width="0.6"/>
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#1a1a1a">一句话总览</text>
+    <line x1="22" y1="44" x2="280" y2="44" stroke="#d4d2c7" stroke-width="0.6"/>
+
+    <!-- 表格 -->
+    <g transform="translate(40, 70)" font-size="12">
+      <rect x="0" y="0" width="1280" height="32" fill="#F1EFE8"/>
+      <text x="14" y="20" font-weight="700" fill="#444441">参数</text>
+      <text x="200" y="20" font-weight="700" fill="#444441">作用</text>
+      <text x="500" y="20" font-weight="700" fill="#444441">调大的好处</text>
+      <text x="800" y="20" font-weight="700" fill="#444441">调大的代价</text>
+      <text x="1080" y="20" font-weight="700" fill="#444441">优先调谁</text>
+
+      <g transform="translate(0, 32)">
+        <rect x="0" y="0" width="1280" height="50" fill="#FFFFFF" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="14" y="22" font-weight="600" fill="#04342C">ROLLOUT_TP</text>
+        <text x="200" y="22" fill="#444441">vLLM 实例的 TP 度数</text>
+        <text x="500" y="22" fill="#444441">装得下大模型 · 单实例 KV 大</text>
+        <text x="800" y="22" fill="#444441">通信开销大 · DP 数减少</text>
+        <text x="1080" y="22" fill="#A32D2D">最后调（影响大）</text>
+        <text x="200" y="40" font-size="11" fill="#5f5e5a" font-style="italic">DP = 总卡 / TP，自动决定</text>
+      </g>
+
+      <g transform="translate(0, 82)">
+        <rect x="0" y="0" width="1280" height="50" fill="#F8F7F2" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="14" y="22" font-weight="600" fill="#412402">ROLLOUT_GPU_MEM_UTIL</text>
+        <text x="200" y="22" fill="#444441">vLLM 占单卡显存比例</text>
+        <text x="500" y="22" fill="#444441">KV pool 大 · rollout 快</text>
+        <text x="800" y="22" fill="#444441">训练阶段 OOM 风险</text>
+        <text x="1080" y="22" fill="#04342C">优先调（影响小）</text>
+        <text x="200" y="40" font-size="11" fill="#5f5e5a" font-style="italic">vLLM 启动时一次性预分配</text>
+      </g>
+    </g>
+
+    <!-- 调参口诀 -->
+    <g transform="translate(40, 240)">
+      <rect x="0" y="0" width="1280" height="180" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.6"/>
+      <text x="14" y="24" font-size="14" font-weight="700" fill="#26215C">调参口诀</text>
+      <line x1="14" y1="36" x2="180" y2="36" stroke="#CECBF6" stroke-width="0.6"/>
+
+      <g transform="translate(14, 56)" font-size="13">
+        <text x="0" y="0" fill="#444441">
+          <tspan font-weight="700" fill="#04342C">TP 看模型大小</tspan>
+          <tspan>：装得下就小，装不下就大 · 不能跨节点</tspan>
+        </text>
+        <text x="0" y="26" fill="#444441">
+          <tspan font-weight="700" fill="#412402">UTIL 看是否 colocate</tspan>
+          <tspan>：共享就保守（0.5-0.7），独占就激进（0.85-0.9）</tspan>
+        </text>
+        <text x="0" y="52" fill="#444441">
+          <tspan font-weight="700" fill="#A32D2D">遇到 OOM 先调 UTIL</tspan>
+          <tspan>：UTIL 改了重启 vLLM 就行，TP 改了整个集群结构都要变</tspan>
+        </text>
+
+        <text x="0" y="98" fill="#5f5e5a" font-style="italic">
+          这两个是 RL colocate 训练里最常需要手调的旋钮 · 大多数其他参数（batch、lr、kl 系数等）是算法层面的，
+        </text>
+        <text x="0" y="116" fill="#5f5e5a" font-style="italic">
+          这两个是基础设施层面的 · 配错了根本跑不起来 · 配对了才能进入正式调算法的阶段
+        </text>
+      </g>
+    </g>
+  </g>
+
+</svg>

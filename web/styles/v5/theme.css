@@ -1,0 +1,95 @@
+/*
+ * styles/v5/theme.css · 自动生成（build-styles.js）
+ * Terminal · 暗夜终端
+ * 深炭 + 琥珀 CRT · 工程师向
+ */
+:root {
+  --bg: #0E1014;
+  --ink: #EDE9DC;
+  --accent: #F59E0B;
+  --accent-soft: rgba(245,158,11,0.12);
+}
+
+html, body {
+  background: #0E1014 !important;
+  color: #EDE9DC !important;
+  font-family: "JetBrains Mono", ui-monospace, Menlo, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif !important;
+}
+
+/* 主色全局覆盖 */
+.accent, .new, .wb-tag.acc,
+.hook-l, .hook-r .row .t em,
+.s-cell.now .tag,
+.wb-hl .lab .n,
+.wb-hl .h .acc,
+.intro-bullet .n,
+.swash,
+.eyebrow .sq, .hero-meta .sq,
+.foot::before {
+  color: #F59E0B !important;
+}
+
+.hook-l { background: #F59E0B !important; color: #0E1014 !important; }
+.hero-meta .sq, .eyebrow .sq, .sec-label .sq,
+.wb-output::before,
+.hook-r .row .n,
+.foot,
+.hero-stat .n,
+.s-cell.now,
+.intro-quote::before,
+.feat-grid,
+.wb-output {  }
+
+.wb-output {
+  background: #0E1014 !important;
+}
+.foot {
+  background: #0a0a0a !important;
+  color: #EDE9DC !important;
+  border-top-color: #F59E0B !important;
+}
+.foot h2, .foot p, .foot .meta { color: inherit !important; }
+
+a, .em, em.em, .ul { color: #F59E0B !important; }
+.hero-stat .n .u, .hero-stats { color: #EDE9DC; border-color: rgba(255,255,255,0.18); }
+
+/* CTA / 按钮 */
+.btn-primary, .cta-row .btn, button.btn-primary {
+  background: #F59E0B !important;
+  color: #0E1014 !important;
+}
+
+/* 暗主题额外修正 · 白底卡片反转 */
+
+.s-track .s-cell, .wb-chapters table, .feat-grid .feat-cell,
+.support .sup, .extra-item, .fit .fit-col, .route-tbl .row,
+.stack-row, .intro-grid .intro-col, .arc-line .arc-step,
+.hero-card, .open-q, .coresent {
+  background: rgba(255,255,255,0.04) !important;
+  color: #EDE9DC !important;
+  border-color: rgba(255,255,255,0.12) !important;
+}
+.wb-chapters table tr,
+.route-tbl .row,
+.stack-row { border-color: rgba(255,255,255,0.08) !important; }
+.hero-stat .l, .wb-hl .b, .s-cell .lab, .s-cell .ti,
+.fit-col ul, .stack .layer {
+  color: #EDE9DC !important;
+  opacity: 0.85;
+}
+.hero-stats { background: rgba(255,255,255,0.03) !important; }
+
+
+/* 字体类 · 大标题更显式 */
+.h-section, .hero-title, h1, h2, h3 {
+  font-family: "JetBrains Mono", ui-monospace, Menlo, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif !important;
+}
+
+/* 给画廊里能立刻看出区别的视觉标记：左上角一条主色色块 */
+body::before {
+  content: "";
+  position: fixed; left: 0; top: 0; width: 4px; height: 100vh;
+  background: #F59E0B;
+  z-index: 9999;
+  pointer-events: none;
+}

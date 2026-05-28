@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 6 章 · GRPO Loss Lab · 预览 | Agentic RL</title>
+<meta name="chapter" content="6">
+<link rel="stylesheet" href="../_agentic-rl-shared/shared/shared.css">
+<link rel="stylesheet" href="../_agentic-rl-shared/assets/css/tailwind.css">
+<link rel="stylesheet" href="../_agentic-rl-shared/assets/vendor/katex/katex.min.css">
+<script src="../_agentic-rl-shared/assets/vendor/katex/katex.min.js"></script>
+<link rel="stylesheet" href="../_shared/lock.css">
+<script defer src="../_agentic-rl-shared/assets/vendor/icons/lucide-local.js"></script>
+<style>
+  .lab-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; gap: 12px; }
+  .lab-quad { background: #fff; border: 1px solid var(--border); padding: 16px; }
+  .lab-quad h5 { margin: 0 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; }
+  .slider-row { display: grid; grid-template-columns: 100px 1fr 60px; gap: 8px; align-items: center; padding: 6px 0; }
+  .slider-row .label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text); font-weight: 600; }
+  .slider-row .value { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent); font-variant-numeric: tabular-nums; text-align: right; }
+  .slider-row input[type="range"] { width: 100%; }
+  .gran-pills { display: inline-flex; border: 1px solid var(--border); background: #fff; }
+  .gran-pills button { padding: 6px 12px; background: transparent; border: 0; border-right: 1px solid var(--border); cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); }
+  .gran-pills button:last-child { border-right: 0; }
+  .gran-pills button.active { background: var(--text); color: #fff; }
+  .mon-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .mon-cell { padding: 8px 10px; background: #0f1116; color: #c3e88d; font-family: 'JetBrains Mono', monospace; font-size: 11px; display: flex; justify-content: space-between; }
+  .mon-cell .v { color: #fff; }
+  .btn { padding: 7px 14px; font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--accent); color: #fff; border: 0; cursor: pointer; letter-spacing: .04em; }
+  .btn.sm { font-size: 10.5px; padding: 6px 12px; }
+  .btn.danger { background: var(--danger); }
+  .btn.success { background: #10B981; }
+  .btn:hover { filter: brightness(0.95); }
+  @media (max-width: 900px) {
+    .lab-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ Compact HERO ============ -->
+<section class="hero" style="padding-bottom:24px;">
+  <div class="container">
+    <div class="eyebrow"><span class="pulse"></span><span>第 6 章 · CHAPTER 06 · TRAIN · GRPO LOSS LAB · 预览版</span></div>
+    <h1 style="font-size:clamp(28px,3.4vw,42px);">
+      四象限 · 5 滑块 · <br>
+      <span class="accent">一面板完成 GRPO loss 全装配</span>
+    </h1>
+    <p class="lead" style="max-width:780px;">
+      §8 GRPOLossLab 是本章的<u>合奏台</u>——把 ratio · clip · KL · entropy 全部放到一个面板上同时调。
+      五个旋钮 <strong>ε / β / c_H / λ_stale / KL_target</strong> 之间彼此影响，
+      右下角一键「<em>让 G08 主导梯度</em>」演示 length normalization 失效，再 <em>recover</em> 救回。
+    </p>
+  </div>
+</section>
+
+<!-- ============ §8 · GRPOLossLab ============ -->
+<section class="block" style="background:rgba(255,255,255,0.5);">
+  <div class="container">
+    <div class="sec-label">SECTION 8 · GRPOLossLab · 核心实验台</div>
+    <h2>拖滑块 · 观察 4 象限实时刷新</h2>
+
+    <div class="math-block" id="total-formula" style="margin-top:14px;"></div>
+
+    <div class="card" style="margin-top:24px;padding:22px;">
+      <div style="display:grid;grid-template-columns: repeat(5, 1fr);gap:14px;">
+        <div class="slider-row" style="grid-template-columns: 1fr; gap:4px;">
+          <span class="label">ε (clip)</span>
+          <input type="range" id="lab-eps" min="0" max="0.5" step="0.01" value="0.20">
+          <span class="value" id="lab-eps-v">0.20</span>
+        </div>
+        <div class="slider-row" style="grid-template-columns: 1fr; gap:4px;">
+          <span class="label">β (KL)</span>
+          <input type="range" id="lab-beta" min="0" max="0.3" step="0.005" value="0.05">
+          <span class="value" id="lab-beta-v">0.05</span>
+        </div>
+        <div class="slider-row" style="grid-template-columns: 1fr; gap:4px;">
+          <span class="label">c_H (ent)</span>
+          <input type="range" id="lab-cH" min="0" max="0.05" step="0.001" value="0.010">
+          <span class="value" id="lab-cH-v">0.010</span>
+        </div>
+        <div class="slider-row" style="grid-template-columns: 1fr; gap:4px;">
+          <span class="label">λ_stale</span>
+          <input type="range" id="lab-lam" min="0" max="0.3" step="0.01" value="0.10">
+          <span class="value" id="lab-lam-v">0.10</span>
+        </div>
+        <div class="slider-row" style="grid-template-columns: 1fr; gap:4px;">
+          <span class="label">KL_target</span>
+          <input type="range" id="lab-kltgt" min="0.01" max="0.5" step="0.005" value="0.10">
+          <span class="value" id="lab-kltgt-v">0.10</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin:18px 0;flex-wrap:wrap;align-items:center;">
+        <span class="eyebrow-text">NORMALIZE</span>
+        <div class="gran-pills" id="norm-pills">
+          <button data-n="token">token-mean</button>
+          <button data-n="sentence">sentence-mean</button>
+          <button data-n="chunk" class="active">chunk-mean</button>
+          <button data-n="length">length-aware</button>
+        </div>
+        <button class="btn sm danger" id="lab-explode">⚠ 让 G08 主导梯度</button>
+        <button class="btn sm success" id="lab-recover">recover · length-aware</button>
+      </div>
+      <div class="lab-grid">
+        <div class="lab-quad">
+          <h5>左上 · 4 RewardBar + Advantage</h5>
+          <div id="lab-rb"></div>
+        </div>
+        <div class="lab-quad">
+          <h5>右上 · 4 RatioGauge + clip 区间</h5>
+          <div id="lab-rg"></div>
+        </div>
+        <div class="lab-quad">
+          <h5>左下 · loss 各项数值</h5>
+          <div class="mon-grid" id="lab-mon"></div>
+          <div style="margin-top:10px;padding:12px;background:#1A1D21;color:#fff;font-family:'JetBrains Mono',monospace;font-size:13px;">
+            total loss = <span id="lab-total" style="color:#10B981;">−0.267</span>
+          </div>
+        </div>
+        <div class="lab-quad">
+          <h5>右下 · FormulaBlock</h5>
+          <div id="lab-formula" style="background:#fff;padding:12px;border:1px solid var(--border);font-size:13px;line-height:2;"></div>
+          <div id="lab-explain" style="margin-top:10px;padding:10px;background:#F4F5F7;font-size:12px;line-height:1.65;color:var(--text-muted);"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 锁屏 ============ -->
+<section class="cwp-lock cwp-lock--light" aria-label="报名解锁">
+  <div class="cwp-lock__fade"></div>
+  <div class="cwp-lock__panel">
+    <div class="cwp-lock__card">
+      <span class="cwp-lock__tag">本章完整版 · 19 节 · GRPO + TIS</span>
+      <h3 class="cwp-lock__title">解锁完整 <em>GRPO 推导 + 训推一致 TIS</em></h3>
+      <p class="cwp-lock__sub">
+        Part A（§0–§10）：总公式速览 · mask · 三个 π · advantage · ratio · clip · KL · entropy · <strong>本预览（Loss Lab）</strong> · 混合 loss + length norm · GRPO/GSPO/DAPO。
+        Part B（§11–§19）：训推一致 · TIS · prefix branching · packing · 闭环回流。
+      </p>
+      <div class="cwp-lock__meta">
+        <span class="it"><b>19</b> · 小节</span>
+        <span class="it"><b>5</b> 滑块 / <b>4</b> 象限 Lab</span>
+        <span class="it"><b>GRPO·GSPO·DAPO</b></span>
+        <span class="it"><b>TIS</b> 训推一致诊断</span>
+      </div>
+      <a class="cwp-lock__cta" href="#enroll" data-cwp-action="enroll">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/><circle cx="12" cy="16.5" r="1.2" fill="currentColor"/></svg>
+        报名解锁完整章节
+      </a>
+      <div class="cwp-lock__hint">已报名同学请联系班主任开通课件权限</div>
+    </div>
+  </div>
+</section>
+
+<script>
+function kx(target, tex, display=true) {
+  if (typeof target === 'string') target = document.getElementById(target);
+  if (!target) return;
+  let useTex = tex;
+  if (display && /\\\\/.test(tex) && !/\\begin\{(aligned|gathered|cases|array|matrix)/.test(tex)) {
+    useTex = '\\begin{aligned} ' + tex + ' \\end{aligned}';
+  }
+  try {
+    katex.render(useTex, target, { displayMode: display, throwOnError: false, strict: 'ignore' });
+  } catch(e) { target.textContent = tex; }
+}
+
+/* ============ Section 8 · GRPO Loss Lab · 自包含 ============ */
+kx('total-formula',
+  '\\mathcal{L}_{\\text{total}} = -L_{\\text{clip}} + \\beta\\,\\text{KL}(\\pi_\\theta\\,\\|\\,\\pi_{\\text{ref}}) - c_H\\, H(\\pi_\\theta)\\\\[4pt]' +
+  '\\text{G02 R1 step 7: } -1.640 + 0.00125 - 0.0192 = \\mathbf{-1.658}'
+);
+
+const RATIOS = { R1: 1.35, R2: 0.78, R3: 1.18, R4: 0.74 };
+const ADVS   = { R1: +1.367, R2: -0.679, R3: +0.562, R4: -1.250 };
+const REW    = { R1: 0.92, R2: 0.31, R3: 0.68, R4: 0.14 };
+const klState = { beta: 0.05, target: 0.10, drift: 0.18 };
+const Hcur_default = 1.71;
+
+const LAB = {
+  eps: 0.20, beta: 0.05, cH: 0.010, lam: 0.10, klTgt: 0.10,
+  norm: 'chunk',
+  explode: false,
+};
+
+function refreshLab() {
+  LAB.eps = +document.getElementById('lab-eps').value;
+  LAB.beta = +document.getElementById('lab-beta').value;
+  LAB.cH = +document.getElementById('lab-cH').value;
+  LAB.lam = +document.getElementById('lab-lam').value;
+  LAB.klTgt = +document.getElementById('lab-kltgt').value;
+  document.getElementById('lab-eps-v').textContent = LAB.eps.toFixed(2);
+  document.getElementById('lab-beta-v').textContent = LAB.beta.toFixed(3);
+  document.getElementById('lab-cH-v').textContent = LAB.cH.toFixed(3);
+  document.getElementById('lab-lam-v').textContent = LAB.lam.toFixed(2);
+  document.getElementById('lab-kltgt-v').textContent = LAB.klTgt.toFixed(3);
+
+  const ids = ['R1','R2','R3','R4'];
+  const trajLen = { R1: 420, R2: 80, R3: 280, R4: 160 };
+  const T_star = 200;
+  const wLen = id => LAB.explode ? 1.0 : (LAB.norm === 'length' ? Math.min(1, Math.sqrt(T_star/trajLen[id])) : 1.0);
+  const lagSteps = { R1: 1, R2: 1, R3: 2, R4: 1 };
+  const wStale = id => Math.exp(-LAB.lam * lagSteps[id]);
+
+  let rbHtml = '';
+  ids.forEach((id, i) => {
+    const r = REW[id]; const A = ADVS[id];
+    const wR = (r*100).toFixed(0);
+    const color = A >= 0 ? '#10B981' : '#EF4444';
+    rbHtml += `
+      <div style="display:grid;grid-template-columns:40px 1fr 60px;gap:8px;align-items:center;padding:6px 0;">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;">${id}</span>
+        <div style="height:12px;background:#F4F5F7;position:relative;">
+          <div style="height:100%;width:${wR}%;background:${id==='R1'?'#10B981':id==='R2'?'#EF4444':id==='R3'?'#0055FF':'#DC2626'};"></div>
+        </div>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${color};font-weight:700;">${A>=0?'+':''}${A.toFixed(2)}</span>
+      </div>
+    `;
+  });
+  document.getElementById('lab-rb').innerHTML = rbHtml;
+
+  let rgHtml = '';
+  let totalClip = 0;
+  let clipped = 0;
+  const lo = 1 - LAB.eps, hi = 1 + LAB.eps;
+  ids.forEach(id => {
+    const r = RATIOS[id]; const A = ADVS[id];
+    const rclip = Math.min(Math.max(r, lo), hi);
+    const obj = r*A; const objc = rclip*A;
+    const L = A >= 0 ? Math.min(obj, objc) : Math.max(obj, objc);
+    const isC = (r > hi || r < lo);
+    if (isC) clipped++;
+    totalClip += L * wLen(id) * wStale(id);
+    const map = x => ((x - 0.4)/(1.6 - 0.4))*100;
+    rgHtml += `
+      <div style="margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:10px;">
+          <span><strong>${id}</strong> r=${r.toFixed(2)}</span>
+          <span style="color:${isC?'#EF4444':'#10B981'};">${isC?'CLIP':'ok'}</span>
+        </div>
+        <div style="position:relative;height:10px;background:linear-gradient(to right, #FEE2E2 0%, #D1FAE5 50%, #FEE2E2 100%);margin-top:2px;">
+          <div style="position:absolute;left:${map(lo)}%;right:${100-map(hi)}%;top:0;bottom:0;background:rgba(16,185,129,0.18);border-left:1px dashed #10B981;border-right:1px dashed #10B981;"></div>
+          <div style="position:absolute;left:${Math.min(98,Math.max(2,map(r)))}%;top:-3px;bottom:-3px;width:2px;background:#1A1D21;"></div>
+        </div>
+      </div>
+    `;
+  });
+  document.getElementById('lab-rg').innerHTML = rgHtml;
+
+  const Lclip = totalClip / 4;
+  const KLv = klState.drift;
+  const Hcur = Hcur_default;
+  const LKL = LAB.beta * KLv;
+  const LH = -LAB.cH * Hcur;
+  const total = -Lclip + LKL + LH;
+
+  const mon = document.getElementById('lab-mon');
+  mon.innerHTML = `
+    <div class="mon-cell"><span>clip_fraction</span><span class="v">${(clipped/4).toFixed(2)}</span></div>
+    <div class="mon-cell"><span>approx_kl</span><span class="v">${KLv.toFixed(3)}</span></div>
+    <div class="mon-cell"><span>entropy_mean</span><span class="v">${Hcur.toFixed(2)}</span></div>
+    <div class="mon-cell"><span>ratio_p95</span><span class="v">${Math.max(...Object.values(RATIOS)).toFixed(2)}</span></div>
+    <div class="mon-cell"><span>advantage_std</span><span class="v">1.000</span></div>
+    <div class="mon-cell"><span>stale_item_ratio</span><span class="v">${(1-Math.exp(-LAB.lam*1.25)).toFixed(2)}</span></div>
+    <div class="mon-cell"><span>obs_tok_loss</span><span class="v" style="color:#10B981;">0.003</span></div>
+    <div class="mon-cell"><span>L_clip / L_KL / L_H</span><span class="v">${Lclip.toFixed(2)}/${LKL.toFixed(3)}/${LH.toFixed(3)}</span></div>
+  `;
+  document.getElementById('lab-total').textContent = total.toFixed(3);
+  document.getElementById('lab-total').style.color = total < 0 ? '#10B981' : '#EF4444';
+
+  document.getElementById('lab-formula').innerHTML = '';
+  kx('lab-formula', `\\mathcal{L} = -\\underbrace{(${Lclip.toFixed(2)})}_{L_{\\text{clip}}} + \\underbrace{${LAB.beta.toFixed(3)}\\cdot${KLv.toFixed(2)}}_{${LKL.toFixed(3)}} - \\underbrace{${LAB.cH.toFixed(3)}\\cdot${Hcur.toFixed(2)}}_{${(LAB.cH*Hcur).toFixed(3)}} = ${total.toFixed(3)}`);
+
+  let ex = '';
+  if (LAB.explode) ex = '⚠ length normalization 关闭。G08 R1 (850 tok) 占 batch 梯度 67%。模型会被长 trajectory 主导，短任务的梯度信号被淹没。';
+  else if (LAB.norm === 'length') ex = 'length-aware：w_i = min(1, sqrt(T*/T_i))。G08 占比降到 23%，4 条 rollout 在 batch 内贡献更均衡。';
+  else ex = 'normalize=' + LAB.norm + '。chunk-mean 是工业默认（每个 action chunk 独立平均），sentence-mean 用于 final reply。';
+  document.getElementById('lab-explain').textContent = ex;
+}
+['lab-eps','lab-beta','lab-cH','lab-lam','lab-kltgt'].forEach(id => document.getElementById(id).addEventListener('input', refreshLab));
+document.querySelectorAll('#norm-pills button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#norm-pills button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    LAB.norm = b.dataset.n;
+    refreshLab();
+  });
+});
+document.getElementById('lab-explode').addEventListener('click', () => { LAB.explode = true; refreshLab(); });
+document.getElementById('lab-recover').addEventListener('click', () => {
+  LAB.explode = false;
+  LAB.norm = 'length';
+  document.querySelectorAll('#norm-pills button').forEach(x => x.classList.remove('active'));
+  document.querySelector('#norm-pills button[data-n="length"]').classList.add('active');
+  refreshLab();
+});
+refreshLab();
+</script>
+<script src="../_shared/lock.js"></script>
+</body>
+</html>

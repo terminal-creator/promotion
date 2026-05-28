@@ -1,0 +1,495 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1480 3300" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Helvetica Neue', sans-serif">
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FAFAF7"/>
+      <stop offset="100%" stop-color="#F3F2EC"/>
+    </linearGradient>
+
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-thin" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect width="1480" height="3300" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="60" y="58" font-size="28" font-weight="600" fill="#1a1a1a" letter-spacing="-0.4">init_workers() · 从注册表到真实分布式进程的边界</text>
+  <text x="60" y="86" font-size="14" fill="#6b6b66" font-style="italic">把"配置 + 角色映射"翻译成可调用的 WorkerGroup · 这是 verl 启动里最重的一步</text>
+  <line x1="60" y1="100" x2="1420" y2="100" stroke="#d4d2c7" stroke-width="0.8"/>
+
+  <!-- ============================================== -->
+  <!-- 整体定位                                          -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 120)">
+    <rect x="0" y="0" width="1360" height="180" rx="6" fill="#FFFFFF" stroke="#A32D2D" stroke-width="0.8"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#501313">这一步是什么</text>
+    <line x1="22" y1="40" x2="200" y2="40" stroke="#F09595" stroke-width="0.6"/>
+
+    <g transform="translate(22, 60)" font-size="13">
+      <text x="0" y="0" fill="#444441">
+        <tspan font-weight="700" fill="#501313">边界：</tspan>
+        <tspan>从"配置/注册表"进入"真实分布式进程"的临界点 · 之前的代码都在做"清单"，这里才"动土施工"</tspan>
+      </text>
+      <text x="0" y="22" fill="#444441">
+        <tspan font-weight="700" fill="#501313">输入：</tspan>
+        <tspan>TaskRunner 准备好的两张表（role_worker_mapping + ResourcePoolManager.mapping）</tspan>
+      </text>
+      <text x="0" y="44" fill="#444441">
+        <tspan font-weight="700" fill="#501313">输出：</tspan>
+        <tspan>actor_rollout_wg / critic_wg / ref_policy_wg + reward/agent/checkpoint 几个管理器</tspan>
+      </text>
+
+      <text x="0" y="80" fill="#444441">
+        <tspan font-weight="700" fill="#A32D2D">一句话：</tspan>
+        <tspan>fit() 之前最重的一步 · 模型权重首次进入 GPU · 多个支撑系统（reward / agent / checkpoint）也在这里搭好</tspan>
+      </text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 4 大阶段总览                                      -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 320)">
+    <rect x="0" y="0" width="1360" height="160" rx="6" fill="#FFFFFF" stroke="#534AB7" stroke-width="0.8"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#26215C">这个函数的 4 大阶段</text>
+    <line x1="22" y1="40" x2="280" y2="40" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <g transform="translate(40, 60)">
+      <!-- 4 个阶段 -->
+      <g>
+        <rect x="0" y="0" width="310" height="80" rx="6" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.8"/>
+        <text x="155" y="22" font-size="13" font-weight="700" fill="#412402" text-anchor="middle">A · 申请资源</text>
+        <text x="155" y="42" font-size="10.5" fill="#854F0B" text-anchor="middle">Ray placement groups</text>
+        <text x="155" y="58" font-size="10" fill="#5f5e5a" text-anchor="middle" font-style="italic">向 Ray 锁定 GPU</text>
+        <text x="155" y="72" font-size="10" fill="#5f5e5a" text-anchor="middle" font-style="italic">还未起进程</text>
+      </g>
+
+      <line x1="310" y1="40" x2="340" y2="40" stroke="#534AB7" stroke-width="2" marker-end="url(#arrow)"/>
+
+      <g transform="translate(340, 0)">
+        <rect x="0" y="0" width="310" height="80" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.8"/>
+        <text x="155" y="22" font-size="13" font-weight="700" fill="#26215C" text-anchor="middle">B · 准备清单</text>
+        <text x="155" y="42" font-size="10.5" fill="#534AB7" text-anchor="middle">RayClassWithInitArgs 包装</text>
+        <text x="155" y="58" font-size="10" fill="#5f5e5a" text-anchor="middle" font-style="italic">为每个 role 备好</text>
+        <text x="155" y="72" font-size="10" fill="#5f5e5a" text-anchor="middle" font-style="italic">"创建参数"</text>
+      </g>
+
+      <line x1="650" y1="40" x2="680" y2="40" stroke="#534AB7" stroke-width="2" marker-end="url(#arrow)"/>
+
+      <g transform="translate(680, 0)">
+        <rect x="0" y="0" width="310" height="80" rx="6" fill="#FAECE7" stroke="#D85A30" stroke-width="0.8"/>
+        <text x="155" y="22" font-size="13" font-weight="700" fill="#4A1B0C" text-anchor="middle">C · 起进程 + 加载模型</text>
+        <text x="155" y="42" font-size="10.5" fill="#993C1D" text-anchor="middle">spawn + init_model</text>
+        <text x="155" y="58" font-size="10" fill="#5f5e5a" text-anchor="middle" font-style="italic">真实 actor 起来</text>
+        <text x="155" y="72" font-size="10" fill="#5f5e5a" text-anchor="middle" font-style="italic">权重进 GPU</text>
+      </g>
+
+      <line x1="990" y1="40" x2="1020" y2="40" stroke="#534AB7" stroke-width="2" marker-end="url(#arrow)"/>
+
+      <g transform="translate(1020, 0)">
+        <rect x="0" y="0" width="280" height="80" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.8"/>
+        <text x="140" y="22" font-size="13" font-weight="700" fill="#04342C" text-anchor="middle">D · 搭支撑系统</text>
+        <text x="140" y="42" font-size="10.5" fill="#0F6E56" text-anchor="middle">reward / agent / checkpoint</text>
+        <text x="140" y="58" font-size="10" fill="#5f5e5a" text-anchor="middle" font-style="italic">不走 role_mapping</text>
+        <text x="140" y="72" font-size="10" fill="#5f5e5a" text-anchor="middle" font-style="italic">的辅助系统</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 阶段 A: 申请资源                                  -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 500)">
+    <rect x="0" y="0" width="1360" height="320" rx="8" fill="#FFFFFF" stroke="#BA7517" stroke-width="1.4"/>
+    <rect x="0" y="0" width="6" height="320" rx="2" fill="#BA7517"/>
+
+    <text x="22" y="32" font-size="20" font-weight="700" fill="#412402">阶段 A · 申请资源（向 Ray 锁定 GPU）</text>
+    <text x="22" y="56" font-size="12.5" fill="#854F0B">这一步还没起任何进程 · 只是告诉 Ray："我要这么多 GPU 留着用"</text>
+
+    <g transform="translate(60, 90)">
+      <!-- 代码 -->
+      <rect x="0" y="0" width="600" height="180" rx="6" fill="#F8F7F2" stroke="#BA7517" stroke-width="0.4"/>
+      <g transform="translate(20, 28)" font-family="ui-monospace, monospace" font-size="11">
+        <text x="0" y="0" fill="#A32D2D">self.resource_pool_manager.create_resource_pool()</text>
+        <text x="0" y="20" fill="#888780"># ↑ 关键调用：向 Ray 申请 placement groups</text>
+
+        <text x="0" y="50" fill="#A32D2D">self.resource_pool_to_cls = {</text>
+        <text x="20" y="68" fill="#444441">pool: {} </text>
+        <text x="0" y="86" fill="#A32D2D">  for pool in resource_pool_dict.values()</text>
+        <text x="0" y="104" fill="#A32D2D">}</text>
+        <text x="0" y="124" fill="#888780"># ↑ 准备一个空字典：{pool对象: {role: ?}}</text>
+        <text x="0" y="142" fill="#888780">#   后面阶段 B 会往里填 RayClassWithInitArgs</text>
+      </g>
+
+      <!-- 右边：发生了什么 -->
+      <g transform="translate(640, 0)">
+        <text x="0" y="0" font-size="13" font-weight="700" fill="#412402">背后的事：</text>
+
+        <g transform="translate(0, 20)">
+          <rect x="0" y="0" width="640" height="40" rx="4" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.6"/>
+          <text x="14" y="24" font-size="11" fill="#412402">① Ray 检查集群里哪些节点有空闲 GPU</text>
+
+          <rect x="0" y="48" width="640" height="40" rx="4" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.6"/>
+          <text x="14" y="72" font-size="11" fill="#412402">② 创建 placement group（"我占了 4 节点 × 8 GPU"）</text>
+
+          <rect x="0" y="96" width="640" height="40" rx="4" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.6"/>
+          <text x="14" y="120" font-size="11" fill="#412402">③ 这些 GPU 被预留 · 别的任务不能用 · 但还没进程</text>
+
+          <text x="0" y="160" font-size="11" fill="#5f5e5a" font-style="italic">→ 类比：餐厅订位 · 你预订了 4 桌，但人还没到</text>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 阶段 B: 准备清单                                  -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 840)">
+    <rect x="0" y="0" width="1360" height="700" rx="8" fill="#FFFFFF" stroke="#534AB7" stroke-width="1.4"/>
+    <rect x="0" y="0" width="6" height="700" rx="2" fill="#534AB7"/>
+
+    <text x="22" y="32" font-size="20" font-weight="700" fill="#26215C">阶段 B · 准备清单（往中间字典填角色）</text>
+    <text x="22" y="56" font-size="12.5" fill="#534AB7">每个 Role 用 RayClassWithInitArgs 包装 → 填进 resource_pool_to_cls</text>
+
+    <!-- RayClassWithInitArgs 是什么 -->
+    <g transform="translate(60, 90)">
+      <rect x="0" y="0" width="1240" height="80" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.6"/>
+      <text x="20" y="24" font-size="13" font-weight="700" fill="#26215C">RayClassWithInitArgs 是什么</text>
+      <line x1="20" y1="36" x2="320" y2="36" stroke="#CECBF6" stroke-width="0.6"/>
+      <text x="20" y="56" font-size="11.5" fill="#444441">不创建 worker · 只记录"创建 worker 时要用哪个 class、哪些 init args" · 真正实例化在阶段 C 的 spawn()</text>
+      <text x="20" y="72" font-size="11" fill="#5f5e5a" font-style="italic">类比：菜单上的菜（class + 配料表），还没下锅做</text>
+    </g>
+
+    <!-- 三个角色的注册过程 -->
+    <g transform="translate(60, 200)">
+      <text x="0" y="0" font-size="13" font-weight="700" fill="#26215C">三类 Role 的注册：</text>
+
+      <!-- ActorRolloutRef -->
+      <g transform="translate(0, 20)">
+        <rect x="0" y="0" width="400" height="200" rx="6" fill="#FAECE7" stroke="#D85A30" stroke-width="1"/>
+        <text x="200" y="22" font-size="12" font-weight="700" fill="#4A1B0C" text-anchor="middle">① actor_role（必有）</text>
+        <line x1="20" y1="32" x2="380" y2="32" stroke="#F0997B" stroke-width="0.4"/>
+
+        <g transform="translate(14, 48)" font-size="10.5">
+          <text x="0" y="0" font-weight="700" fill="#993C1D">分支判断：</text>
+          <text x="0" y="18" fill="#444441">if Role.ActorRolloutRef in role_worker_mapping:</text>
+          <text x="0" y="34" fill="#444441">    actor_role = ActorRolloutRef</text>
+          <text x="0" y="50" fill="#444441">else:</text>
+          <text x="0" y="66" fill="#444441">    actor_role = ActorRollout</text>
+
+          <text x="0" y="92" fill="#5f5e5a" font-style="italic">→ ref 是否融合在 actor 进程里</text>
+          <text x="0" y="108" fill="#5f5e5a" font-style="italic">  LoRA 时常融合（ref_in_actor=True）</text>
+
+          <text x="0" y="134" font-weight="700" fill="#993C1D">填入字典：</text>
+          <text x="0" y="150" font-family="ui-monospace, monospace" fill="#444441">resource_pool_to_cls[pool][role] = ...</text>
+        </g>
+      </g>
+
+      <!-- Critic -->
+      <g transform="translate(420, 20)">
+        <rect x="0" y="0" width="400" height="200" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+        <text x="200" y="22" font-size="12" font-weight="700" fill="#26215C" text-anchor="middle">② Critic（PPO 才有）</text>
+        <line x1="20" y1="32" x2="380" y2="32" stroke="#CECBF6" stroke-width="0.4"/>
+
+        <g transform="translate(14, 48)" font-size="10.5">
+          <text x="0" y="0" font-weight="700" fill="#534AB7">条件：</text>
+          <text x="0" y="18" fill="#444441">if self.use_critic:</text>
+
+          <text x="0" y="44" font-weight="700" fill="#534AB7">关键转换：</text>
+          <text x="0" y="62" fill="#444441">CriticConfig → TrainingWorkerConfig</text>
+          <text x="0" y="78" fill="#444441">model_type="value_model"</text>
+
+          <text x="0" y="106" fill="#5f5e5a" font-style="italic">→ TrainingWorker 是统一训练 worker</text>
+          <text x="0" y="122" fill="#5f5e5a" font-style="italic">  通过 model_type 区分</text>
+          <text x="0" y="138" fill="#5f5e5a" font-style="italic">  policy / value model</text>
+
+          <text x="0" y="170" fill="#A32D2D" font-style="italic">GRPO 跳过这步 · use_critic=False</text>
+        </g>
+      </g>
+
+      <!-- RefPolicy -->
+      <g transform="translate(840, 20)">
+        <rect x="0" y="0" width="400" height="200" rx="6" fill="#E6F1FB" stroke="#378ADD" stroke-width="1"/>
+        <text x="200" y="22" font-size="12" font-weight="700" fill="#042C53" text-anchor="middle">③ RefPolicy（如未融合）</text>
+        <line x1="20" y1="32" x2="380" y2="32" stroke="#85B7EB" stroke-width="0.4"/>
+
+        <g transform="translate(14, 48)" font-size="10.5">
+          <text x="0" y="0" font-weight="700" fill="#185FA5">条件：</text>
+          <text x="0" y="18" fill="#444441">if use_reference_policy and</text>
+          <text x="0" y="34" fill="#444441">   Role.RefPolicy in role_mapping:</text>
+
+          <text x="0" y="60" fill="#5f5e5a" font-style="italic">→ 旧路径或特殊 recipe</text>
+          <text x="0" y="76" fill="#5f5e5a" font-style="italic">  unified engine 下通常融合</text>
+          <text x="0" y="92" fill="#5f5e5a" font-style="italic">  在 ActorRolloutRefWorker 里</text>
+
+          <text x="0" y="124" font-weight="700" fill="#185FA5">融合 vs 独立：</text>
+          <text x="0" y="142" fill="#444441">融合：actor 进程内多一份</text>
+          <text x="0" y="158" fill="#444441">      冻结模型</text>
+          <text x="0" y="174" fill="#444441">独立：单独的 RefWorker 进程</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- 最终的 resource_pool_to_cls -->
+    <g transform="translate(60, 460)">
+      <text x="0" y="0" font-size="13" font-weight="700" fill="#26215C">阶段 B 结束后的 resource_pool_to_cls 长这样：</text>
+
+      <g transform="translate(0, 20)">
+        <rect x="0" y="0" width="1240" height="200" rx="6" fill="#F8F7F2" stroke="#534AB7" stroke-width="0.4"/>
+        <g transform="translate(20, 28)" font-family="ui-monospace, monospace" font-size="11">
+          <text x="0" y="0" fill="#A32D2D">resource_pool_to_cls = {</text>
+
+          <text x="20" y="22" fill="#0F6E56">global_pool: {</text>
+          <text x="40" y="40" fill="#444441">"ActorRolloutRef": </text>
+          <text x="240" y="40" fill="#A32D2D">RayClassWithInitArgs(ActorRolloutRefWorker, config, role="ActorRolloutRef"),</text>
+          <text x="40" y="58" fill="#444441">"Critic": </text>
+          <text x="240" y="58" fill="#A32D2D">RayClassWithInitArgs(TrainingWorker, value_model_config),</text>
+          <text x="20" y="76" fill="#0F6E56">},</text>
+
+          <text x="20" y="100" fill="#0F6E56">reward_pool: {</text>
+          <text x="40" y="118" fill="#5f5e5a" font-style="italic"># reward_loop_manager 处理，不走这里</text>
+          <text x="20" y="136" fill="#0F6E56">}</text>
+
+          <text x="0" y="158" fill="#A32D2D">}</text>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 阶段 C: 起进程 + 加载模型                          -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 1560)">
+    <rect x="0" y="0" width="1360" height="800" rx="8" fill="#FFFFFF" stroke="#D85A30" stroke-width="1.4"/>
+    <rect x="0" y="0" width="6" height="800" rx="2" fill="#D85A30"/>
+
+    <text x="22" y="32" font-size="20" font-weight="700" fill="#4A1B0C">阶段 C · 起进程 + 加载模型 ★</text>
+    <text x="22" y="56" font-size="12.5" fill="#993C1D">这是整个 init_workers 最重的一步 · 模型权重首次进入 GPU</text>
+
+    <!-- 步骤 1: create_colocated_worker_cls -->
+    <g transform="translate(60, 90)">
+      <text x="0" y="0" font-size="13" font-weight="700" fill="#4A1B0C">① 同 pool 多 role → 包成一个 colocated worker class</text>
+
+      <g transform="translate(0, 20)">
+        <rect x="0" y="0" width="1240" height="100" rx="6" fill="#FAECE7" stroke="#D85A30" stroke-width="0.6"/>
+        <g transform="translate(20, 28)" font-family="ui-monospace, monospace" font-size="11">
+          <text x="0" y="0" fill="#A32D2D">for resource_pool, class_dict in resource_pool_to_cls.items():</text>
+          <text x="0" y="18" fill="#444441">    worker_dict_cls = create_colocated_worker_cls(class_dict)</text>
+          <text x="0" y="40" fill="#888780"># ↑ 把 {ActorRolloutRef, Critic} 合成一个 class</text>
+          <text x="0" y="58" fill="#888780">#   每个 Ray actor 进程同时持有这两个角色实例</text>
+          <text x="0" y="76" fill="#888780">#   → actor + critic 共用一张 GPU，节省显存和通信</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- 步骤 2: spawn -->
+    <g transform="translate(60, 230)">
+      <text x="0" y="0" font-size="13" font-weight="700" fill="#4A1B0C">② RayWorkerGroup + spawn → 真实 actor 起来</text>
+
+      <g transform="translate(0, 20)">
+        <rect x="0" y="0" width="1240" height="120" rx="6" fill="#FAECE7" stroke="#D85A30" stroke-width="0.6"/>
+        <g transform="translate(20, 28)" font-family="ui-monospace, monospace" font-size="11">
+          <text x="0" y="0" fill="#A32D2D">wg_dict = self.ray_worker_group_cls(</text>
+          <text x="0" y="18" fill="#444441">    resource_pool=resource_pool,</text>
+          <text x="0" y="36" fill="#444441">    ray_cls_with_init=worker_dict_cls,</text>
+          <text x="0" y="54" fill="#A32D2D">)</text>
+          <text x="320" y="54" fill="#888780"># ↑ 真正起 N 个 Ray actor（每张 GPU 一个）</text>
+
+          <text x="0" y="78" fill="#A32D2D">spawn_wg = wg_dict.spawn(prefix_set=class_dict.keys())</text>
+          <text x="0" y="96" fill="#888780"># ↑ 拆成"按 Role 分组的 WorkerGroup 视图"</text>
+        </g>
+      </g>
+
+      <!-- spawn 拆分示意 -->
+      <g transform="translate(0, 160)">
+        <rect x="0" y="0" width="600" height="100" rx="6" fill="#FFFFFF" stroke="#D85A30" stroke-width="0.8"/>
+        <text x="14" y="22" font-size="12" font-weight="700" fill="#4A1B0C">底层（实际 Ray actor）</text>
+        <text x="14" y="42" font-size="10" fill="#993C1D">N 个进程 · 每个同时持有 ActorRollout + Critic 实例</text>
+        <text x="14" y="60" font-size="10" fill="#993C1D">共享一张 GPU · 通过 colocate 时间复用</text>
+        <text x="14" y="80" font-size="10" fill="#5f5e5a" font-style="italic">物理上是 N 个进程，不是 2N 个</text>
+
+        <line x1="610" y1="50" x2="650" y2="50" stroke="#534AB7" stroke-width="2" marker-end="url(#arrow)"/>
+        <text x="630" y="42" font-size="10" fill="#534AB7" text-anchor="middle">spawn</text>
+
+        <g transform="translate(660, 0)">
+          <rect x="0" y="0" width="580" height="100" rx="6" fill="#FFFFFF" stroke="#534AB7" stroke-width="0.8"/>
+          <text x="14" y="22" font-size="12" font-weight="700" fill="#26215C">驱动端（all_wg 字典）</text>
+          <text x="14" y="42" font-size="10" font-family="ui-monospace, monospace" fill="#534AB7">all_wg = {"ActorRolloutRef": wg1, "Critic": wg2}</text>
+          <text x="14" y="62" font-size="10" fill="#534AB7">逻辑上是 2 个 WorkerGroup · 可以分别调用</text>
+          <text x="14" y="82" font-size="10" fill="#5f5e5a" font-style="italic">底层共享 actor，driver 看不见这个细节</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- 步骤 3: 各种后处理 -->
+    <g transform="translate(60, 540)">
+      <text x="0" y="0" font-size="13" font-weight="700" fill="#4A1B0C">③ 拆出 wg + 注入 loss + 处理融合</text>
+
+      <g transform="translate(0, 20)" font-size="11">
+        <rect x="0" y="0" width="400" height="100" rx="6" fill="#FFFFFF" stroke="#D85A30" stroke-width="0.6"/>
+        <text x="14" y="22" font-size="11" font-weight="700" fill="#4A1B0C">critic_wg：注入 loss_fn</text>
+        <text x="14" y="42" font-size="10" font-family="ui-monospace, monospace" fill="#993C1D">critic_wg.set_loss_fn(value_loss_)</text>
+        <text x="14" y="62" font-size="10" fill="#5f5e5a" font-style="italic">worker 只提供通用 train_mini_batch</text>
+        <text x="14" y="78" font-size="10" fill="#5f5e5a" font-style="italic">具体 loss 由 trainer 注入</text>
+
+        <rect x="420" y="0" width="400" height="100" rx="6" fill="#FFFFFF" stroke="#D85A30" stroke-width="0.6"/>
+        <text x="434" y="22" font-size="11" font-weight="700" fill="#4A1B0C">ref_policy_wg：处理融合</text>
+        <text x="434" y="42" font-size="10" fill="#993C1D">if ref_in_actor:</text>
+        <text x="434" y="58" font-size="10" fill="#993C1D">    ref_policy_wg = actor_rollout_wg</text>
+        <text x="434" y="78" font-size="10" fill="#5f5e5a" font-style="italic">LoRA 时通过 disable adapter 算 ref</text>
+
+        <rect x="840" y="0" width="400" height="100" rx="6" fill="#FCEBEB" stroke="#A32D2D" stroke-width="1"/>
+        <text x="854" y="22" font-size="11" font-weight="700" fill="#501313">actor_rollout_wg.init_model() ★</text>
+        <text x="854" y="42" font-size="10" fill="#A32D2D">权重首次进 GPU</text>
+        <text x="854" y="58" font-size="10" fill="#A32D2D">FSDP + vLLM + ref engine 起来</text>
+        <text x="854" y="78" font-size="10" fill="#5f5e5a" font-style="italic">最后做 · 给 vLLM 估 KV cache</text>
+      </g>
+    </g>
+
+    <!-- 关键洞察 -->
+    <g transform="translate(60, 700)">
+      <rect x="0" y="0" width="1240" height="80" rx="6" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.6"/>
+      <text x="14" y="24" font-size="13" font-weight="700" fill="#501313">为什么 actor_rollout_wg.init_model() 故意放最后</text>
+      <line x1="14" y1="36" x2="500" y2="36" stroke="#F09595" stroke-width="0.6"/>
+      <text x="14" y="58" font-size="11.5" fill="#444441">vLLM 启动时会 "看剩余显存的 X% 都吃掉做 KV pool"</text>
+      <text x="14" y="74" font-size="11.5" fill="#5f5e5a" font-style="italic">所以 critic / ref 先加载完 · vLLM 才能基于"真实剩余显存"准确分配 KV pool · 否则容易高估或低估</text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 阶段 D: 搭支撑系统                                 -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 2380)">
+    <rect x="0" y="0" width="1360" height="780" rx="8" fill="#FFFFFF" stroke="#0F6E56" stroke-width="1.4"/>
+    <rect x="0" y="0" width="6" height="780" rx="2" fill="#0F6E56"/>
+
+    <text x="22" y="32" font-size="20" font-weight="700" fill="#04342C">阶段 D · 搭支撑系统</text>
+    <text x="22" y="56" font-size="12.5" fill="#0F6E56">这些不走 role_worker_mapping · 是 init_workers 末尾创建的"管理器"集合</text>
+
+    <!-- 4 个管理器 -->
+    <g transform="translate(60, 90)">
+      <!-- RewardLoopManager -->
+      <g>
+        <rect x="0" y="0" width="600" height="160" rx="6" fill="#FAEEDA" stroke="#BA7517" stroke-width="1"/>
+        <text x="20" y="26" font-size="14" font-weight="700" fill="#412402">① RewardLoopManager</text>
+        <line x1="20" y1="38" x2="280" y2="38" stroke="#FAC775" stroke-width="0.6"/>
+
+        <g transform="translate(20, 56)" font-size="11.5">
+          <text x="0" y="0" fill="#444441">为什么不走 role_mapping？</text>
+          <text x="0" y="20" fill="#5f5e5a" font-style="italic">reward 形式多样：RM 模型 / 规则函数 / agent 环境 / 它们的组合</text>
+          <text x="0" y="42" fill="#444441">职责：</text>
+          <text x="0" y="62" fill="#5f5e5a" font-style="italic">统一 reward 入口 · 内部决定起不起 worker</text>
+          <text x="0" y="84" font-family="ui-monospace, monospace" fill="#854F0B" font-size="10">RewardLoopManager(config, rm_resource_pool)</text>
+        </g>
+      </g>
+
+      <!-- LLMServerManager -->
+      <g transform="translate(640, 0)">
+        <rect x="0" y="0" width="600" height="160" rx="6" fill="#FAECE7" stroke="#D85A30" stroke-width="1"/>
+        <text x="20" y="26" font-size="14" font-weight="700" fill="#4A1B0C">② LLMServerManager</text>
+        <line x1="20" y1="38" x2="280" y2="38" stroke="#F0997B" stroke-width="0.6"/>
+
+        <g transform="translate(20, 56)" font-size="11.5">
+          <text x="0" y="0" fill="#444441">作用：</text>
+          <text x="0" y="20" fill="#5f5e5a" font-style="italic">把 actor_rollout_wg 暴露成"rollout 服务客户端"</text>
+          <text x="0" y="42" fill="#444441">为什么需要：</text>
+          <text x="0" y="62" fill="#5f5e5a" font-style="italic">AgentLoop 通过 client API 发请求 · 不直接调 wg 方法</text>
+          <text x="0" y="84" font-family="ui-monospace, monospace" fill="#993C1D" font-size="10">LLMServerManager.create(config, worker_group=actor_rollout_wg)</text>
+        </g>
+      </g>
+
+      <!-- AgentLoopManager -->
+      <g transform="translate(0, 180)">
+        <rect x="0" y="0" width="600" height="200" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+        <text x="20" y="26" font-size="14" font-weight="700" fill="#26215C">③ AgentLoopManager</text>
+        <line x1="20" y1="38" x2="280" y2="38" stroke="#CECBF6" stroke-width="0.6"/>
+
+        <g transform="translate(20, 56)" font-size="11.5">
+          <text x="0" y="0" fill="#444441">作用：</text>
+          <text x="0" y="20" fill="#5f5e5a" font-style="italic">异步 rollout · reward 流水线并行</text>
+          <text x="0" y="42" fill="#444441">关键判断：enable_agent_reward_loop</text>
+          <text x="0" y="60" fill="#5f5e5a" font-style="italic">  没 RM 或 RM 独立资源池 → True（可流水）</text>
+          <text x="0" y="76" fill="#5f5e5a" font-style="italic">  RM 和 rollout 共资源 → False（必须 sleep/wake）</text>
+          <text x="0" y="98" fill="#444441">输入：</text>
+          <text x="0" y="116" fill="#5f5e5a" font-style="italic">llm_client + teacher_client + reward_loop_handles</text>
+          <text x="0" y="138" font-family="ui-monospace, monospace" fill="#534AB7" font-size="10">AgentLoopManager.create(...)</text>
+        </g>
+      </g>
+
+      <!-- CheckpointEngineManager -->
+      <g transform="translate(640, 180)">
+        <rect x="0" y="0" width="600" height="200" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+        <text x="20" y="26" font-size="14" font-weight="700" fill="#04342C">④ CheckpointEngineManager</text>
+        <line x1="20" y1="38" x2="280" y2="38" stroke="#5DCAA5" stroke-width="0.6"/>
+
+        <g transform="translate(20, 56)" font-size="11.5">
+          <text x="0" y="0" fill="#444441">作用：</text>
+          <text x="0" y="20" fill="#5f5e5a" font-style="italic">管理 checkpoint 加载 / 保存 / 权重同步</text>
+          <text x="0" y="42" fill="#444441">关键最后一步：</text>
+          <text x="0" y="62" font-family="ui-monospace, monospace" fill="#A32D2D" font-size="11">checkpoint_manager.sleep_replicas()</text>
+          <text x="0" y="84" fill="#5f5e5a" font-style="italic">让 rollout 副本立即休眠</text>
+          <text x="0" y="100" fill="#5f5e5a" font-style="italic">fit() 启动后会 update_weights 再唤醒</text>
+          <text x="0" y="122" font-weight="700" fill="#04342C">显存控制：</text>
+          <text x="0" y="138" fill="#5f5e5a" font-style="italic">避免空 vLLM 占着 KV pool · 留位给训练</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- 协作示意 -->
+    <g transform="translate(60, 600)">
+      <text x="0" y="0" font-size="13" font-weight="700" fill="#04342C">这 4 个管理器在 fit() 里怎么协作：</text>
+
+      <g transform="translate(0, 24)">
+        <rect x="0" y="0" width="1240" height="120" rx="6" fill="#F8F7F2" stroke="#0F6E56" stroke-width="0.4"/>
+        <g transform="translate(20, 24)" font-size="11">
+          <text x="0" y="0" fill="#444441">
+            <tspan font-weight="700" fill="#04342C">1. fit() 主循环里：</tspan>
+            <tspan font-family="ui-monospace, monospace" fill="#0F6E56">async_rollout_manager</tspan>
+            <tspan> 管理 rollout 流</tspan>
+          </text>
+          <text x="0" y="22" fill="#444441">
+            <tspan font-weight="700" fill="#04342C">2. rollout 时调：</tspan>
+            <tspan font-family="ui-monospace, monospace" fill="#993C1D">llm_server_manager.get_client()</tspan>
+            <tspan> 发请求</tspan>
+          </text>
+          <text x="0" y="44" fill="#444441">
+            <tspan font-weight="700" fill="#04342C">3. reward 时调：</tspan>
+            <tspan font-family="ui-monospace, monospace" fill="#854F0B">reward_loop_manager</tspan>
+            <tspan>（同步或与 rollout 流水）</tspan>
+          </text>
+          <text x="0" y="66" fill="#444441">
+            <tspan font-weight="700" fill="#04342C">4. step 完同步：</tspan>
+            <tspan font-family="ui-monospace, monospace" fill="#0F6E56">checkpoint_manager</tspan>
+            <tspan> 处理 sleep/wake/update_weights</tspan>
+          </text>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 退出后的状态                                      -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 3180)">
+    <rect x="0" y="0" width="1360" height="100" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.8"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#26215C">init_workers() 返回时的最终状态</text>
+    <line x1="22" y1="40" x2="380" y2="40" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <g transform="translate(22, 60)" font-size="12">
+      <text x="0" y="0" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">trainer 持有：</tspan>
+        <tspan>actor_rollout_wg · critic_wg · ref_policy_wg · reward_loop_manager · llm_server_manager · async_rollout_manager · checkpoint_manager</tspan>
+      </text>
+      <text x="0" y="22" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">物理状态：</tspan>
+        <tspan>N 个 Ray actor 进程已起 · 模型权重已在 GPU · vLLM rollout 副本已 sleep · 等 fit() 唤醒</tspan>
+      </text>
+    </g>
+  </g>
+
+</svg>

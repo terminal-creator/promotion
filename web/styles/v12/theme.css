@@ -1,0 +1,77 @@
+/*
+ * styles/v12/theme.css · 自动生成（build-styles.js）
+ * Brutalist · 极简极大字
+ * ★ 极大字号 + 黑白 + 电光酸绿单色块
+ */
+:root {
+  --bg: #F4F2EC;
+  --ink: #0A0A0A;
+  --accent: #A3CC2F;
+  --accent-soft: rgba(163,204,47,0.18);
+}
+
+html, body {
+  background: #F4F2EC !important;
+  color: #0A0A0A !important;
+  font-family: Inter Tight, ui-sans-serif, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif !important;
+}
+
+/* 主色全局覆盖 */
+.accent, .new, .wb-tag.acc,
+.hook-l, .hook-r .row .t em,
+.s-cell.now .tag,
+.wb-hl .lab .n,
+.wb-hl .h .acc,
+.intro-bullet .n,
+.swash,
+.eyebrow .sq, .hero-meta .sq,
+.foot::before {
+  color: #A3CC2F !important;
+}
+
+.hook-l { background: #A3CC2F !important; color: #fff !important; }
+.hero-meta .sq, .eyebrow .sq, .sec-label .sq,
+.wb-output::before,
+.hook-r .row .n,
+.foot,
+.hero-stat .n,
+.s-cell.now,
+.intro-quote::before,
+.feat-grid,
+.wb-output {  }
+
+.wb-output {
+  background: #1a1d21 !important;
+}
+.foot {
+  background: #0A0A0A !important;
+  color: #f7f7f7 !important;
+  border-top-color: #A3CC2F !important;
+}
+.foot h2, .foot p, .foot .meta { color: inherit !important; }
+
+a, .em, em.em, .ul { color: #A3CC2F !important; }
+.hero-stat .n .u, .hero-stats {  }
+
+/* CTA / 按钮 */
+.btn-primary, .cta-row .btn, button.btn-primary {
+  background: #A3CC2F !important;
+  color: #fff !important;
+}
+
+/* 暗主题额外修正 · 白底卡片反转 */
+
+
+/* 字体类 · 大标题更显式 */
+.h-section, .hero-title, h1, h2, h3 {
+  font-family: Inter Tight, ui-sans-serif, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif !important;
+}
+
+/* 给画廊里能立刻看出区别的视觉标记：左上角一条主色色块 */
+body::before {
+  content: "";
+  position: fixed; left: 0; top: 0; width: 4px; height: 100vh;
+  background: #A3CC2F;
+  z-index: 9999;
+  pointer-events: none;
+}

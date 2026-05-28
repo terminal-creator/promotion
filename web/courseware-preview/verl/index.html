@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>verl · HybridFlow 深入剖析 · 预览</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="./assets/app.css">
+    <link rel="stylesheet" href="../_shared/lock.css">
+    <style>
+      /* 预览开放到 ch1（DataProto Inspector），ch2-ch8 全部隐藏 */
+      #ch2, #ch3, #ch4, #ch5, #ch6, #ch7, #ch8,
+      [id^="ch2-"], [id^="ch3-"], [id^="ch4-"], [id^="ch5-"], [id^="ch6-"], [id^="ch7-"], [id^="ch8-"] {
+        display: none !important;
+      }
+      a[href^="#ch"][data-cwp-locked="1"] {
+        opacity: 0.45;
+        cursor: not-allowed;
+        position: relative;
+      }
+      a[href^="#ch"][data-cwp-locked="1"]::after {
+        content: "🔒";
+        margin-left: 4px;
+        font-size: 10px;
+      }
+      #cwp-lock-host { position: relative; z-index: 60; padding: 0 24px; }
+    </style>
+  </head>
+  <body class="path-novice">
+    <div id="root"></div>
+    <script type="module" src="./assets/app.js"></script>
+
+    <template id="cwp-lock-tpl">
+      <section class="cwp-lock" aria-label="报名解锁">
+        <div class="cwp-lock__fade"></div>
+        <div class="cwp-lock__panel">
+          <div class="cwp-lock__card">
+            <span class="cwp-lock__tag">verl 完整版 · 8 章 · 完整调用链 · PPO/GRPO 动画</span>
+            <h3 class="cwp-lock__title">解锁剩余 <em>6 章</em> · 含 HybridFlow 全栈调用链拆解</h3>
+            <p class="cwp-lock__sub">
+              CH0 HybridFlow Stage · <strong>本预览（CH1 DataProto Inspector / Dispatch / Cluster Topology）</strong> · CH2 3D-Hybrid Engine LIVE · CH3 Checkpoint &amp; Worker Registry · CH4 PPO Step Call Trace · CH5 Worker Architecture · CH6 BaseEngine 6 实现 · CH7 PPO Step Timeline · CH8 算法骨架。
+            </p>
+            <div class="cwp-lock__meta">
+              <span class="it"><b>8</b> · 章节</span>
+              <span class="it"><b>10</b> · 架构图</span>
+              <span class="it"><b>PPO</b> 一次 step 全程动画</span>
+              <span class="it"><b>3D-Hybrid</b> Engine</span>
+            </div>
+            <a class="cwp-lock__cta" href="#enroll" data-cwp-action="enroll">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/><circle cx="12" cy="16.5" r="1.2" fill="currentColor"/></svg>
+              报名解锁完整章节
+            </a>
+            <div class="cwp-lock__hint">已报名同学请联系班主任开通课件权限</div>
+          </div>
+        </div>
+      </section>
+    </template>
+
+    <script src="../_shared/lock.js"></script>
+    <script>
+      (function () {
+        function enrollSignal() {
+          try {
+            if (window.top && window.top !== window) {
+              window.top.postMessage({ type: 'cwp:enroll', from: 'cwp-preview' }, '*');
+              return;
+            }
+          } catch (err) { /* ignore */ }
+          alert('返回 S5 课程页 · 报名后即可解锁 verl 全部 8 章互动内容');
+        }
+
+        function pinHash() {
+          const m = (location.hash || '').match(/#ch(\d+)/);
+          if (m && parseInt(m[1], 10) >= 2) {
+            history.replaceState(null, '', location.pathname + '#ch1');
+          }
+        }
+        pinHash();
+        window.addEventListener('hashchange', pinHash);
+
+        function patchNav() {
+          document.querySelectorAll('a[href^="#ch"]').forEach((a) => {
+            const m = a.getAttribute('href').match(/#ch(\d+)/);
+            if (m && parseInt(m[1], 10) >= 2) {
+              a.setAttribute('data-cwp-locked', '1');
+              if (!a.__cwpBound) {
+                a.__cwpBound = true;
+                a.addEventListener('click', function (e) {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  enrollSignal();
+                }, true);
+              }
+            }
+          });
+        }
+
+        function injectLock() {
+          if (document.getElementById('cwp-lock-host')) return true;
+          // 在 ch1 (DataProto Inspector) 之后插入
+          const ch1 = document.getElementById('ch1');
+          const ch0 = document.getElementById('ch0');
+          const anchor = ch1 || ch0;
+          const root = document.getElementById('root');
+          const tpl = document.getElementById('cwp-lock-tpl');
+          if (!tpl) return false;
+          const host = document.createElement('div');
+          host.id = 'cwp-lock-host';
+          host.innerHTML = tpl.innerHTML;
+          if (anchor && anchor.parentNode) {
+            anchor.parentNode.insertBefore(host, anchor.nextSibling);
+            return true;
+          }
+          if (root) {
+            root.appendChild(host);
+            return true;
+          }
+          return false;
+        }
+
+        const mo = new MutationObserver(function () {
+          patchNav();
+          injectLock();
+        });
+        mo.observe(document.documentElement, { childList: true, subtree: true });
+
+        setTimeout(() => { patchNav(); injectLock(); }, 500);
+        setTimeout(() => { patchNav(); injectLock(); }, 1500);
+      })();
+    </script>
+  </body>
+</html>

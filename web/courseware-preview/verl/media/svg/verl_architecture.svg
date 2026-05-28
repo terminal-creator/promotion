@@ -1,0 +1,463 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1480 2400" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Helvetica Neue', sans-serif">
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FAFAF7"/>
+      <stop offset="100%" stop-color="#F3F2EC"/>
+    </linearGradient>
+
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-thin" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="ref-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M2 2L8 5L2 8" fill="none" stroke="context-stroke" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect width="1480" height="2400" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="60" y="58" font-size="28" font-weight="600" fill="#1a1a1a" letter-spacing="-0.4">verl 物理架构图 · 代码对象的位置和引用关系</text>
+  <text x="60" y="86" font-size="14" fill="#6b6b66" font-style="italic">每个方框是一个真实的 Python 对象 · 标注它在哪个进程、谁持有谁的引用 · 配上对应代码</text>
+  <line x1="60" y1="100" x2="1420" y2="100" stroke="#d4d2c7" stroke-width="0.8"/>
+
+  <!-- 图例 -->
+  <g transform="translate(60, 120)">
+    <rect x="0" y="0" width="1360" height="80" rx="6" fill="#FFFFFF" stroke="#888780" stroke-width="0.6"/>
+    <text x="22" y="24" font-size="13" font-weight="700" fill="#1a1a1a">图例</text>
+
+    <g transform="translate(22, 40)" font-size="11">
+      <rect x="0" y="0" width="14" height="14" rx="2" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.8"/>
+      <text x="22" y="11" fill="#444441">本地对象（Python 内存里的对象）</text>
+
+      <rect x="220" y="0" width="14" height="14" rx="2" fill="#FAECE7" stroke="#D85A30" stroke-width="0.8"/>
+      <text x="242" y="11" fill="#444441">远端 Ray actor（独立进程，占 GPU）</text>
+
+      <rect x="490" y="0" width="14" height="14" rx="2" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.8"/>
+      <text x="512" y="11" fill="#444441">资源容器（placement group / 物理 GPU）</text>
+
+      <line x1="780" y1="7" x2="820" y2="7" stroke="#534AB7" stroke-width="2"/>
+      <text x="828" y="11" fill="#444441">引用 / 持有 handle</text>
+
+      <line x1="950" y1="7" x2="990" y2="7" stroke="#A32D2D" stroke-width="2" stroke-dasharray="4 3"/>
+      <text x="998" y="11" fill="#444441">RPC 调用</text>
+
+      <line x1="1080" y1="7" x2="1120" y2="7" stroke="#0F6E56" stroke-width="2" stroke-dasharray="2 2"/>
+      <text x="1128" y="11" fill="#444441">资源占用</text>
+    </g>
+
+    <text x="22" y="68" font-size="11" fill="#5f5e5a" font-style="italic">阅读顺序：从左上的 Driver 开始，跟着引用链一路追到右下的 GPU</text>
+  </g>
+
+  <!-- ======================================================== -->
+  <!-- 主架构图                                                  -->
+  <!-- ======================================================== -->
+
+  <!-- ============== 左上：Driver 进程 ============== -->
+  <g transform="translate(60, 220)">
+    <rect x="0" y="0" width="420" height="320" rx="10" fill="#F8F7F2" stroke="#534AB7" stroke-width="2"/>
+    <text x="20" y="32" font-size="16" font-weight="700" fill="#26215C">Driver 进程（head node CPU）</text>
+    <text x="20" y="52" font-size="11" fill="#5f5e5a" font-style="italic">main() 函数运行的进程</text>
+    <line x1="20" y1="62" x2="280" y2="62" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <!-- Hydra Config -->
+    <g transform="translate(20, 80)">
+      <rect x="0" y="0" width="380" height="60" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.8"/>
+      <text x="14" y="22" font-size="12" font-weight="700" fill="#26215C">config (OmegaConf)</text>
+      <text x="14" y="40" font-size="10" font-family="ui-monospace, monospace" fill="#5f5e5a">@hydra.main 解析 yaml + CLI 覆盖</text>
+      <text x="14" y="54" font-size="10" font-family="ui-monospace, monospace" fill="#5f5e5a">data / model / actor / rollout / trainer ...</text>
+    </g>
+
+    <!-- TaskRunner handle -->
+    <g transform="translate(20, 160)">
+      <rect x="0" y="0" width="380" height="80" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+      <text x="14" y="22" font-size="12" font-weight="700" fill="#26215C">runner (TaskRunner handle)</text>
+      <text x="14" y="40" font-size="10" font-family="ui-monospace, monospace" fill="#5f5e5a">runner = task_runner_class.remote()</text>
+      <text x="14" y="58" font-size="10" fill="#534AB7">↑ 这只是个轻量引用</text>
+      <text x="14" y="72" font-size="10" fill="#5f5e5a">真实 actor 在远端节点跑</text>
+    </g>
+
+    <!-- 阻塞点 -->
+    <g transform="translate(20, 260)">
+      <rect x="0" y="0" width="380" height="44" rx="6" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.8"/>
+      <text x="14" y="20" font-size="11" font-weight="700" fill="#501313">ray.get(runner.run.remote(config))</text>
+      <text x="14" y="36" font-size="10" fill="#A32D2D">→ 阻塞 · 等 TaskRunner 训练完才返回</text>
+    </g>
+  </g>
+
+  <!-- 跨进程箭头 -->
+  <g>
+    <path d="M 480 380 L 580 380" stroke="#A32D2D" stroke-width="2" stroke-dasharray="4 3" fill="none" marker-end="url(#arrow)"/>
+    <text x="530" y="370" font-size="11" fill="#A32D2D" text-anchor="middle" font-weight="700">RPC</text>
+    <text x="530" y="396" font-size="10" fill="#A32D2D" text-anchor="middle">.remote()</text>
+  </g>
+
+  <!-- ============== 右上：TaskRunner actor ============== -->
+  <g transform="translate(580, 220)">
+    <rect x="0" y="0" width="840" height="600" rx="10" fill="#FAECE7" stroke="#D85A30" stroke-width="2"/>
+    <text x="20" y="32" font-size="16" font-weight="700" fill="#4A1B0C">TaskRunner Ray actor（某 worker node CPU）</text>
+    <text x="20" y="52" font-size="11" fill="#5f5e5a" font-style="italic">@ray.remote(num_cpus=1) class TaskRunner · 装配中心</text>
+    <line x1="20" y1="62" x2="380" y2="62" stroke="#F0997B" stroke-width="0.6"/>
+
+    <!-- 阶段标注 -->
+    <text x="20" y="84" font-size="11.5" font-weight="700" fill="#993C1D">def run(self, config):  # 装配整个训练系统</text>
+
+    <!-- 两个字典 -->
+    <g transform="translate(20, 100)">
+      <text x="0" y="0" font-size="12" font-weight="700" fill="#4A1B0C">① 注册阶段：填两个字典</text>
+
+      <g transform="translate(0, 16)">
+        <rect x="0" y="0" width="395" height="120" rx="6" fill="#FFFFFF" stroke="#D85A30" stroke-width="0.6"/>
+        <text x="14" y="20" font-size="11" font-weight="700" fill="#4A1B0C">self.role_worker_mapping</text>
+        <text x="14" y="34" font-size="9" fill="#993C1D" font-style="italic">Role → ray.remote(WorkerClass)</text>
+
+        <g transform="translate(14, 50)" font-family="ui-monospace, monospace" font-size="10">
+          <text x="0" y="0" fill="#444441">{</text>
+          <text x="10" y="14" fill="#444441">Role.ActorRolloutRef:</text>
+          <text x="20" y="28" fill="#A32D2D">ray.remote(ActorRolloutRefWorker),</text>
+          <text x="10" y="44" fill="#444441">Role.Critic:</text>
+          <text x="20" y="58" fill="#A32D2D">ray.remote(TrainingWorker),</text>
+          <text x="0" y="72" fill="#444441">}</text>
+        </g>
+      </g>
+
+      <g transform="translate(405, 16)">
+        <rect x="0" y="0" width="395" height="120" rx="6" fill="#FFFFFF" stroke="#D85A30" stroke-width="0.6"/>
+        <text x="14" y="20" font-size="11" font-weight="700" fill="#4A1B0C">self.mapping</text>
+        <text x="14" y="34" font-size="9" fill="#993C1D" font-style="italic">Role → resource_pool_id (string)</text>
+
+        <g transform="translate(14, 50)" font-family="ui-monospace, monospace" font-size="10">
+          <text x="0" y="0" fill="#444441">{</text>
+          <text x="10" y="14" fill="#444441">Role.ActorRolloutRef:</text>
+          <text x="20" y="28" fill="#0F6E56">"global_pool",</text>
+          <text x="10" y="44" fill="#444441">Role.Critic:</text>
+          <text x="20" y="58" fill="#0F6E56">"global_pool",</text>
+          <text x="10" y="72" fill="#444441">Role.RewardModel: </text>
+          <text x="20" y="86" fill="#0F6E56">"reward_pool",</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- ResourcePoolManager -->
+    <g transform="translate(20, 252)">
+      <text x="0" y="0" font-size="12" font-weight="700" fill="#4A1B0C">② 创建 ResourcePoolManager（持有规划，不分配 GPU）</text>
+
+      <g transform="translate(0, 16)">
+        <rect x="0" y="0" width="800" height="80" rx="6" fill="#FFFFFF" stroke="#D85A30" stroke-width="0.6"/>
+        <text x="14" y="20" font-size="11" font-weight="700" fill="#4A1B0C">resource_pool_manager</text>
+
+        <g transform="translate(14, 32)" font-family="ui-monospace, monospace" font-size="10">
+          <text x="0" y="0" fill="#444441">resource_pool_spec = {</text>
+          <text x="10" y="14" fill="#444441">"global_pool": [8, 8, 8, 8],   </text>
+          <text x="320" y="14" fill="#888780"># 4 节点 × 8 GPU</text>
+          <text x="10" y="28" fill="#444441">"reward_pool": [8, 8],         </text>
+          <text x="320" y="28" fill="#888780"># 可选独占池</text>
+          <text x="0" y="42" fill="#444441">}</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- RayPPOTrainer -->
+    <g transform="translate(20, 360)">
+      <text x="0" y="0" font-size="12" font-weight="700" fill="#4A1B0C">③ 构造 RayPPOTrainer（single controller 主控）</text>
+
+      <g transform="translate(0, 16)">
+        <rect x="0" y="0" width="800" height="200" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+        <text x="14" y="22" font-size="13" font-weight="700" fill="#26215C">trainer (RayPPOTrainer)</text>
+        <text x="14" y="38" font-size="10" fill="#5f5e5a" font-style="italic">single controller · 编排所有 worker</text>
+
+        <line x1="14" y1="48" x2="780" y2="48" stroke="#CECBF6" stroke-width="0.4"/>
+
+        <text x="14" y="66" font-size="11" font-weight="700" fill="#26215C">持有的 WorkerGroup（init_workers() 后才有）：</text>
+
+        <g transform="translate(14, 78)">
+          <rect x="0" y="0" width="180" height="40" rx="4" fill="#FFFFFF" stroke="#534AB7" stroke-width="0.6"/>
+          <text x="90" y="18" font-size="10" font-weight="700" fill="#26215C" text-anchor="middle">actor_rollout_wg</text>
+          <text x="90" y="32" font-size="9" fill="#534AB7" text-anchor="middle">RayWorkerGroup</text>
+
+          <rect x="190" y="0" width="180" height="40" rx="4" fill="#FFFFFF" stroke="#534AB7" stroke-width="0.6"/>
+          <text x="280" y="18" font-size="10" font-weight="700" fill="#26215C" text-anchor="middle">critic_wg</text>
+          <text x="280" y="32" font-size="9" fill="#534AB7" text-anchor="middle">RayWorkerGroup</text>
+
+          <rect x="380" y="0" width="180" height="40" rx="4" fill="#FFFFFF" stroke="#534AB7" stroke-width="0.6"/>
+          <text x="470" y="18" font-size="10" font-weight="700" fill="#26215C" text-anchor="middle">ref_wg (可选)</text>
+          <text x="470" y="32" font-size="9" fill="#534AB7" text-anchor="middle">RayWorkerGroup</text>
+
+          <rect x="570" y="0" width="180" height="40" rx="4" fill="#FFFFFF" stroke="#534AB7" stroke-width="0.6"/>
+          <text x="660" y="18" font-size="10" font-weight="700" fill="#26215C" text-anchor="middle">rm_wg (可选)</text>
+          <text x="660" y="32" font-size="9" fill="#534AB7" text-anchor="middle">RayWorkerGroup</text>
+        </g>
+
+        <text x="14" y="142" font-size="10" font-family="ui-monospace, monospace" fill="#534AB7">trainer.init_workers()  ← 真正起 actor 的地方</text>
+        <text x="14" y="160" font-size="10" font-family="ui-monospace, monospace" fill="#534AB7">trainer.fit()           ← 训练主循环</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============== 中间：从 trainer 指向远端的引用箭头 ============== -->
+  <!-- WorkerGroup -> Workers -->
+  <g>
+    <path d="M 340 1230 Q 340 880 680 880" stroke="#534AB7" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+    <text x="220" y="1100" font-size="11" fill="#26215C" font-weight="600" transform="rotate(-90 220 1100)">WorkerGroup 持有 N 个 actor handle</text>
+  </g>
+
+  <!-- ============== 资源池横幅 ============== -->
+  <g transform="translate(60, 880)">
+    <rect x="0" y="0" width="1360" height="60" rx="8" fill="#F1EFE8" stroke="#888780" stroke-width="0.8"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#1a1a1a">━━ 跨网络 · 物理 GPU 节点 ━━</text>
+    <text x="22" y="48" font-size="11" fill="#5f5e5a" font-style="italic">下方所有对象都跑在 worker node 上 · 每个 actor 是独立进程占一张 GPU · 通过 Ray 网络通信</text>
+  </g>
+
+  <!-- ============== Resource Pool 层 ============== -->
+  <g transform="translate(60, 960)">
+    <text x="0" y="0" font-size="14" font-weight="700" fill="#412402">资源池（Ray placement groups）</text>
+
+    <g transform="translate(0, 20)">
+      <!-- global_pool -->
+      <g>
+        <rect x="0" y="0" width="900" height="100" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="1.5"/>
+        <text x="20" y="26" font-size="13" font-weight="700" fill="#412402">global_pool（4 节点 × 8 GPU = 32 张）</text>
+        <text x="20" y="42" font-size="10" fill="#854F0B" font-style="italic">由 ResourcePoolManager 向 Ray 申请的 placement group</text>
+
+        <g transform="translate(20, 56)" font-size="10">
+          <!-- 4 个节点 -->
+          <rect x="0" y="0" width="200" height="32" rx="3" fill="#FFFFFF" stroke="#BA7517" stroke-width="0.6"/>
+          <text x="100" y="20" fill="#412402" text-anchor="middle">node-01 · 8×A100</text>
+          <rect x="210" y="0" width="200" height="32" rx="3" fill="#FFFFFF" stroke="#BA7517" stroke-width="0.6"/>
+          <text x="310" y="20" fill="#412402" text-anchor="middle">node-02 · 8×A100</text>
+          <rect x="420" y="0" width="200" height="32" rx="3" fill="#FFFFFF" stroke="#BA7517" stroke-width="0.6"/>
+          <text x="520" y="20" fill="#412402" text-anchor="middle">node-03 · 8×A100</text>
+          <rect x="630" y="0" width="200" height="32" rx="3" fill="#FFFFFF" stroke="#BA7517" stroke-width="0.6"/>
+          <text x="730" y="20" fill="#412402" text-anchor="middle">node-04 · 8×A100</text>
+        </g>
+      </g>
+
+      <!-- reward_pool -->
+      <g transform="translate(920, 0)">
+        <rect x="0" y="0" width="440" height="100" rx="8" fill="#FAEEDA" stroke="#BA7517" stroke-width="1.5"/>
+        <text x="20" y="26" font-size="13" font-weight="700" fill="#412402">reward_pool（可选）</text>
+        <text x="20" y="42" font-size="10" fill="#854F0B" font-style="italic">独占 reward model 资源</text>
+
+        <g transform="translate(20, 56)" font-size="10">
+          <rect x="0" y="0" width="180" height="32" rx="3" fill="#FFFFFF" stroke="#BA7517" stroke-width="0.6"/>
+          <text x="90" y="20" fill="#412402" text-anchor="middle">node-05 · 8×A100</text>
+          <rect x="190" y="0" width="180" height="32" rx="3" fill="#FFFFFF" stroke="#BA7517" stroke-width="0.6"/>
+          <text x="280" y="20" fill="#412402" text-anchor="middle">node-06 · 8×A100</text>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============== Worker Actor 层 ============== -->
+  <g transform="translate(60, 1140)">
+    <text x="0" y="0" font-size="14" font-weight="700" fill="#4A1B0C">Ray actor 层（每个 actor 是独立进程，占一张 GPU）</text>
+
+    <!-- ActorRolloutRefWorker 32 个 -->
+    <g transform="translate(0, 20)">
+      <rect x="0" y="0" width="900" height="280" rx="8" fill="#FAECE7" stroke="#D85A30" stroke-width="1.5"/>
+      <text x="20" y="26" font-size="13" font-weight="700" fill="#4A1B0C">actor_rollout_wg 持有的 32 个 ActorRolloutRefWorker actor</text>
+      <text x="20" y="42" font-size="10" fill="#993C1D" font-style="italic">每个 actor 内部装着 actor 训练 engine + rollout 推理 engine + ref forward engine</text>
+
+      <!-- 一个 actor 的内部结构（详细展示） -->
+      <g transform="translate(20, 56)">
+        <rect x="0" y="0" width="430" height="200" rx="6" fill="#FFFFFF" stroke="#D85A30" stroke-width="1"/>
+        <text x="14" y="22" font-size="12" font-weight="700" fill="#4A1B0C">ActorRolloutRefWorker (rank 0, GPU 0)</text>
+        <text x="14" y="36" font-size="9" font-family="ui-monospace, monospace" fill="#993C1D">PID 22001</text>
+
+        <line x1="14" y1="46" x2="416" y2="46" stroke="#F0997B" stroke-width="0.4"/>
+
+        <!-- 内部 engines -->
+        <g transform="translate(14, 56)">
+          <rect x="0" y="0" width="400" height="40" rx="4" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.8"/>
+          <text x="14" y="18" font-size="11" font-weight="700" fill="#04342C">self.actor_engine (FSDP)</text>
+          <text x="14" y="32" font-size="9" font-family="ui-monospace, monospace" fill="#0F6E56">FSDP-wrapped policy model · forward + backward</text>
+
+          <rect x="0" y="48" width="400" height="40" rx="4" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.8"/>
+          <text x="14" y="66" font-size="11" font-weight="700" fill="#412402">self.rollout (vLLM)</text>
+          <text x="14" y="80" font-size="9" font-family="ui-monospace, monospace" fill="#854F0B">vLLM engine · TP=2 切片 · KV pool</text>
+
+          <rect x="0" y="96" width="400" height="40" rx="4" fill="#E6F1FB" stroke="#378ADD" stroke-width="0.8"/>
+          <text x="14" y="114" font-size="11" font-weight="700" fill="#042C53">self.ref_engine (FSDP，frozen)</text>
+          <text x="14" y="128" font-size="9" font-family="ui-monospace, monospace" fill="#185FA5">冻结 ref · 仅 forward 算 ref_logp</text>
+        </g>
+      </g>
+
+      <!-- 其他 actor 简化展示 -->
+      <g transform="translate(470, 56)">
+        <rect x="0" y="0" width="200" height="60" rx="6" fill="#FFFFFF" stroke="#D85A30" stroke-width="0.8"/>
+        <text x="14" y="22" font-size="11" font-weight="700" fill="#4A1B0C">Worker rank 1 (GPU 1)</text>
+        <text x="14" y="38" font-size="9" font-family="ui-monospace, monospace" fill="#993C1D">PID 22002 · 同样三个 engine</text>
+        <text x="14" y="52" font-size="9" fill="#5f5e5a" font-style="italic">FSDP + vLLM + ref</text>
+
+        <rect x="0" y="68" width="200" height="60" rx="6" fill="#FFFFFF" stroke="#D85A30" stroke-width="0.8"/>
+        <text x="14" y="90" font-size="11" font-weight="700" fill="#4A1B0C">Worker rank 2 (GPU 2)</text>
+        <text x="14" y="106" font-size="9" font-family="ui-monospace, monospace" fill="#993C1D">PID 22003</text>
+
+        <text x="100" y="160" font-size="14" fill="#5f5e5a" text-anchor="middle">⋯ 共 32 个 ⋯</text>
+
+        <rect x="0" y="170" width="200" height="60" rx="6" fill="#FFFFFF" stroke="#D85A30" stroke-width="0.8"/>
+        <text x="14" y="192" font-size="11" font-weight="700" fill="#4A1B0C">Worker rank 31 (GPU 31)</text>
+        <text x="14" y="208" font-size="9" font-family="ui-monospace, monospace" fill="#993C1D">PID 22032</text>
+      </g>
+
+      <text x="700" y="280" font-size="11" fill="#5f5e5a" font-style="italic" text-anchor="end">→ 这 32 个 actor 共占 global_pool 的 32 张 GPU</text>
+    </g>
+
+    <!-- Critic Workers (PPO only) -->
+    <g transform="translate(920, 20)">
+      <rect x="0" y="0" width="440" height="280" rx="8" fill="#FAECE7" stroke="#D85A30" stroke-width="1.5" stroke-dasharray="6 3"/>
+      <text x="20" y="26" font-size="13" font-weight="700" fill="#4A1B0C">critic_wg（PPO 才有，GRPO 不用）</text>
+      <text x="20" y="42" font-size="10" fill="#993C1D" font-style="italic">colocate 时和 actor 共享 GPU</text>
+
+      <g transform="translate(20, 56)">
+        <rect x="0" y="0" width="400" height="40" rx="6" fill="#FFFFFF" stroke="#D85A30" stroke-width="0.6"/>
+        <text x="14" y="22" font-size="11" font-weight="700" fill="#4A1B0C">CriticWorker (rank 0)</text>
+        <text x="14" y="36" font-size="9" fill="#993C1D">FSDP value model</text>
+
+        <text x="200" y="80" font-size="12" fill="#5f5e5a" text-anchor="middle" font-style="italic">⋯</text>
+
+        <rect x="0" y="100" width="400" height="40" rx="6" fill="#FFFFFF" stroke="#D85A30" stroke-width="0.6"/>
+        <text x="14" y="122" font-size="11" font-weight="700" fill="#4A1B0C">CriticWorker (rank N)</text>
+      </g>
+
+      <text x="220" y="265" font-size="10" fill="#5f5e5a" text-anchor="middle" font-style="italic">虚线：可选组件</text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 关键引用关系图                                    -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 1480)">
+    <rect x="0" y="0" width="1360" height="600" rx="8" fill="#FFFFFF" stroke="#534AB7" stroke-width="1"/>
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#26215C">关键引用关系 · 谁持有谁的 handle</text>
+    <line x1="22" y1="44" x2="500" y2="44" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <text x="22" y="68" font-size="12" fill="#5f5e5a">下面这条引用链是整个 verl 运行时的"骨架"</text>
+
+    <!-- 引用链可视化 -->
+    <g transform="translate(40, 100)">
+      <!-- driver -->
+      <rect x="0" y="0" width="200" height="60" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.8"/>
+      <text x="100" y="24" font-size="12" fill="#26215C" text-anchor="middle" font-weight="700">Driver</text>
+      <text x="100" y="42" font-size="10" font-family="ui-monospace, monospace" fill="#534AB7" text-anchor="middle">main()</text>
+
+      <line x1="200" y1="30" x2="280" y2="30" stroke="#534AB7" stroke-width="2" marker-end="url(#ref-arrow)"/>
+      <text x="240" y="22" font-size="10" fill="#534AB7" text-anchor="middle">持有</text>
+
+      <!-- TaskRunner handle -->
+      <rect x="280" y="0" width="200" height="60" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.8"/>
+      <text x="380" y="22" font-size="11" fill="#26215C" text-anchor="middle" font-weight="700">runner</text>
+      <text x="380" y="38" font-size="9" font-family="ui-monospace, monospace" fill="#534AB7" text-anchor="middle">TaskRunner.handle</text>
+      <text x="380" y="52" font-size="9" fill="#5f5e5a" text-anchor="middle">(轻量引用)</text>
+
+      <line x1="480" y1="30" x2="560" y2="30" stroke="#A32D2D" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+      <text x="520" y="22" font-size="10" fill="#A32D2D" text-anchor="middle">RPC</text>
+
+      <!-- TaskRunner actor -->
+      <rect x="560" y="0" width="200" height="60" rx="6" fill="#FAECE7" stroke="#D85A30" stroke-width="1"/>
+      <text x="660" y="22" font-size="11" fill="#4A1B0C" text-anchor="middle" font-weight="700">TaskRunner actor</text>
+      <text x="660" y="38" font-size="9" font-family="ui-monospace, monospace" fill="#993C1D" text-anchor="middle">远端进程</text>
+      <text x="660" y="52" font-size="9" fill="#5f5e5a" text-anchor="middle">(独立 Python 进程)</text>
+
+      <line x1="760" y1="30" x2="840" y2="30" stroke="#534AB7" stroke-width="2" marker-end="url(#ref-arrow)"/>
+      <text x="800" y="22" font-size="10" fill="#534AB7" text-anchor="middle">持有</text>
+
+      <!-- RayPPOTrainer -->
+      <rect x="840" y="0" width="200" height="60" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+      <text x="940" y="22" font-size="11" fill="#26215C" text-anchor="middle" font-weight="700">RayPPOTrainer</text>
+      <text x="940" y="38" font-size="9" fill="#5f5e5a" text-anchor="middle">single controller</text>
+
+      <line x1="1040" y1="30" x2="1120" y2="30" stroke="#534AB7" stroke-width="2" marker-end="url(#ref-arrow)"/>
+      <text x="1080" y="22" font-size="10" fill="#534AB7" text-anchor="middle">持有</text>
+
+      <!-- WorkerGroup -->
+      <rect x="1120" y="0" width="200" height="60" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+      <text x="1220" y="22" font-size="11" fill="#26215C" text-anchor="middle" font-weight="700">actor_rollout_wg</text>
+      <text x="1220" y="38" font-size="9" font-family="ui-monospace, monospace" fill="#534AB7" text-anchor="middle">RayWorkerGroup</text>
+      <text x="1220" y="52" font-size="9" fill="#5f5e5a" text-anchor="middle">(本地代理对象)</text>
+    </g>
+
+    <!-- 第二层：WorkerGroup -> Workers -->
+    <g transform="translate(40, 200)">
+      <rect x="1120" y="0" width="200" height="40" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.8"/>
+      <text x="1220" y="22" font-size="11" fill="#26215C" text-anchor="middle" font-weight="700">actor_rollout_wg</text>
+
+      <line x1="1220" y1="40" x2="1220" y2="80" stroke="#534AB7" stroke-width="2" marker-end="url(#ref-arrow)"/>
+      <text x="1240" y="62" font-size="10" fill="#534AB7">持有 N 个</text>
+
+      <g transform="translate(1080, 90)">
+        <rect x="0" y="0" width="280" height="40" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.6"/>
+        <text x="140" y="16" font-size="10" fill="#26215C" text-anchor="middle" font-weight="700">self._workers (列表)</text>
+        <text x="140" y="32" font-size="9" font-family="ui-monospace, monospace" fill="#534AB7" text-anchor="middle">[handle_0, handle_1, ..., handle_31]</text>
+      </g>
+
+      <line x1="1220" y1="130" x2="1220" y2="170" stroke="#A32D2D" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+      <text x="1240" y="152" font-size="10" fill="#A32D2D">RPC</text>
+
+      <g transform="translate(1080, 180)">
+        <rect x="0" y="0" width="280" height="60" rx="6" fill="#FAECE7" stroke="#D85A30" stroke-width="1"/>
+        <text x="140" y="22" font-size="11" fill="#4A1B0C" text-anchor="middle" font-weight="700">32 个 ActorRolloutRefWorker</text>
+        <text x="140" y="38" font-size="9" fill="#993C1D" text-anchor="middle">分布在远端 32 张 GPU 上</text>
+        <text x="140" y="52" font-size="9" fill="#5f5e5a" text-anchor="middle">每个 actor 是独立进程</text>
+      </g>
+    </g>
+
+    <!-- 第三层：Workers -> Resource Pool -->
+    <g transform="translate(40, 460)">
+      <text x="0" y="0" font-size="13" font-weight="700" fill="#26215C">资源占用关系：</text>
+
+      <rect x="0" y="20" width="280" height="40" rx="6" fill="#FAECE7" stroke="#D85A30" stroke-width="0.6"/>
+      <text x="140" y="42" font-size="10" fill="#4A1B0C" text-anchor="middle">32 个 Ray actor</text>
+
+      <line x1="280" y1="40" x2="360" y2="40" stroke="#0F6E56" stroke-width="2" stroke-dasharray="2 2" marker-end="url(#arrow)"/>
+      <text x="320" y="32" font-size="10" fill="#0F6E56" text-anchor="middle">占用</text>
+
+      <rect x="360" y="20" width="280" height="40" rx="6" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.6"/>
+      <text x="500" y="42" font-size="10" fill="#412402" text-anchor="middle">global_pool (32 GPU)</text>
+
+      <line x1="640" y1="40" x2="720" y2="40" stroke="#0F6E56" stroke-width="2" stroke-dasharray="2 2" marker-end="url(#arrow)"/>
+      <text x="680" y="32" font-size="10" fill="#0F6E56" text-anchor="middle">背后是</text>
+
+      <rect x="720" y="20" width="280" height="40" rx="6" fill="#F1EFE8" stroke="#888780" stroke-width="0.6"/>
+      <text x="860" y="42" font-size="10" fill="#1a1a1a" text-anchor="middle">物理 GPU（4 节点 × 8 卡）</text>
+    </g>
+
+    <!-- 关键洞察 -->
+    <g transform="translate(40, 540)">
+      <rect x="0" y="0" width="1280" height="50" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.6"/>
+      <text x="14" y="22" font-size="12" font-weight="700" fill="#26215C">读源码定位法</text>
+      <text x="14" y="40" font-size="11" fill="#444441">看到 .remote() = RPC · 看到 _wg.xxx() = WorkerGroup 代理 · 看到 self._workers = N 个远端 actor 引用 · 看到 placement_group = 资源池</text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 一次方法调用的完整流转                            -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 2120)">
+    <rect x="0" y="0" width="1360" height="240" rx="8" fill="#FFFFFF" stroke="#A32D2D" stroke-width="1"/>
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#501313">最终连起来 · trainer.fit() 内一行代码的完整流转</text>
+    <line x1="22" y1="44" x2="540" y2="44" stroke="#F09595" stroke-width="0.6"/>
+
+    <g transform="translate(40, 70)" font-size="12">
+      <text x="0" y="0" font-weight="700" fill="#501313">trainer.fit() 内某一行：</text>
+      <text x="200" y="0" font-family="ui-monospace, monospace" fill="#A32D2D">resp = self.actor_rollout_wg.generate_sequences(prompts)</text>
+
+      <text x="0" y="32" font-weight="700" fill="#501313">这一行内部发生：</text>
+
+      <g transform="translate(0, 50)" font-size="11">
+        <text x="0" y="0" fill="#444441">1. 在 TaskRunner 进程内：trainer 找到自己持有的 actor_rollout_wg</text>
+        <text x="0" y="20" fill="#444441">2. WorkerGroup 内部：查 dispatch_table → "generate_sequences" 是 DP_COMPUTE_PROTO</text>
+        <text x="0" y="40" fill="#444441">3. 切 prompts batch 成 32 份 → 通过 self._workers 列表里的 handle 发 32 个 .remote()</text>
+        <text x="0" y="60" fill="#444441">4. 32 个远端 ActorRolloutRefWorker actor 各自调用自己的 self.rollout (vLLM) 生成</text>
+        <text x="0" y="80" fill="#444441">5. 结果通过 Ray object store 返回 → ray.get → concat → trainer 拿到完整 resp</text>
+
+        <text x="0" y="110" fill="#5f5e5a" font-style="italic">→ 全程 trainer 那段代码看起来像单机调用，背后是 32 张 GPU 同时干活</text>
+      </g>
+    </g>
+  </g>
+
+</svg>

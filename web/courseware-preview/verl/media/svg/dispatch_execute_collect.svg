@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1480 1820" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Helvetica Neue', sans-serif">
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FAFAF7"/>
+      <stop offset="100%" stop-color="#F3F2EC"/>
+    </linearGradient>
+
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-thin" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect width="1480" height="1820" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="60" y="58" font-size="28" font-weight="600" fill="#1a1a1a" letter-spacing="-0.4">Dispatch / Execute / Collect 各自发生在哪里</text>
+  <text x="60" y="86" font-size="14" fill="#6b6b66" font-style="italic">这是理解 single controller 模式的核心 · 一次 _wg 调用的完整时序</text>
+  <line x1="60" y1="100" x2="1420" y2="100" stroke="#d4d2c7" stroke-width="0.8"/>
+
+  <!-- ============================================== -->
+  <!-- 三个动作速览                                     -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 120)">
+    <rect x="0" y="0" width="1360" height="160" rx="6" fill="#FFFFFF" stroke="#534AB7" stroke-width="0.8"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#26215C">速览：三个动作分别在哪</text>
+    <line x1="22" y1="40" x2="320" y2="40" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <g transform="translate(22, 60)" font-size="13">
+      <!-- Dispatch -->
+      <g>
+        <rect x="0" y="0" width="14" height="14" rx="2" fill="#534AB7"/>
+        <text x="22" y="12" font-weight="700" fill="#26215C">Dispatch（分发）</text>
+        <text x="200" y="12" fill="#444441">在 <tspan font-weight="700" fill="#26215C">driver 进程</tspan>内 · WorkerGroup 代理方法的前半段 · 切 batch + 发 RPC</text>
+      </g>
+
+      <!-- Execute -->
+      <g transform="translate(0, 28)">
+        <rect x="0" y="0" width="14" height="14" rx="2" fill="#D85A30"/>
+        <text x="22" y="12" font-weight="700" fill="#4A1B0C">Execute（执行）</text>
+        <text x="200" y="12" fill="#444441">在 <tspan font-weight="700" fill="#4A1B0C">worker 进程</tspan>内 · 64 个 Ray actor 在各自 GPU 上独立计算</text>
+      </g>
+
+      <!-- Collect -->
+      <g transform="translate(0, 56)">
+        <rect x="0" y="0" width="14" height="14" rx="2" fill="#0F6E56"/>
+        <text x="22" y="12" font-weight="700" fill="#04342C">Collect（聚合）</text>
+        <text x="200" y="12" fill="#444441">回到 <tspan font-weight="700" fill="#04342C">driver 进程</tspan> · WorkerGroup 代理方法的后半段 · ray.get + concat</text>
+      </g>
+
+      <text x="0" y="100" font-size="12" fill="#5f5e5a" font-style="italic">关键洞察：dispatch 和 collect 是 driver 端的"两个动作" · execute 是 worker 端的"中间动作" · 三者构成 RPC 调用的完整周期</text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 主时序图                                          -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 300)">
+    <rect x="0" y="0" width="1360" height="900" rx="8" fill="#FFFFFF" stroke="#d4d2c7" stroke-width="0.8"/>
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#1a1a1a">完整时序 · 一次 actor_wg.generate_sequences(batch) 调用</text>
+    <line x1="22" y1="44" x2="500" y2="44" stroke="#d4d2c7" stroke-width="0.6"/>
+
+    <!-- 两个 swim lane 的标题 -->
+    <g transform="translate(40, 70)">
+      <!-- Driver lane -->
+      <rect x="0" y="0" width="600" height="40" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+      <text x="300" y="26" font-size="14" font-weight="700" fill="#26215C" text-anchor="middle">Driver 进程（head node CPU · 单进程）</text>
+
+      <!-- Worker lane -->
+      <rect x="680" y="0" width="600" height="40" rx="6" fill="#FAECE7" stroke="#D85A30" stroke-width="1"/>
+      <text x="980" y="26" font-size="14" font-weight="700" fill="#4A1B0C" text-anchor="middle">Worker 进程（GPU 节点 · 64 个并行）</text>
+    </g>
+
+    <!-- Time axis arrow on far left -->
+    <g transform="translate(20, 130)">
+      <line x1="0" y1="0" x2="0" y2="720" stroke="#888780" stroke-width="0.8" marker-end="url(#arrow-thin)"/>
+      <text x="-4" y="-4" font-size="11" fill="#5f5e5a" font-weight="600" text-anchor="end" transform="rotate(-90 -4 -4)">time ↓</text>
+    </g>
+
+    <!-- ============== STEP 1: 用户代码 (driver) ============== -->
+    <g transform="translate(40, 130)">
+      <rect x="0" y="0" width="600" height="60" rx="6" fill="#FFFFFF" stroke="#534AB7" stroke-width="0.8"/>
+      <text x="14" y="22" font-size="12" font-weight="700" fill="#26215C">① 用户代码（driver）</text>
+      <text x="14" y="44" font-size="12" font-family="ui-monospace, monospace" fill="#444441">result = actor_wg.generate_sequences(batch)</text>
+    </g>
+
+    <!-- ============== STEP 2: DISPATCH (driver) ============== -->
+    <g transform="translate(40, 210)">
+      <rect x="0" y="0" width="600" height="180" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.2"/>
+      <text x="14" y="22" font-size="13" font-weight="700" fill="#26215C">② DISPATCH（在 driver 内执行）</text>
+      <line x1="14" y1="32" x2="280" y2="32" stroke="#CECBF6" stroke-width="0.6"/>
+
+      <g transform="translate(14, 50)" font-size="11.5">
+        <!-- Step a -->
+        <text x="0" y="0" fill="#444441"><tspan font-weight="700" fill="#26215C">a.</tspan> 查 dispatch_table</text>
+        <text x="20" y="16" font-family="ui-monospace, monospace" fill="#534AB7">"generate_sequences" → DP_COMPUTE_PROTO</text>
+
+        <!-- Step b -->
+        <text x="0" y="40" fill="#444441"><tspan font-weight="700" fill="#26215C">b.</tspan> 切分输入 batch</text>
+        <text x="20" y="56" font-family="ui-monospace, monospace" fill="#534AB7">batch[128] → [shard_0, shard_1, ..., shard_63]</text>
+        <text x="20" y="72" font-size="10.5" fill="#5f5e5a" font-style="italic">每 shard 包含 batch[i*2 : i*2+2]</text>
+
+        <!-- Step c -->
+        <text x="0" y="100" fill="#444441"><tspan font-weight="700" fill="#26215C">c.</tspan> 发 64 个 Ray RPC（异步、并发）</text>
+        <text x="20" y="116" font-family="ui-monospace, monospace" fill="#534AB7">futures = [worker_i.generate.remote(shard_i) for i in 64]</text>
+      </g>
+    </g>
+
+    <!-- 64 RPC arrows fanning out -->
+    <g transform="translate(640, 220)">
+      <!-- 简化为 5 条代表性箭头 -->
+      <path d="M 0 30 Q 30 30 40 60" fill="none" stroke="#534AB7" stroke-width="1.2" marker-end="url(#arrow-thin)"/>
+      <path d="M 0 60 Q 30 60 40 100" fill="none" stroke="#534AB7" stroke-width="1.2" marker-end="url(#arrow-thin)"/>
+      <path d="M 0 90 Q 30 90 40 140" fill="none" stroke="#534AB7" stroke-width="1.2" marker-end="url(#arrow-thin)"/>
+      <path d="M 0 120 Q 30 120 40 180" fill="none" stroke="#534AB7" stroke-width="1.2" marker-end="url(#arrow-thin)"/>
+      <path d="M 0 150 Q 30 150 40 220" fill="none" stroke="#534AB7" stroke-width="1.2" marker-end="url(#arrow-thin)"/>
+
+      <text x="60" y="180" font-size="10" fill="#534AB7" font-style="italic">64 个并发 RPC</text>
+    </g>
+
+    <!-- ============== STEP 3: EXECUTE (workers) ============== -->
+    <g transform="translate(720, 230)">
+      <rect x="0" y="0" width="560" height="320" rx="6" fill="#FAECE7" stroke="#D85A30" stroke-width="1.2"/>
+      <text x="14" y="22" font-size="13" font-weight="700" fill="#4A1B0C">③ EXECUTE（在 64 个 worker 进程内并行）</text>
+      <line x1="14" y1="32" x2="280" y2="32" stroke="#F0997B" stroke-width="0.6"/>
+
+      <!-- 64 个 worker 的简化展示 -->
+      <g transform="translate(14, 50)">
+        <!-- Worker 0 -->
+        <g transform="translate(0, 0)">
+          <rect x="0" y="0" width="170" height="74" rx="4" fill="#FFFFFF" stroke="#D85A30" stroke-width="0.8"/>
+          <text x="85" y="18" font-size="11" font-weight="700" fill="#4A1B0C" text-anchor="middle">Worker 0</text>
+          <text x="10" y="36" font-size="10" fill="#993C1D">收 shard_0 (2 prompts)</text>
+          <text x="10" y="52" font-size="10" fill="#993C1D">vLLM forward × 200</text>
+          <text x="10" y="68" font-size="10" fill="#993C1D">return result_0</text>
+        </g>
+
+        <!-- Worker 1 -->
+        <g transform="translate(180, 0)">
+          <rect x="0" y="0" width="170" height="74" rx="4" fill="#FFFFFF" stroke="#D85A30" stroke-width="0.8"/>
+          <text x="85" y="18" font-size="11" font-weight="700" fill="#4A1B0C" text-anchor="middle">Worker 1</text>
+          <text x="10" y="36" font-size="10" fill="#993C1D">收 shard_1 (2 prompts)</text>
+          <text x="10" y="52" font-size="10" fill="#993C1D">vLLM forward × 200</text>
+          <text x="10" y="68" font-size="10" fill="#993C1D">return result_1</text>
+        </g>
+
+        <!-- Worker 2 -->
+        <g transform="translate(360, 0)">
+          <rect x="0" y="0" width="170" height="74" rx="4" fill="#FFFFFF" stroke="#D85A30" stroke-width="0.8"/>
+          <text x="85" y="18" font-size="11" font-weight="700" fill="#4A1B0C" text-anchor="middle">Worker 2</text>
+          <text x="10" y="36" font-size="10" fill="#993C1D">收 shard_2</text>
+          <text x="10" y="52" font-size="10" fill="#993C1D">vLLM forward × 200</text>
+          <text x="10" y="68" font-size="10" fill="#993C1D">return result_2</text>
+        </g>
+
+        <!-- ... -->
+        <g transform="translate(0, 84)">
+          <text x="265" y="14" font-size="14" fill="#5f5e5a" text-anchor="middle">⋯ 共 64 个 worker 同时工作 ⋯</text>
+        </g>
+
+        <!-- Worker 63 -->
+        <g transform="translate(180, 110)">
+          <rect x="0" y="0" width="170" height="74" rx="4" fill="#FFFFFF" stroke="#D85A30" stroke-width="0.8"/>
+          <text x="85" y="18" font-size="11" font-weight="700" fill="#4A1B0C" text-anchor="middle">Worker 63</text>
+          <text x="10" y="36" font-size="10" fill="#993C1D">收 shard_63</text>
+          <text x="10" y="52" font-size="10" fill="#993C1D">vLLM forward × 200</text>
+          <text x="10" y="68" font-size="10" fill="#993C1D">return result_63</text>
+        </g>
+
+        <!-- Worker activities note -->
+        <text x="265" y="220" font-size="11" fill="#993C1D" text-anchor="middle" font-style="italic">每个 worker 独立、并发、互不通信（这次方法内部）</text>
+        <text x="265" y="236" font-size="11" fill="#993C1D" text-anchor="middle" font-style="italic">各自持有的模型权重不同（FSDP shard / vLLM TP shard）</text>
+      </g>
+    </g>
+
+    <!-- Driver waiting state during EXECUTE -->
+    <g transform="translate(40, 410)">
+      <rect x="0" y="0" width="600" height="140" rx="6" fill="#FFFFFF" stroke="#888780" stroke-width="0.8" stroke-dasharray="4 3"/>
+      <text x="14" y="22" font-size="12" font-weight="700" fill="#5f5e5a">Driver 此刻在做什么？</text>
+      <line x1="14" y1="32" x2="220" y2="32" stroke="#D3D1C7" stroke-width="0.6"/>
+
+      <text x="14" y="56" font-size="12" fill="#444441">阻塞在 <tspan font-family="ui-monospace, monospace" fill="#534AB7">ray.get(futures)</tspan> 这一行</text>
+      <text x="14" y="76" font-size="12" fill="#444441">什么都不做 · 等所有 64 个 RPC 返回</text>
+      <text x="14" y="100" font-size="11.5" fill="#5f5e5a" font-style="italic">最慢的 worker 决定整体耗时</text>
+      <text x="14" y="118" font-size="11.5" fill="#5f5e5a" font-style="italic">这就是 straggler 问题的根源</text>
+    </g>
+
+    <!-- 64 result arrows fanning back -->
+    <g transform="translate(640, 580)">
+      <path d="M 80 -130 Q 50 -100 40 -90" fill="none" stroke="#0F6E56" stroke-width="1.2" marker-end="url(#arrow-thin)"/>
+      <path d="M 80 -100 Q 50 -70 40 -60" fill="none" stroke="#0F6E56" stroke-width="1.2" marker-end="url(#arrow-thin)"/>
+      <path d="M 80 -70 Q 50 -40 40 -30" fill="none" stroke="#0F6E56" stroke-width="1.2" marker-end="url(#arrow-thin)"/>
+      <path d="M 80 -40 Q 50 -10 40 0" fill="none" stroke="#0F6E56" stroke-width="1.2" marker-end="url(#arrow-thin)"/>
+      <path d="M 80 -10 Q 50 20 40 30" fill="none" stroke="#0F6E56" stroke-width="1.2" marker-end="url(#arrow-thin)"/>
+
+      <text x="60" y="-150" font-size="10" fill="#0F6E56" font-style="italic">64 个返回值</text>
+    </g>
+
+    <!-- ============== STEP 4: COLLECT (driver) ============== -->
+    <g transform="translate(40, 570)">
+      <rect x="0" y="0" width="600" height="180" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1.2"/>
+      <text x="14" y="22" font-size="13" font-weight="700" fill="#04342C">④ COLLECT（在 driver 内执行）</text>
+      <line x1="14" y1="32" x2="280" y2="32" stroke="#5DCAA5" stroke-width="0.6"/>
+
+      <g transform="translate(14, 50)" font-size="11.5">
+        <!-- Step a -->
+        <text x="0" y="0" fill="#444441"><tspan font-weight="700" fill="#04342C">a.</tspan> 收集所有结果</text>
+        <text x="20" y="16" font-family="ui-monospace, monospace" fill="#0F6E56">results = ray.get(futures)</text>
+        <text x="20" y="32" font-size="10.5" fill="#5f5e5a" font-style="italic">→ list of 64 result objects</text>
+
+        <!-- Step b -->
+        <text x="0" y="60" fill="#444441"><tspan font-weight="700" fill="#04342C">b.</tspan> 按 dispatch_mode 聚合</text>
+        <text x="20" y="76" font-family="ui-monospace, monospace" fill="#0F6E56">DP_COMPUTE_PROTO → torch.cat(results, dim=0)</text>
+
+        <!-- Step c -->
+        <text x="0" y="104" fill="#444441"><tspan font-weight="700" fill="#04342C">c.</tspan> 返回完整结果给 driver 代码</text>
+        <text x="20" y="120" font-family="ui-monospace, monospace" fill="#0F6E56">return result  # shape: [128, ...]</text>
+      </g>
+    </g>
+
+    <!-- ============== STEP 5: 用户代码继续 ============== -->
+    <g transform="translate(40, 770)">
+      <rect x="0" y="0" width="600" height="60" rx="6" fill="#FFFFFF" stroke="#534AB7" stroke-width="0.8"/>
+      <text x="14" y="22" font-size="12" font-weight="700" fill="#26215C">⑤ 用户代码继续（driver）</text>
+      <text x="14" y="44" font-size="12" font-family="ui-monospace, monospace" fill="#444441">old_logp = actor_wg.compute_log_prob(result)  # 下一个调用</text>
+    </g>
+
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 几个常见误解                                     -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 1220)">
+    <rect x="0" y="0" width="1360" height="280" rx="6" fill="#FFFFFF" stroke="#A32D2D" stroke-width="0.8"/>
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#501313">常见误解纠正</text>
+    <line x1="22" y1="44" x2="280" y2="44" stroke="#F09595" stroke-width="0.6"/>
+
+    <g transform="translate(40, 70)" font-size="12">
+      <text x="0" y="0" font-weight="700" fill="#A32D2D">误解 1：dispatch 在 worker 端做</text>
+      <text x="0" y="20" fill="#444441"><tspan font-weight="700" fill="#04342C">实际：</tspan>dispatch 完全在 driver 端 · 切 batch、决定哪份给谁、发 RPC 都在 driver 进程内</text>
+
+      <text x="0" y="56" font-weight="700" fill="#A32D2D">误解 2：collect 在某个"主 worker"上做</text>
+      <text x="0" y="76" fill="#444441"><tspan font-weight="700" fill="#04342C">实际：</tspan>没有"主 worker" · 每个 worker 算完就把结果丢回 Ray object store · driver 自己 ray.get 拉回来聚合</text>
+
+      <text x="0" y="112" font-weight="700" fill="#A32D2D">误解 3：worker 之间会通信传中间结果</text>
+      <text x="0" y="132" fill="#444441"><tspan font-weight="700" fill="#04342C">实际：</tspan>这次方法调用内部，64 个 worker 互不通信 · 各自处理自己的 shard</text>
+      <text x="0" y="148" fill="#5f5e5a" font-style="italic">注意区分：worker 之间在 FSDP all-gather / NCCL 通信是另一回事 · 那是单 worker 内部计算需要 · dispatch/execute/collect 是更上层的 RPC 周期</text>
+
+      <text x="0" y="184" font-weight="700" fill="#A32D2D">误解 4：dispatch 把整个 batch 的数据通过网络传 64 份</text>
+      <text x="0" y="204" fill="#444441"><tspan font-weight="700" fill="#04342C">实际：</tspan>Ray 用 object store 优化 · driver 把 batch 放进 object store 一次 · RPC 只传 object reference · worker 按需 pull</text>
+      <text x="0" y="220" fill="#5f5e5a" font-style="italic">大对象不会通过 RPC 网络重复传输 · 这是 Ray 的核心优化</text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 三层关系总结                                     -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 1520)">
+    <rect x="0" y="0" width="1360" height="280" rx="6" fill="#FFFFFF" stroke="#534AB7" stroke-width="0.8"/>
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#26215C">三个动作 vs 五层架构 · 把概念对齐</text>
+    <line x1="22" y1="44" x2="500" y2="44" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <g transform="translate(40, 70)" font-size="12">
+      <!-- Header -->
+      <rect x="0" y="0" width="1280" height="32" fill="#F1EFE8"/>
+      <text x="14" y="20" font-weight="700" fill="#444441">动作</text>
+      <text x="180" y="20" font-weight="700" fill="#444441">在哪个进程发生</text>
+      <text x="420" y="20" font-weight="700" fill="#444441">对应五层架构的哪一层</text>
+      <text x="780" y="20" font-weight="700" fill="#444441">具体在哪个文件</text>
+      <text x="1080" y="20" font-weight="700" fill="#444441">耗时占比</text>
+
+      <!-- Dispatch -->
+      <g transform="translate(0, 32)">
+        <rect x="0" y="0" width="1280" height="36" fill="#FFFFFF" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="14" y="22" font-weight="600" fill="#26215C">Dispatch</text>
+        <text x="180" y="22" fill="#444441">Driver</text>
+        <text x="420" y="22" fill="#444441">Layer 3 · WorkerGroup</text>
+        <text x="780" y="22" fill="#444441" font-family="ui-monospace, monospace">single_controller/base/decorator.py</text>
+        <text x="1080" y="22" fill="#444441">极小（毫秒级）</text>
+      </g>
+
+      <!-- Execute -->
+      <g transform="translate(0, 68)">
+        <rect x="0" y="0" width="1280" height="36" fill="#F8F7F2" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="14" y="22" font-weight="600" fill="#4A1B0C">Execute</text>
+        <text x="180" y="22" fill="#444441">Worker × N（GPU）</text>
+        <text x="420" y="22" fill="#444441">Layer 4 · Worker / Engine</text>
+        <text x="780" y="22" fill="#444441" font-family="ui-monospace, monospace">workers/fsdp_workers.py</text>
+        <text x="1080" y="22" fill="#A32D2D" font-weight="700">99% 时间在这</text>
+      </g>
+
+      <!-- Collect -->
+      <g transform="translate(0, 104)">
+        <rect x="0" y="0" width="1280" height="36" fill="#FFFFFF" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="14" y="22" font-weight="600" fill="#04342C">Collect</text>
+        <text x="180" y="22" fill="#444441">Driver</text>
+        <text x="420" y="22" fill="#444441">Layer 3 · WorkerGroup</text>
+        <text x="780" y="22" fill="#444441" font-family="ui-monospace, monospace">single_controller/base/decorator.py</text>
+        <text x="1080" y="22" fill="#444441">极小（毫秒级）</text>
+      </g>
+
+      <!-- 总结 -->
+      <g transform="translate(0, 160)">
+        <rect x="0" y="0" width="1280" height="80" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.6"/>
+        <text x="14" y="22" font-size="13" font-weight="700" fill="#26215C">读源码定位法</text>
+        <text x="14" y="44" font-size="12" fill="#444441">想看 dispatch / collect 逻辑 → 看 single_controller 模块的 decorator.py（dispatch_mode 实现）和 worker_group.py（_dispatch 函数）</text>
+        <text x="14" y="64" font-size="12" fill="#444441">想看 execute 逻辑 → 看 workers/ 目录下的具体 Worker 类（FSDPWorker / vLLMWorker 等），那里是真正的计算代码</text>
+      </g>
+    </g>
+  </g>
+
+</svg>

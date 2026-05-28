@@ -1,0 +1,529 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1480 2700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Helvetica Neue', sans-serif">
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FAFAF7"/>
+      <stop offset="100%" stop-color="#F3F2EC"/>
+    </linearGradient>
+
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-thin" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect width="1480" height="2700" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="60" y="58" font-size="28" font-weight="600" fill="#1a1a1a" letter-spacing="-0.4">Ray · verl 的运行底座</text>
+  <text x="60" y="86" font-size="14" fill="#6b6b66" font-style="italic">Ray 本身是个分布式 Python 框架 · verl 只是它的一个用户 · 先理解 Ray，再理解 verl 用它干什么</text>
+  <line x1="60" y1="100" x2="1420" y2="100" stroke="#d4d2c7" stroke-width="0.8"/>
+
+  <!-- ============================================== -->
+  <!-- Ray 是什么 / 解决什么                            -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 120)">
+    <rect x="0" y="0" width="1360" height="160" rx="6" fill="#FFFFFF" stroke="#534AB7" stroke-width="0.8"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#26215C">Ray 解决什么问题</text>
+    <line x1="22" y1="40" x2="280" y2="40" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <g transform="translate(22, 60)" font-size="13">
+      <text x="0" y="0" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">问题：</tspan>
+        <tspan>我有一段 Python 代码，想在多机多卡上分布式跑，怎么办？</tspan>
+      </text>
+      <text x="0" y="22" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">传统答案：</tspan>
+        <tspan>MPI / torchrun / multiprocessing · 但只适合"对称的、紧耦合的"任务（如纯训练）</tspan>
+      </text>
+      <text x="0" y="44" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">RL 的麻烦：</tspan>
+        <tspan>Rollout 用 vLLM、Train 用 FSDP、Reward 用 rule function · 各跑各的、互相调用 · MPI 类工具搞不定</tspan>
+      </text>
+      <text x="0" y="74" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">Ray 的答案：</tspan>
+        <tspan>把"远程 Python 进程"做成一等公民 · 像调本地函数一样调远程 · 多种角色（actor / task）互相通信都行</tspan>
+      </text>
+      <text x="0" y="104" fill="#5f5e5a" font-style="italic">
+        类比：torchrun 像"军队列队齐步走"（所有进程做同样的事）· Ray 像"公司组织"（不同部门各干各的，按需调用）
+      </text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- Ray Cluster 拓扑                                 -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 300)">
+    <rect x="0" y="0" width="1360" height="500" rx="8" fill="#FFFFFF" stroke="#0F6E56" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="500" rx="2" fill="#0F6E56"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#04342C">Ray Cluster · 物理拓扑</text>
+    <text x="22" y="54" font-size="12.5" fill="#0F6E56">Ray 启动后构成一个"集群"——1 个 head node + N 个 worker node</text>
+
+    <!-- Head node -->
+    <g transform="translate(40, 90)">
+      <rect x="0" y="0" width="380" height="380" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1.4"/>
+      <text x="190" y="28" font-size="14" font-weight="700" fill="#04342C" text-anchor="middle">Head Node（指挥中心）</text>
+      <line x1="20" y1="40" x2="360" y2="40" stroke="#5DCAA5" stroke-width="0.6"/>
+
+      <!-- GCS -->
+      <g transform="translate(20, 56)">
+        <rect x="0" y="0" width="340" height="50" rx="4" fill="#FFFFFF" stroke="#0F6E56" stroke-width="0.8"/>
+        <text x="14" y="20" font-size="12" font-weight="700" fill="#04342C">GCS (Global Control Store)</text>
+        <text x="14" y="38" font-size="10.5" fill="#444441">集群元数据 · actor 注册表 · placement group 信息</text>
+      </g>
+
+      <!-- Scheduler -->
+      <g transform="translate(20, 116)">
+        <rect x="0" y="0" width="340" height="50" rx="4" fill="#FFFFFF" stroke="#0F6E56" stroke-width="0.8"/>
+        <text x="14" y="20" font-size="12" font-weight="700" fill="#04342C">Scheduler</text>
+        <text x="14" y="38" font-size="10.5" fill="#444441">决定 task / actor 落到哪个 node</text>
+      </g>
+
+      <!-- Driver -->
+      <g transform="translate(20, 176)">
+        <rect x="0" y="0" width="340" height="80" rx="4" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.8"/>
+        <text x="14" y="20" font-size="12" font-weight="700" fill="#412402">Driver 进程</text>
+        <text x="14" y="38" font-size="10.5" fill="#854F0B">用户写的 main.py 跑在这里</text>
+        <text x="14" y="54" font-size="10.5" fill="#854F0B">verl 里就是 RayPPOTrainer.fit()</text>
+        <text x="14" y="70" font-size="10.5" fill="#854F0B">单进程 · 不占 GPU · 是"指挥官"</text>
+      </g>
+
+      <!-- Worker on head -->
+      <g transform="translate(20, 266)">
+        <rect x="0" y="0" width="340" height="50" rx="4" fill="#F5C4B3" stroke="#D85A30" stroke-width="0.8"/>
+        <text x="14" y="20" font-size="12" font-weight="700" fill="#4A1B0C">Worker 进程（如果 head 也带 GPU）</text>
+        <text x="14" y="38" font-size="10.5" fill="#993C1D">head 节点也可以跑 actor</text>
+      </g>
+
+      <!-- Object store -->
+      <g transform="translate(20, 326)">
+        <rect x="0" y="0" width="340" height="38" rx="4" fill="#E6F1FB" stroke="#378ADD" stroke-width="0.8"/>
+        <text x="14" y="22" font-size="12" font-weight="700" fill="#042C53">Object Store（共享内存）</text>
+      </g>
+    </g>
+
+    <!-- 网络连接 -->
+    <g transform="translate(440, 250)">
+      <line x1="-30" y1="0" x2="30" y2="-100" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow-thin)"/>
+      <line x1="-30" y1="0" x2="30" y2="0" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow-thin)"/>
+      <line x1="-30" y1="0" x2="30" y2="100" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow-thin)"/>
+      <text x="0" y="-110" font-size="11" fill="#888780" text-anchor="middle">心跳 + RPC</text>
+    </g>
+
+    <!-- Worker nodes -->
+    <g transform="translate(500, 90)">
+      <text x="0" y="0" font-size="14" font-weight="700" fill="#04342C">Worker Nodes（执行单元）</text>
+
+      <!-- Worker node 1 -->
+      <g transform="translate(0, 14)">
+        <rect x="0" y="0" width="820" height="100" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+        <text x="20" y="22" font-size="12" font-weight="700" fill="#04342C">Worker Node 1（8 GPU 机器）</text>
+
+        <!-- Raylet -->
+        <g transform="translate(20, 32)">
+          <rect x="0" y="0" width="120" height="50" rx="3" fill="#FFFFFF" stroke="#0F6E56" stroke-width="0.6"/>
+          <text x="60" y="18" font-size="10.5" fill="#04342C" text-anchor="middle" font-weight="700">Raylet</text>
+          <text x="60" y="34" font-size="9" fill="#5f5e5a" text-anchor="middle">本地 daemon</text>
+          <text x="60" y="46" font-size="9" fill="#5f5e5a" text-anchor="middle">管理本机进程</text>
+        </g>
+
+        <!-- Worker processes -->
+        <g transform="translate(150, 32)">
+          <rect x="0" y="0" width="600" height="50" rx="3" fill="#FAECE7" stroke="#D85A30" stroke-width="0.6"/>
+          <text x="20" y="18" font-size="10.5" fill="#4A1B0C" font-weight="700">Worker 进程（每 GPU 一个）</text>
+          <g font-size="9" fill="#993C1D">
+            <text x="20" y="34">PID 1001 (GPU0)</text>
+            <text x="160" y="34">PID 1002 (GPU1)</text>
+            <text x="290" y="34">⋯</text>
+            <text x="380" y="34">PID 1008 (GPU7)</text>
+          </g>
+          <text x="20" y="46" font-size="9" fill="#993C1D">每个进程跑一个 Ray actor</text>
+        </g>
+      </g>
+
+      <!-- Worker node 2 -->
+      <g transform="translate(0, 124)">
+        <rect x="0" y="0" width="820" height="100" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+        <text x="20" y="22" font-size="12" font-weight="700" fill="#04342C">Worker Node 2（8 GPU 机器）</text>
+
+        <g transform="translate(20, 32)">
+          <rect x="0" y="0" width="120" height="50" rx="3" fill="#FFFFFF" stroke="#0F6E56" stroke-width="0.6"/>
+          <text x="60" y="18" font-size="10.5" fill="#04342C" text-anchor="middle" font-weight="700">Raylet</text>
+        </g>
+
+        <g transform="translate(150, 32)">
+          <rect x="0" y="0" width="600" height="50" rx="3" fill="#FAECE7" stroke="#D85A30" stroke-width="0.6"/>
+          <text x="20" y="18" font-size="10.5" fill="#4A1B0C" font-weight="700">Worker 进程</text>
+          <g font-size="9" fill="#993C1D">
+            <text x="20" y="34">PID 2001 (GPU0)</text>
+            <text x="160" y="34">PID 2002 (GPU1)</text>
+            <text x="290" y="34">⋯</text>
+          </g>
+        </g>
+      </g>
+
+      <!-- ... -->
+      <text x="410" y="250" font-size="11" fill="#5f5e5a" text-anchor="middle" font-style="italic">⋯ 更多 worker node ⋯</text>
+
+      <!-- Worker node N -->
+      <g transform="translate(0, 264)">
+        <rect x="0" y="0" width="820" height="100" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+        <text x="20" y="22" font-size="12" font-weight="700" fill="#04342C">Worker Node N</text>
+
+        <g transform="translate(20, 32)">
+          <rect x="0" y="0" width="120" height="50" rx="3" fill="#FFFFFF" stroke="#0F6E56" stroke-width="0.6"/>
+          <text x="60" y="18" font-size="10.5" fill="#04342C" text-anchor="middle" font-weight="700">Raylet</text>
+        </g>
+
+        <g transform="translate(150, 32)">
+          <rect x="0" y="0" width="600" height="50" rx="3" fill="#FAECE7" stroke="#D85A30" stroke-width="0.6"/>
+          <text x="20" y="18" font-size="10.5" fill="#4A1B0C" font-weight="700">Worker 进程</text>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 三个核心原语                                     -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 820)">
+    <rect x="0" y="0" width="1360" height="600" rx="8" fill="#FFFFFF" stroke="#534AB7" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="600" rx="2" fill="#534AB7"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#26215C">Ray 的三个核心原语</text>
+    <text x="22" y="54" font-size="12.5" fill="#534AB7">Task · Actor · Object Store · 这就是你需要理解的全部</text>
+
+    <!-- Task -->
+    <g transform="translate(40, 90)">
+      <rect x="0" y="0" width="416" height="490" rx="6" fill="#E6F1FB" stroke="#378ADD" stroke-width="1"/>
+      <text x="20" y="28" font-size="14" font-weight="700" fill="#042C53">① Task（远程函数）</text>
+      <line x1="20" y1="40" x2="200" y2="40" stroke="#85B7EB" stroke-width="0.6"/>
+
+      <text x="20" y="62" font-size="12" fill="#185FA5" font-weight="600">无状态 · 一次性 · 像调函数</text>
+
+      <g transform="translate(20, 80)" font-family="ui-monospace, monospace" font-size="11">
+        <rect x="0" y="0" width="376" height="160" rx="4" fill="#FFFFFF" stroke="#85B7EB" stroke-width="0.6"/>
+        <text x="14" y="20" fill="#A32D2D">@ray.remote</text>
+        <text x="14" y="38" fill="#444441">def add(x, y):</text>
+        <text x="14" y="56" fill="#444441">    return x + y</text>
+
+        <text x="14" y="86" fill="#888780"># 调用</text>
+        <text x="14" y="104" fill="#444441">future = add.remote(1, 2)</text>
+        <text x="14" y="122" fill="#444441">result = ray.get(future)</text>
+        <text x="14" y="142" fill="#888780"># result == 3</text>
+      </g>
+
+      <g transform="translate(20, 260)" font-size="11.5">
+        <text x="0" y="0" font-weight="700" fill="#042C53">特点：</text>
+        <text x="0" y="20" fill="#444441">· 每次调用启一个新进程</text>
+        <text x="0" y="38" fill="#444441">· 没有状态保留</text>
+        <text x="0" y="56" fill="#444441">· 适合"数据处理"类任务</text>
+
+        <text x="0" y="90" font-weight="700" fill="#042C53">verl 用得少：</text>
+        <text x="0" y="108" fill="#444441">RL 训练需要持久状态</text>
+        <text x="0" y="126" fill="#444441">（模型权重、optimizer）</text>
+        <text x="0" y="144" fill="#444441">所以 verl 用 actor 更多</text>
+
+        <text x="0" y="180" fill="#5f5e5a" font-style="italic">类比：你叫外卖，</text>
+        <text x="0" y="196" fill="#5f5e5a" font-style="italic">送完就走</text>
+      </g>
+    </g>
+
+    <!-- Actor -->
+    <g transform="translate(472, 90)">
+      <rect x="0" y="0" width="416" height="490" rx="6" fill="#FAECE7" stroke="#D85A30" stroke-width="1"/>
+      <text x="20" y="28" font-size="14" font-weight="700" fill="#4A1B0C">② Actor（有状态的远程对象）</text>
+      <line x1="20" y1="40" x2="280" y2="40" stroke="#F0997B" stroke-width="0.6"/>
+
+      <text x="20" y="62" font-size="12" fill="#993C1D" font-weight="600">有状态 · 长期存在 · 像调对象方法</text>
+
+      <g transform="translate(20, 80)" font-family="ui-monospace, monospace" font-size="11">
+        <rect x="0" y="0" width="376" height="220" rx="4" fill="#FFFFFF" stroke="#F0997B" stroke-width="0.6"/>
+        <text x="14" y="20" fill="#A32D2D">@ray.remote(num_gpus=1)</text>
+        <text x="14" y="38" fill="#444441">class ActorWorker:</text>
+        <text x="14" y="56" fill="#444441">    def __init__(self):</text>
+        <text x="14" y="74" fill="#444441">        self.model = load_7b()</text>
+        <text x="14" y="92" fill="#444441">    def generate(self, prompt):</text>
+        <text x="14" y="110" fill="#444441">        return self.model(prompt)</text>
+
+        <text x="14" y="140" fill="#888780"># 创建</text>
+        <text x="14" y="158" fill="#444441">w = ActorWorker.remote()</text>
+        <text x="14" y="178" fill="#888780"># 多次调用，模型一直在</text>
+        <text x="14" y="196" fill="#444441">r1 = w.generate.remote(p1)</text>
+        <text x="14" y="212" fill="#444441">r2 = w.generate.remote(p2)</text>
+      </g>
+
+      <g transform="translate(20, 320)" font-size="11.5">
+        <text x="0" y="0" font-weight="700" fill="#4A1B0C">特点：</text>
+        <text x="0" y="20" fill="#444441">· 进程一直活着</text>
+        <text x="0" y="38" fill="#444441">· 状态（模型权重）保留</text>
+        <text x="0" y="56" fill="#444441">· 占用资源（如 1 个 GPU）</text>
+
+        <text x="0" y="90" font-weight="700" fill="#4A1B0C">verl 主力：</text>
+        <text x="0" y="108" fill="#444441">ActorWorker / RefWorker /</text>
+        <text x="0" y="126" fill="#444441">RewardWorker 都是 actor</text>
+
+        <text x="0" y="160" fill="#5f5e5a" font-style="italic">类比：你雇了员工，</text>
+        <text x="0" y="176" fill="#5f5e5a" font-style="italic">每天上班记得昨天的事</text>
+      </g>
+    </g>
+
+    <!-- Object Store -->
+    <g transform="translate(904, 90)">
+      <rect x="0" y="0" width="416" height="490" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+      <text x="20" y="28" font-size="14" font-weight="700" fill="#04342C">③ Object Store（共享数据）</text>
+      <line x1="20" y1="40" x2="240" y2="40" stroke="#5DCAA5" stroke-width="0.6"/>
+
+      <text x="20" y="62" font-size="12" fill="#0F6E56" font-weight="600">大对象的高速通道 · 跨进程共享</text>
+
+      <g transform="translate(20, 80)" font-family="ui-monospace, monospace" font-size="11">
+        <rect x="0" y="0" width="376" height="180" rx="4" fill="#FFFFFF" stroke="#5DCAA5" stroke-width="0.6"/>
+        <text x="14" y="20" fill="#888780"># 把大对象放进去</text>
+        <text x="14" y="38" fill="#444441">batch = make_huge_batch()</text>
+        <text x="14" y="56" fill="#444441">ref = ray.put(batch)</text>
+        <text x="14" y="76" fill="#888780"># ref 是个轻量 ID</text>
+
+        <text x="14" y="106" fill="#888780"># 64 个 worker 收到 ref</text>
+        <text x="14" y="124" fill="#444441">[w.process.remote(ref)</text>
+        <text x="14" y="142" fill="#444441"> for w in workers]</text>
+
+        <text x="14" y="162" fill="#888780"># 每个 worker 自己 pull</text>
+      </g>
+
+      <g transform="translate(20, 280)" font-size="11.5">
+        <text x="0" y="0" font-weight="700" fill="#04342C">为什么必要：</text>
+        <text x="0" y="20" fill="#444441">batch 可能几个 GB</text>
+        <text x="0" y="38" fill="#444441">RPC 复制 64 份太贵</text>
+        <text x="0" y="56" fill="#444441">→ 放 store 一份</text>
+        <text x="0" y="74" fill="#444441">→ 每 worker 按需拉</text>
+
+        <text x="0" y="108" font-weight="700" fill="#04342C">底层：</text>
+        <text x="0" y="126" fill="#444441">Plasma 共享内存</text>
+        <text x="0" y="144" fill="#444441">同 node 内零拷贝</text>
+        <text x="0" y="162" fill="#444441">跨 node 走网络</text>
+
+        <text x="0" y="196" fill="#5f5e5a" font-style="italic">类比：公司云盘 ·</text>
+        <text x="0" y="212" fill="#5f5e5a" font-style="italic">不是抄文件而是发链接</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 一次 RPC 在 Ray 内部发生了什么                    -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 1440)">
+    <rect x="0" y="0" width="1360" height="540" rx="8" fill="#FFFFFF" stroke="#BA7517" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="540" rx="2" fill="#BA7517"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#412402">一次远程调用在 Ray 内部发生了什么</text>
+    <text x="22" y="54" font-size="12.5" fill="#854F0B">以 actor.do_thing.remote(big_data) 为例</text>
+
+    <!-- 时序图 -->
+    <g transform="translate(40, 90)">
+      <!-- Three lanes -->
+      <g>
+        <rect x="0" y="0" width="280" height="380" rx="6" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.8"/>
+        <text x="140" y="24" font-size="13" font-weight="700" fill="#412402" text-anchor="middle">Driver</text>
+
+        <rect x="290" y="0" width="280" height="380" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.8"/>
+        <text x="430" y="24" font-size="13" font-weight="700" fill="#04342C" text-anchor="middle">GCS / Scheduler</text>
+
+        <rect x="580" y="0" width="280" height="380" rx="6" fill="#E6F1FB" stroke="#378ADD" stroke-width="0.8"/>
+        <text x="720" y="24" font-size="13" font-weight="700" fill="#042C53" text-anchor="middle">Object Store</text>
+
+        <rect x="870" y="0" width="280" height="380" rx="6" fill="#FAECE7" stroke="#D85A30" stroke-width="0.8"/>
+        <text x="1010" y="24" font-size="13" font-weight="700" fill="#4A1B0C" text-anchor="middle">Worker (target actor)</text>
+      </g>
+
+      <!-- Steps -->
+      <g font-size="11">
+        <!-- Step 1 -->
+        <g transform="translate(0, 60)">
+          <circle cx="14" cy="0" r="11" fill="#BA7517"/>
+          <text x="14" y="4" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">1</text>
+          <text x="32" y="4" fill="#412402">用户调用 actor.do.remote(big_data)</text>
+        </g>
+
+        <!-- Step 2: put -->
+        <g transform="translate(0, 90)">
+          <circle cx="14" cy="0" r="11" fill="#BA7517"/>
+          <text x="14" y="4" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">2</text>
+          <text x="32" y="4" fill="#412402">Driver 把 big_data 放进 store</text>
+          <line x1="160" y1="0" x2="580" y2="0" stroke="#185FA5" stroke-width="1.2" marker-end="url(#arrow-thin)"/>
+          <text x="370" y="-4" font-size="10" fill="#185FA5" text-anchor="middle">put(big_data)</text>
+          <text x="370" y="14" font-size="10" fill="#5f5e5a" text-anchor="middle">→ 拿到 ref</text>
+        </g>
+
+        <!-- Step 3: schedule -->
+        <g transform="translate(0, 130)">
+          <circle cx="14" cy="0" r="11" fill="#BA7517"/>
+          <text x="14" y="4" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">3</text>
+          <text x="32" y="4" fill="#412402">向 scheduler 询问 actor 在哪</text>
+          <line x1="240" y1="0" x2="290" y2="0" stroke="#0F6E56" stroke-width="1.2" marker-end="url(#arrow-thin)"/>
+        </g>
+
+        <!-- Step 4: dispatch -->
+        <g transform="translate(0, 160)">
+          <circle cx="14" cy="0" r="11" fill="#BA7517"/>
+          <text x="14" y="4" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">4</text>
+          <text x="32" y="4" fill="#412402">Scheduler 把 RPC 发给目标 worker</text>
+          <line x1="430" y1="0" x2="870" y2="0" stroke="#0F6E56" stroke-width="1.2" marker-end="url(#arrow-thin)"/>
+          <text x="650" y="-4" font-size="10" fill="#0F6E56" text-anchor="middle">RPC: do(ref) （只传 ref，不传数据）</text>
+        </g>
+
+        <!-- Step 5: pull from store -->
+        <g transform="translate(0, 200)">
+          <circle cx="14" cy="0" r="11" fill="#BA7517"/>
+          <text x="14" y="4" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">5</text>
+          <text x="32" y="4" fill="#412402">Worker 从 store pull 真实数据</text>
+          <line x1="870" y1="0" x2="580" y2="0" stroke="#185FA5" stroke-width="1.2" marker-end="url(#arrow-thin)"/>
+          <text x="730" y="-4" font-size="10" fill="#185FA5" text-anchor="middle">get(ref)</text>
+          <text x="730" y="14" font-size="10" fill="#5f5e5a" text-anchor="middle">→ 拿到 big_data</text>
+        </g>
+
+        <!-- Step 6: execute -->
+        <g transform="translate(0, 240)">
+          <circle cx="14" cy="0" r="11" fill="#BA7517"/>
+          <text x="14" y="4" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">6</text>
+          <text x="32" y="4" fill="#412402">Worker 执行 do(big_data) → 拿到 result</text>
+        </g>
+
+        <!-- Step 7: return -->
+        <g transform="translate(0, 280)">
+          <circle cx="14" cy="0" r="11" fill="#BA7517"/>
+          <text x="14" y="4" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">7</text>
+          <text x="32" y="4" fill="#412402">Worker 把 result 放回 store</text>
+          <line x1="870" y1="0" x2="580" y2="0" stroke="#185FA5" stroke-width="1.2" marker-end="url(#arrow-thin)"/>
+        </g>
+
+        <!-- Step 8: ray.get -->
+        <g transform="translate(0, 320)">
+          <circle cx="14" cy="0" r="11" fill="#BA7517"/>
+          <text x="14" y="4" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">8</text>
+          <text x="32" y="4" fill="#412402">Driver 调 ray.get(future) 取结果</text>
+          <line x1="160" y1="0" x2="580" y2="0" stroke="#185FA5" stroke-width="1.2" marker-end="url(#arrow-thin)"/>
+        </g>
+      </g>
+    </g>
+
+    <!-- 总结 -->
+    <g transform="translate(40, 480)">
+      <rect x="0" y="0" width="1280" height="40" rx="6" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.6"/>
+      <text x="14" y="24" font-size="12" fill="#444441">
+        <tspan font-weight="700" fill="#412402">关键设计：</tspan>
+        <tspan>大对象走 object store（一次复制，按需拉取）· RPC 只传引用 → 64 个 worker 调用同一 batch 不会复制 64 次</tspan>
+      </text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- verl 怎么用 Ray                                  -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 2000)">
+    <rect x="0" y="0" width="1360" height="500" rx="8" fill="#FFFFFF" stroke="#A32D2D" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="500" rx="2" fill="#A32D2D"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#501313">verl 怎么用 Ray</text>
+    <text x="22" y="54" font-size="12.5" fill="#791F1F">verl 用了 Ray 的几乎所有特性 · 但用得有自己的风格</text>
+
+    <!-- 映射表 -->
+    <g transform="translate(40, 80)" font-size="12">
+      <!-- Header -->
+      <rect x="0" y="0" width="1280" height="32" fill="#F1EFE8"/>
+      <text x="14" y="20" font-weight="700" fill="#444441">Ray 概念</text>
+      <text x="280" y="20" font-weight="700" fill="#444441">verl 的对应物</text>
+      <text x="640" y="20" font-weight="700" fill="#444441">作用</text>
+
+      <g transform="translate(0, 32)">
+        <rect x="0" y="0" width="1280" height="36" fill="#FFFFFF" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="14" y="22" font-weight="600" fill="#26215C">Driver 进程</text>
+        <text x="280" y="22" fill="#444441">RayPPOTrainer.fit() 跑的进程</text>
+        <text x="640" y="22" fill="#444441">single controller · 编排算法逻辑</text>
+      </g>
+
+      <g transform="translate(0, 68)">
+        <rect x="0" y="0" width="1280" height="36" fill="#F8F7F2" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="14" y="22" font-weight="600" fill="#4A1B0C">Ray Actor</text>
+        <text x="280" y="22" fill="#444441">ActorWorker / RefWorker / RewardWorker</text>
+        <text x="640" y="22" fill="#444441">每张 GPU 一个 actor 进程，持有模型</text>
+      </g>
+
+      <g transform="translate(0, 104)">
+        <rect x="0" y="0" width="1280" height="36" fill="#FFFFFF" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="14" y="22" font-weight="600" fill="#04342C">Ray Task</text>
+        <text x="280" y="22" fill="#444441">基本不用</text>
+        <text x="640" y="22" fill="#444441">RL 需要持久状态，actor 更合适</text>
+      </g>
+
+      <g transform="translate(0, 140)">
+        <rect x="0" y="0" width="1280" height="36" fill="#F8F7F2" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="14" y="22" font-weight="600" fill="#185FA5">Object Store</text>
+        <text x="280" y="22" fill="#444441">DataProto 的传递</text>
+        <text x="640" y="22" fill="#444441">batch 数据通过 store 共享，避免 RPC 拷贝</text>
+      </g>
+
+      <g transform="translate(0, 176)">
+        <rect x="0" y="0" width="1280" height="36" fill="#FFFFFF" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="14" y="22" font-weight="600" fill="#412402">Placement Group</text>
+        <text x="280" y="22" fill="#444441">Resource Pool</text>
+        <text x="640" y="22" fill="#444441">colocate 配置就是基于 PG 实现</text>
+      </g>
+
+      <g transform="translate(0, 212)">
+        <rect x="0" y="0" width="1280" height="36" fill="#F8F7F2" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="14" y="22" font-weight="600" fill="#A32D2D">WorkerGroup（verl 自创）</text>
+        <text x="280" y="22" fill="#444441">封装 N 个 actor handle 的 driver 端代理</text>
+        <text x="640" y="22" fill="#444441">把"对一组 actor 的调用"变成单机风格函数</text>
+      </g>
+    </g>
+
+    <!-- 一句话总结 -->
+    <g transform="translate(40, 360)">
+      <rect x="0" y="0" width="1280" height="120" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.6"/>
+      <text x="14" y="24" font-size="13" font-weight="700" fill="#26215C">为什么 RL 训练偏偏选 Ray（不选 torchrun / MPI）</text>
+      <line x1="14" y1="36" x2="500" y2="36" stroke="#CECBF6" stroke-width="0.6"/>
+
+      <g transform="translate(14, 56)" font-size="12">
+        <text x="0" y="0" fill="#444441">
+          <tspan font-weight="700" fill="#26215C">torchrun 适合：</tspan>
+          <tspan>所有进程做同样的事（纯 SFT 训练）· 步调一致 · 用 NCCL 同步梯度</tspan>
+        </text>
+        <text x="0" y="22" fill="#444441">
+          <tspan font-weight="700" fill="#26215C">RL 不适合：</tspan>
+          <tspan>actor 在 rollout、ref 在 forward、reward 在打分 · 角色不同 · 还要互相通信</tspan>
+        </text>
+        <text x="0" y="48" fill="#5f5e5a" font-style="italic">
+          Ray 让"异构角色 + 灵活通信"成为一等公民 · 这就是 verl/OpenRLHF/NeMo-Aligner 都选 Ray 的根本原因
+        </text>
+      </g>
+    </g>
+  </g>
+
+  <!-- 底部总结 -->
+  <g transform="translate(60, 2520)">
+    <rect x="0" y="0" width="1360" height="160" rx="6" fill="#FFFFFF" stroke="#888780" stroke-width="0.6"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#1a1a1a">一句话记忆</text>
+    <line x1="22" y1="40" x2="280" y2="40" stroke="#d4d2c7" stroke-width="0.6"/>
+
+    <g transform="translate(22, 60)" font-size="13">
+      <text x="0" y="0" fill="#444441">
+        <tspan font-weight="700" fill="#1a1a1a">Ray ≈ "Python 的分布式 RPC + 内存数据库"</tspan>
+      </text>
+      <text x="0" y="24" fill="#444441">
+        <tspan>把"远程 Python 进程"做成一等公民 · Actor（有状态）+ Task（无状态）+ Object Store（共享数据）三件套</tspan>
+      </text>
+      <text x="0" y="48" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">读 verl 源码时记住：</tspan>
+        <tspan>所有 .remote() 调用都是 Ray RPC · 所有 ray.get() 都是阻塞等结果 · 所有 actor 都活在远端 GPU 上</tspan>
+      </text>
+      <text x="0" y="72" fill="#5f5e5a" font-style="italic">
+        理解了这一点，verl 里那些看起来奇怪的代码（@ray.remote 装饰、_wg.xxx() 调用、ray.get 等待）就都看得懂了
+      </text>
+    </g>
+  </g>
+
+</svg>

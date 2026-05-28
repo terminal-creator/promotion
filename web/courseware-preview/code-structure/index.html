@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>大模型架构课程 · Roadmap · 预览</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@300;400;500;600;700;800&family=Noto+Serif+SC:wght@500;700&display=swap" />
+<link rel="stylesheet" href="../_shared/lock.css">
+<style>
+  :root{
+    --bg:#0e0f12;
+    --bg-2:#15171c;
+    --bg-3:#1c1f26;
+    --line:#2a2e38;
+    --line-soft:#23262e;
+    --ink:#e9e6dc;
+    --ink-2:#b8b4a6;
+    --ink-3:#7c7868;
+    --accent:#d97a3c;
+    --accent-soft:#f0a36a;
+    --accent-deep:#a85522;
+    --gold:#c9a35a;
+    --green:#7aa66a;
+    --serif:"Noto Serif SC", serif;
+    --sans:"Noto Sans SC", system-ui, sans-serif;
+    --mono:"JetBrains Mono", ui-monospace, monospace;
+    --cwp-lock-bg:#0e0f12;
+    --cwp-lock-accent:#d97a3c;
+    --cwp-lock-accent-ink:#0e0f12;
+    --cwp-lock-card-bg:rgba(21,23,28,0.95);
+    --cwp-lock-card-line:rgba(217,122,60,0.25);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{
+    background:
+      radial-gradient(ellipse 1200px 600px at 15% -10%, rgba(217,122,60,.10), transparent 60%),
+      radial-gradient(ellipse 900px 500px at 110% 30%, rgba(90,133,184,.06), transparent 60%),
+      var(--bg);
+    min-height:100vh;
+    padding:48px 28px 0;
+  }
+  .wrap{max-width:1480px;margin:0 auto}
+
+  .hdr{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:36px;gap:40px;flex-wrap:wrap}
+  .hdr-l .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--accent);text-transform:uppercase;margin-bottom:14px;display:flex;gap:12px;align-items:center}
+  .eyebrow .dot{width:6px;height:6px;background:var(--accent);border-radius:50%;box-shadow:0 0 12px var(--accent)}
+  .hdr-l h1{font-family:var(--serif);font-weight:700;font-size:54px;line-height:1.05;margin:0 0 14px;letter-spacing:-.01em}
+  .hdr-l h1 em{font-style:normal;color:var(--accent);font-family:var(--serif)}
+  .hdr-l .sub{color:var(--ink-2);max-width:680px;font-size:15px;line-height:1.7}
+  .hdr-r{display:grid;grid-template-columns:repeat(4,auto);gap:24px;font-family:var(--mono);font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.12em}
+  .hdr-r .stat{border-left:1px solid var(--line);padding-left:14px}
+  .hdr-r .stat b{display:block;font-family:var(--serif);color:var(--ink);font-size:26px;letter-spacing:0;margin-bottom:2px;font-weight:700}
+
+  .section-title{display:flex;align-items:baseline;gap:14px;margin:64px 0 22px;border-bottom:1px dashed var(--line);padding-bottom:10px}
+  .section-title .num{font-family:var(--mono);color:var(--accent);font-size:12px;letter-spacing:.2em}
+  .section-title h2{font-family:var(--serif);font-size:28px;margin:0;font-weight:700}
+  .section-title .hint{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.1em}
+
+  .map-wrap{position:relative;background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:36px 28px 28px;overflow:hidden}
+  .map-wrap::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:32px 32px;pointer-events:none}
+  .map-legend{position:relative;display:flex;gap:26px;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:.1em;margin-bottom:24px;flex-wrap:wrap}
+  .map-legend span{display:flex;align-items:center;gap:8px}
+  .map-legend i{width:14px;height:2px;display:inline-block}
+  .lg-main{background:var(--accent)}
+  .lg-side{background:var(--ink-3);height:0!important;border-top:1px dashed var(--ink-3)}
+  .lg-boss{background:var(--gold)}
+
+  .map{position:relative;display:grid;grid-template-columns:repeat(6,1fr);gap:18px;z-index:1}
+  .stage{position:relative;background:var(--bg-3);border:1px solid var(--line);border-radius:4px;padding:18px 16px 16px;min-height:340px;display:flex;flex-direction:column;text-decoration:none;color:inherit;cursor:pointer;transition:border-color .2s, transform .2s}
+  .stage:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .stage .pin{position:absolute;top:-10px;left:14px;background:var(--bg);border:1px solid var(--line);padding:3px 9px;font-family:var(--mono);font-size:10px;letter-spacing:.15em;color:var(--ink-3)}
+  .stage .pin.active{color:var(--accent);border-color:var(--accent)}
+  .stage h3{font-family:var(--serif);font-size:19px;margin:8px 0 4px;font-weight:700;letter-spacing:-.01em}
+  .stage .week{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.1em;margin-bottom:10px}
+  .stage .tag{font-family:var(--mono);font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.12em;border-top:1px dashed var(--line);padding-top:10px;margin-top:auto}
+  .stage ul{list-style:none;padding:0;margin:0 0 12px;font-size:13px;color:var(--ink-2);line-height:1.85}
+  .stage ul li{padding-left:14px;position:relative}
+  .stage ul li::before{content:"›";position:absolute;left:0;color:var(--accent);font-family:var(--mono)}
+  .stage--boss{background:linear-gradient(180deg, rgba(201,163,90,.10), transparent 80%);border:1px solid var(--gold)}
+  .stage--boss .pin{color:var(--gold);border-color:var(--gold)}
+  .stage--boss h3{color:var(--gold)}
+  .stage--boss .week{color:var(--gold)}
+  .stage .lvl{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:38px;color:var(--line);font-weight:700;line-height:1}
+  .stage:hover .lvl{color:var(--accent);opacity:.4}
+  .stage--boss .lvl{color:var(--gold);opacity:.25}
+
+  .stage--locked{filter:saturate(.4) opacity(.55)}
+  .stage--locked::after{
+    content:"🔒"; position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:34px; background:rgba(14,15,18,0.55); backdrop-filter:blur(2px);
+    border-radius:4px;
+  }
+  .stage--locked:hover{transform:none;border-color:var(--line)}
+
+  .map-arrows{position:relative;display:grid;grid-template-columns:repeat(6,1fr);margin-top:10px}
+  .map-arrows .ar{height:18px;display:flex;align-items:center;justify-content:center;color:var(--ink-3);font-family:var(--mono);font-size:11px;border-right:1px dashed var(--line)}
+  .map-arrows .ar:last-child{border-right:none}
+  .map-arrows .ar::before{content:"━━━▸";color:var(--accent);letter-spacing:-3px}
+
+  .timeline{margin-top:28px;background:var(--bg-3);border:1px solid var(--line);border-radius:4px;padding:18px 20px;font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.08em}
+  .tl-row{display:grid;grid-template-columns:90px 1fr;gap:14px;align-items:center;padding:6px 0}
+  .tl-row + .tl-row{border-top:1px dashed var(--line-soft)}
+  .tl-row .lab{color:var(--ink-2)}
+  .tl-bar{display:grid;grid-template-columns:repeat(16,1fr);gap:2px;height:18px}
+  .tl-bar i{background:var(--bg-2);border:1px solid var(--line-soft);display:block}
+  .tl-bar i.on{background:var(--accent);border-color:var(--accent)}
+  .tl-bar i.boss{background:var(--gold);border-color:var(--gold)}
+  .tl-axis{display:grid;grid-template-columns:repeat(16,1fr);gap:2px;font-size:9.5px;color:var(--ink-3);margin-top:8px;text-align:center}
+
+  /* ============ STAGE 1 详情卡 ============ */
+  .det{background:var(--bg-2);border:1px solid var(--line);border-radius:4px;padding:24px 26px;position:relative;margin-top:24px}
+  .det .det-head{display:flex;align-items:flex-start;gap:18px;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:18px}
+  .det .lvbig{font-family:var(--mono);font-weight:700;font-size:42px;color:var(--accent);line-height:1;letter-spacing:-.02em}
+  .det .h-info h4{font-family:var(--serif);margin:0 0 4px;font-size:22px;font-weight:700}
+  .det .h-info .meta{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.1em}
+  .det .h-info .quote{margin-top:8px;color:var(--ink-2);font-size:13.5px;font-style:italic;border-left:2px solid var(--accent);padding-left:10px;line-height:1.6}
+  .det h5{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.16em;margin:18px 0 10px;text-transform:uppercase;display:flex;gap:8px;align-items:center}
+  .det h5::before{content:"";display:inline-block;width:14px;height:1px;background:currentColor}
+  .det ul.kp{margin:0 0 4px;padding:0;list-style:none;font-size:13.5px;color:var(--ink);line-height:1.85}
+  .det ul.kp li{padding:4px 0 4px 18px;position:relative;border-bottom:1px dashed var(--line-soft)}
+  .det ul.kp li:last-child{border-bottom:none}
+  .det ul.kp li::before{content:"◆";color:var(--accent);position:absolute;left:0;top:5px;font-size:9px}
+  .det ul.kp li b{color:var(--ink);font-weight:600}
+  .det ul.kp li span.code{font-family:var(--mono);font-size:11.5px;color:var(--ink-2);background:var(--bg-3);padding:1px 6px;border-radius:2px;margin-left:4px}
+  .det .row2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  .det .quiz, .det .proj, .det .accept{background:var(--bg-3);border:1px solid var(--line-soft);padding:14px 16px;border-radius:3px;margin-top:8px}
+  .det .quiz p, .det .proj p, .det .accept p{margin:6px 0;font-size:12.5px;color:var(--ink-2);line-height:1.7}
+  .det .quiz p::before{content:"Q.";font-family:var(--mono);color:var(--accent);margin-right:6px;font-weight:700}
+  .det .proj{border-left:2px solid var(--accent)}
+  .det .proj .ttl{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.12em;margin-bottom:6px}
+  .det .proj .ttl b{color:var(--ink);font-family:var(--sans);margin-left:8px;font-size:13.5px;letter-spacing:0}
+  .det .accept ul{padding:0;margin:0;list-style:none;font-size:12.5px;color:var(--ink-2);line-height:1.8}
+  .det .accept li{padding-left:18px;position:relative}
+  .det .accept li::before{content:"✓";color:var(--green);position:absolute;left:0;font-family:var(--mono);font-weight:700}
+
+  @media (max-width: 1180px){
+    .map{grid-template-columns:repeat(3,1fr)}
+    .map-arrows{display:none}
+    .hdr-r{grid-template-columns:repeat(2,auto)}
+    .det .row2{grid-template-columns:1fr}
+  }
+  @media (max-width: 640px){
+    .map{grid-template-columns:1fr}
+    .hdr-l h1{font-size:36px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hdr">
+    <div class="hdr-l">
+      <div class="eyebrow"><span class="dot"></span>COURSE PLAN · v1.0 · 2026 · 预览版</div>
+      <h1>从 <em>if/else</em> 到 <em>AI 中台架构师</em><br/>16 周打怪升级路线</h1>
+      <p class="sub">面向只会 Python 基础语法的零基础学员，循序渐进打通 FastAPI、Docker、数据库、消息队列、K8s、可观测性、微服务、网关、鉴权、高并发与高可用，最终合体一个支持 <b style="color:var(--ink)">Channel + Gateway + Agent Runtime + Tool Factory</b> 的企业级 AI 中台。</p>
+    </div>
+    <div class="hdr-r">
+      <div class="stat"><b>16</b>weeks</div>
+      <div class="stat"><b>6</b>stages</div>
+      <div class="stat"><b>22</b>mini-projects</div>
+      <div class="stat"><b>1</b>boss raid</div>
+    </div>
+  </header>
+
+  <div class="section-title">
+    <span class="num">§ 01</span>
+    <h2>整体路径图 · The Map</h2>
+    <span class="hint">// 6 stages · linear unlock · 每关都有小测 + 小项目</span>
+  </div>
+
+  <div class="map-wrap">
+    <div class="map-legend">
+      <span><i class="lg-main"></i>主线（必修）</span>
+      <span><i class="lg-side"></i>支线（强烈建议）</span>
+      <span><i class="lg-boss"></i>BOSS 关 · 大项目</span>
+      <span style="margin-left:auto">// 单向解锁，每关验收通过后进入下一关</span>
+    </div>
+
+    <div class="map">
+
+      <a class="stage" href="#enroll" data-cwp-action="enroll">
+        <div class="pin active">STAGE 01 →</div>
+        <div class="lvl">01</div>
+        <div class="week">WEEK 1 – 2 · 新手村</div>
+        <h3>工程素养与 Web 基础</h3>
+        <ul>
+          <li>Linux / 命令行</li>
+          <li>Git / 分支 / PR</li>
+          <li>HTTP / TCP / DNS</li>
+          <li>FastAPI 入门</li>
+          <li>Pydantic 数据模型</li>
+        </ul>
+        <div class="tag">→ 小项目：Echo API + 用户注册接口</div>
+      </a>
+
+      <a class="stage" href="#enroll" data-cwp-action="enroll">
+        <div class="pin active">STAGE 02 →</div>
+        <div class="lvl">02</div>
+        <div class="week">WEEK 3 – 5 · 沼泽地</div>
+        <h3>异步 / 数据 / 缓存</h3>
+        <ul>
+          <li>asyncio 协程</li>
+          <li>SSE / WebSocket 流式</li>
+          <li>MySQL + SQLAlchemy</li>
+          <li>Redis 多级缓存</li>
+          <li>向量库（pgvector / Milvus）</li>
+        </ul>
+        <div class="tag">→ 小项目：流式问答 + RAG 检索服务</div>
+      </a>
+
+      <a class="stage stage--locked" href="#enroll" data-cwp-action="enroll">
+        <div class="pin">STAGE 03 →</div>
+        <div class="lvl">03</div>
+        <div class="week">WEEK 6 – 8 · 工厂区</div>
+        <h3>容器化 &amp; 微服务</h3>
+        <ul>
+          <li>Docker / Compose</li>
+          <li>gRPC + Protobuf</li>
+          <li>注册发现（Nacos）</li>
+          <li>消息队列（Kafka）</li>
+          <li>API Gateway 设计</li>
+        </ul>
+        <div class="tag">→ 小项目：3 服务拆分 + 网关路由</div>
+      </a>
+
+      <a class="stage stage--locked" href="#enroll" data-cwp-action="enroll">
+        <div class="pin">STAGE 04 →</div>
+        <div class="lvl">04</div>
+        <div class="week">WEEK 9 – 11 · 高原</div>
+        <h3>高并发 / 高可用 / 安全</h3>
+        <ul>
+          <li>限流（令牌桶 / 漏桶）</li>
+          <li>熔断 / 降级 / 重试</li>
+          <li>JWT / OAuth2 / 鉴权网关</li>
+          <li>OWASP / Prompt 注入防护</li>
+          <li>多租户 + 配额计费</li>
+        </ul>
+        <div class="tag">→ 小项目：千 QPS 压测 + 多租户隔离</div>
+      </a>
+
+      <a class="stage stage--locked" href="#enroll" data-cwp-action="enroll">
+        <div class="pin">STAGE 05 →</div>
+        <div class="lvl">05</div>
+        <div class="week">WEEK 12 – 13 · 云端</div>
+        <h3>K8s / 可观测 / DevOps</h3>
+        <ul>
+          <li>K8s 核心对象</li>
+          <li>Helm + Kustomize</li>
+          <li>HPA / GPU 调度</li>
+          <li>Prometheus + Grafana</li>
+          <li>OpenTelemetry 链路追踪</li>
+        </ul>
+        <div class="tag">→ 小项目：上云 + 灰度发布</div>
+      </a>
+
+      <a class="stage stage--boss stage--locked" href="#enroll" data-cwp-action="enroll">
+        <div class="pin">★ BOSS →</div>
+        <div class="lvl">06</div>
+        <div class="week">WEEK 14 – 16 · 王城</div>
+        <h3>企业级 AI 中台合体</h3>
+        <ul>
+          <li>Channel · 多渠道接入</li>
+          <li>Gateway · 鉴权/路由/限流</li>
+          <li>Agent Runtime · 编排</li>
+          <li>Tool Factory · 工具工厂</li>
+          <li>K8s 多集群 + 灰度</li>
+        </ul>
+        <div class="tag" style="color:var(--gold)">→ 答辩：架构图 + 压测报告 + Demo</div>
+      </a>
+
+    </div>
+
+    <div class="map-arrows">
+      <div class="ar"></div><div class="ar"></div><div class="ar"></div>
+      <div class="ar"></div><div class="ar"></div><div class="ar" style="border:none"></div>
+    </div>
+
+    <div class="timeline">
+      <div class="tl-row">
+        <div class="lab">// stage</div>
+        <div class="tl-bar">
+          <i class="on"></i><i class="on"></i>
+          <i class="on" style="background:var(--accent-deep);border-color:var(--accent-deep)"></i><i class="on" style="background:var(--accent-deep);border-color:var(--accent-deep)"></i><i class="on" style="background:var(--accent-deep);border-color:var(--accent-deep)"></i>
+          <i class="on"></i><i class="on"></i><i class="on"></i>
+          <i class="on" style="background:var(--accent-deep);border-color:var(--accent-deep)"></i><i class="on" style="background:var(--accent-deep);border-color:var(--accent-deep)"></i><i class="on" style="background:var(--accent-deep);border-color:var(--accent-deep)"></i>
+          <i class="on"></i><i class="on"></i>
+          <i class="boss"></i><i class="boss"></i><i class="boss"></i>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="lab">// theme</div>
+        <div class="tl-bar" style="grid-template-columns:repeat(16,1fr)">
+          <i style="grid-column:span 2;background:rgba(217,122,60,.5);color:var(--bg);font-size:10px;display:flex;align-items:center;justify-content:center;font-family:var(--mono)">Web</i>
+          <i style="grid-column:span 3;background:rgba(217,122,60,.35);color:var(--bg);font-size:10px;display:flex;align-items:center;justify-content:center;font-family:var(--mono)">Async/Data/RAG</i>
+          <i style="grid-column:span 3;background:rgba(217,122,60,.5);color:var(--bg);font-size:10px;display:flex;align-items:center;justify-content:center;font-family:var(--mono)">Container/μSvc</i>
+          <i style="grid-column:span 3;background:rgba(217,122,60,.35);color:var(--bg);font-size:10px;display:flex;align-items:center;justify-content:center;font-family:var(--mono)">HA/HC/Sec</i>
+          <i style="grid-column:span 2;background:rgba(217,122,60,.5);color:var(--bg);font-size:10px;display:flex;align-items:center;justify-content:center;font-family:var(--mono)">K8s/Obs</i>
+          <i style="grid-column:span 3;background:rgba(201,163,90,.55);color:var(--bg);font-size:10px;display:flex;align-items:center;justify-content:center;font-family:var(--mono)">★ BOSS · AI 中台</i>
+        </div>
+      </div>
+      <div class="tl-axis">
+        <span>w1</span><span>w2</span><span>w3</span><span>w4</span><span>w5</span><span>w6</span><span>w7</span><span>w8</span>
+        <span>w9</span><span>w10</span><span>w11</span><span>w12</span><span>w13</span><span>w14</span><span>w15</span><span>w16</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ §02 Quest Log · 仅展开 STAGE 01 ============ -->
+  <div class="section-title">
+    <span class="num">§ 02</span>
+    <h2>分阶段大纲 · Quest Log · STAGE 01</h2>
+    <span class="hint">// 每关 = 知识点 + 小测 + 小项目 + 验收标准（其余 5 关报名后解锁）</span>
+  </div>
+
+  <div class="det">
+    <div class="det-head">
+      <div class="lvbig">01</div>
+      <div class="h-info">
+        <h4>新手村 · 工程素养与 Web 基础</h4>
+        <div class="meta">WEEK 1 – 2  ·  ⏱ 25h  ·  HP+ 基础工程</div>
+        <div class="quote">「先学会把代码跑起来、传上去、给别人看到，再谈架构。」</div>
+      </div>
+    </div>
+
+    <h5>核心知识点</h5>
+    <ul class="kp">
+      <li><b>Linux 与命令行</b>：文件/进程/权限/管道/SSH<span class="code">vim · tmux · curl · jq</span></li>
+      <li><b>Git 工作流</b>：分支策略、PR、Conflict、Rebase；<b>CI/CD</b> 入门 <span class="code">GitHub Actions</span></li>
+      <li><b>网络基础</b>：TCP 三次握手、HTTP/1.1 vs 2 vs 3、DNS、TLS、CORS</li>
+      <li><b>FastAPI 起步</b>：路由、依赖注入、Pydantic 模型、错误处理、OpenAPI 文档</li>
+      <li><b>Python 工程化</b>：venv / poetry、类型注解、ruff + black、pytest</li>
+      <li><b>API 设计基础</b>：RESTful、状态码、幂等、版本化、分页</li>
+    </ul>
+
+    <div class="row2">
+      <div>
+        <h5>小测验</h5>
+        <div class="quiz">
+          <p>三次握手为什么要 3 次而不是 2 次？</p>
+          <p>FastAPI 的依赖注入和 Flask 的装饰器路由有什么本质区别？</p>
+          <p>Git rebase 和 merge 各自的代价是什么？</p>
+        </div>
+      </div>
+      <div>
+        <h5>小项目</h5>
+        <div class="proj">
+          <div class="ttl">P1.1<b>用户系统 API</b></div>
+          <p style="color:var(--ink-2);font-size:12.5px;margin:0;line-height:1.7">FastAPI 实现注册/登录/获取信息接口，写 pytest，跑 GitHub Actions CI，自动部署到一台云主机。</p>
+        </div>
+      </div>
+    </div>
+
+    <h5>验收标准</h5>
+    <div class="accept">
+      <ul>
+        <li>能用一句 curl 完成注册→登录→拿 token→访问受保护接口</li>
+        <li>仓库有 README、有测试、CI 绿勾、能复现部署</li>
+        <li>能讲清楚一个 HTTP 请求从输入域名到返回 JSON 的全过程</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<!-- 锁屏：替换原 §02 Quest Log 其余 5 关 + §03 BOSS + §04 Skill Tree -->
+<section class="cwp-lock" aria-label="报名解锁" style="margin-top:64px;">
+  <div class="cwp-lock__fade"></div>
+  <div class="cwp-lock__panel">
+    <div class="cwp-lock__card">
+      <span class="cwp-lock__tag">完整 Roadmap · 6 关 22 mini · 1 BOSS</span>
+      <h3 class="cwp-lock__title">解锁剩余 <em>5 关 Quest Log</em> + <em>BOSS 企业级中台拆解</em></h3>
+      <p class="cwp-lock__sub">
+        §02 STAGE 02-05 + BOSS 详细大纲（每关含 Quiz/小项目/验收清单）· §03 BOSS 企业级 AI 中台 4 层架构 · §04 16 周技能树与评分。
+      </p>
+      <div class="cwp-lock__meta">
+        <span class="it"><b>16</b> · 周</span>
+        <span class="it"><b>22</b> · mini-project</span>
+        <span class="it"><b>1</b> · BOSS raid</span>
+        <span class="it"><b>4</b> · 中台模块</span>
+      </div>
+      <a class="cwp-lock__cta" href="#enroll" data-cwp-action="enroll">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/><circle cx="12" cy="16.5" r="1.2" fill="currentColor"/></svg>
+        报名解锁完整章节
+      </a>
+      <div class="cwp-lock__hint">已报名同学请联系班主任开通课件权限</div>
+    </div>
+  </div>
+</section>
+
+<script src="../_shared/lock.js"></script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+# llmpromotion · Nginx 配置示例
+# 拷到 /etc/nginx/sites-available/llmpromotion 后改 server_name + root 路径
+# sudo ln -s ../sites-available/llmpromotion /etc/nginx/sites-enabled/
+
+# 全局限流（放 http 块顶部，避免被 DDoS）
+limit_req_zone $binary_remote_addr zone=cwp_zone:10m rate=2r/s;
+
+server {
+  listen 80;
+  server_name 你的域名;
+  # 自动跳 HTTPS（certbot 会接管这块）
+  return 301 https://$host$request_uri;
+}
+
+server {
+  listen 443 ssl http2;
+  server_name 你的域名;
+
+  # SSL（certbot 生成）
+  ssl_certificate     /etc/letsencrypt/live/你的域名/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/你的域名/privkey.pem;
+
+  # 上传大小限制（与后端 multer 一致）
+  client_max_body_size 1m;
+
+  # 全局限流（每 IP 2r/s · 突发 20）
+  limit_req zone=cwp_zone burst=20 nodelay;
+
+  # 前端静态根目录
+  root /opt/llmpromotion/web;
+  index index.html;
+
+  # 日志
+  access_log /var/log/nginx/llmpromotion.access.log;
+  error_log  /var/log/nginx/llmpromotion.error.log;
+
+  # ============ API · 反代到 Node ============
+  location /api/ {
+    proxy_pass http://127.0.0.1:3001/api/;
+    proxy_http_version 1.1;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Host $host;
+    proxy_read_timeout 30s;
+  }
+
+  # ============ 上传的二维码 · Nginx 直 serve ============
+  location /uploads/ {
+    alias /opt/llmpromotion/uploads/;
+    expires 7d;
+    add_header Cache-Control "public, immutable";
+    # 防止上传目录被遍历
+    autoindex off;
+  }
+
+  # ============ admin 控制台 ============
+  location = /admin {
+    try_files /admin.html =404;
+  }
+
+  # ============ 渠道路由壳 ============
+  location ~ ^/c/[\w-]+/?$ {
+    try_files /index.html =404;
+  }
+
+  # ============ 13 套样式 ============
+  location /styles/ {
+    try_files $uri $uri/ $uri/index.html =404;
+  }
+
+  # ============ 课件 preview ============
+  location /courseware-preview/ {
+    expires 1d;
+    add_header Cache-Control "public";
+  }
+
+  # ============ 静态资源缓存 ============
+  location ~* \.(js|css|svg|png|jpg|jpeg|gif|woff2?|ttf)$ {
+    expires 1d;
+    add_header Cache-Control "public, max-age=86400";
+  }
+
+  # ============ HTML 不缓存（保证更新即时生效）============
+  location ~* \.html$ {
+    add_header Cache-Control "no-cache, must-revalidate";
+  }
+
+  # ============ Fallback ============
+  location / {
+    try_files $uri $uri/ /index.html;
+  }
+
+  # ============ 隐藏 .env / .db / .git 等 ============
+  location ~ /\.(?!well-known) {
+    deny all;
+    return 404;
+  }
+  location ~* \.(db|env|log|backup)$ {
+    deny all;
+    return 404;
+  }
+}

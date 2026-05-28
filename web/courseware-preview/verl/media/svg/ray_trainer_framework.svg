@@ -1,0 +1,527 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1480 3200" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Helvetica Neue', sans-serif">
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FAFAF7"/>
+      <stop offset="100%" stop-color="#F3F2EC"/>
+    </linearGradient>
+
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-thin" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect width="1480" height="3200" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="60" y="58" font-size="28" font-weight="600" fill="#1a1a1a" letter-spacing="-0.4">ray_trainer.py 框架图 · 26 个方法的职责分布</text>
+  <text x="60" y="86" font-size="14" fill="#6b6b66" font-style="italic">RayPPOTrainer 是 single-controller 主控 · fit() 是中央调度器，调用其他 25 个方法编织出完整训练流程</text>
+  <line x1="60" y1="100" x2="1420" y2="100" stroke="#d4d2c7" stroke-width="0.8"/>
+
+  <!-- ============================================== -->
+  <!-- 文件总览                                          -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 120)">
+    <rect x="0" y="0" width="1360" height="200" rx="6" fill="#FFFFFF" stroke="#534AB7" stroke-width="0.8"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#26215C">文件总览</text>
+    <line x1="22" y1="40" x2="200" y2="40" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <g transform="translate(22, 60)" font-size="13">
+      <text x="0" y="0" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">本质：</tspan>
+        <tspan>1 个类（RayPPOTrainer）+ 3 个模块级函数 · 共 26 个方法/函数</tspan>
+      </text>
+      <text x="0" y="22" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">运行位置：</tspan>
+        <tspan>TaskRunner Ray actor 进程内 · 但不持有大模型参数 · 只通过 WorkerGroup 调用远端 worker</tspan>
+      </text>
+      <text x="0" y="44" fill="#444441">
+        <tspan font-weight="700" fill="#A32D2D">最关键：</tspan>
+        <tspan>fit() 是中央调度器 · 直接或间接调用了几乎所有其他方法</tspan>
+      </text>
+
+      <text x="0" y="80" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">7 大职责分组：</tspan>
+      </text>
+      <text x="0" y="104" font-size="12" fill="#444441">
+        <tspan>① 构造和资源初始化（3）</tspan>
+        <tspan dx="20">② 数据流核心方法（8）</tspan>
+        <tspan dx="20">③ Validation 和日志（6）</tspan>
+        <tspan dx="20">④ Checkpoint 管理（2）</tspan>
+      </text>
+      <text x="0" y="124" font-size="12" fill="#444441">
+        <tspan>⑤ Profiling（2）</tspan>
+        <tspan dx="20">⑥ 辅助（1）</tspan>
+        <tspan dx="20">⑦ 主循环 fit()（1）</tspan>
+        <tspan dx="20">+ 模块级函数（3）</tspan>
+      </text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 模块级函数（独立于类）                             -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 340)">
+    <rect x="0" y="0" width="1360" height="220" rx="8" fill="#FFFFFF" stroke="#888780" stroke-width="0.8"/>
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#1a1a1a">模块级函数（不在类里 · 任何 trainer 都能复用）</text>
+    <line x1="22" y1="44" x2="500" y2="44" stroke="#d4d2c7" stroke-width="0.6"/>
+
+    <g transform="translate(40, 70)">
+      <!-- apply_kl_penalty -->
+      <g>
+        <rect x="0" y="0" width="430" height="120" rx="6" fill="#E6F1FB" stroke="#378ADD" stroke-width="1"/>
+        <text x="20" y="24" font-size="13" font-weight="700" fill="#042C53">apply_kl_penalty</text>
+        <line x1="20" y1="36" x2="200" y2="36" stroke="#85B7EB" stroke-width="0.6"/>
+        <text x="20" y="56" font-size="11" fill="#444441">把 KL 散度折算到 reward 里：</text>
+        <text x="20" y="74" font-family="ui-monospace, monospace" font-size="10.5" fill="#185FA5">rewards = scores − β × KL</text>
+        <text x="20" y="96" font-size="10.5" fill="#5f5e5a" font-style="italic">use_kl_in_reward=True 时才走这里</text>
+      </g>
+
+      <!-- compute_response_mask -->
+      <g transform="translate(450, 0)">
+        <rect x="0" y="0" width="400" height="120" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1"/>
+        <text x="20" y="24" font-size="13" font-weight="700" fill="#04342C">compute_response_mask</text>
+        <line x1="20" y1="36" x2="240" y2="36" stroke="#5DCAA5" stroke-width="0.6"/>
+        <text x="20" y="56" font-size="11" fill="#444441">提取 response 部分的 attention_mask</text>
+        <text x="20" y="78" font-size="10.5" fill="#5f5e5a" font-style="italic">reward / advantage / loss</text>
+        <text x="20" y="94" font-size="10.5" fill="#5f5e5a" font-style="italic">都只能作用在 response token 上</text>
+      </g>
+
+      <!-- compute_advantage -->
+      <g transform="translate(870, 0)">
+        <rect x="0" y="0" width="430" height="120" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+        <text x="20" y="24" font-size="13" font-weight="700" fill="#26215C">compute_advantage ★</text>
+        <line x1="20" y1="36" x2="200" y2="36" stroke="#CECBF6" stroke-width="0.6"/>
+        <text x="20" y="56" font-size="11" fill="#444441">算法分叉点：</text>
+        <text x="20" y="74" font-size="10.5" fill="#534AB7">GAE / GRPO / RLOO / REINFORCE++ / GDPO ...</text>
+        <text x="20" y="96" font-size="10.5" fill="#5f5e5a" font-style="italic">驱动侧轻量计算 · 不下放 worker</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 类的方法树（按职责分 6 组）                         -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 580)">
+    <text x="0" y="0" font-size="22" font-weight="700" fill="#1a1a1a">RayPPOTrainer 类的 23 个方法</text>
+    <text x="0" y="28" font-size="12" fill="#5f5e5a" font-style="italic">按职责分 6 组 · 注意 fit() 几乎调用其他每一组</text>
+  </g>
+
+  <!-- 组 1: 构造和资源初始化 -->
+  <g transform="translate(60, 640)">
+    <rect x="0" y="0" width="1360" height="240" rx="8" fill="#FFFFFF" stroke="#0F6E56" stroke-width="1.4"/>
+    <rect x="0" y="0" width="6" height="240" rx="2" fill="#0F6E56"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#04342C">① 构造和资源初始化（3 个方法 · 启动时各跑一次）</text>
+    <line x1="22" y1="44" x2="500" y2="44" stroke="#5DCAA5" stroke-width="0.6"/>
+
+    <g transform="translate(40, 70)">
+      <g>
+        <rect x="0" y="0" width="420" height="140" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.6"/>
+        <text x="20" y="24" font-size="13" font-weight="700" fill="#04342C">__init__</text>
+        <line x1="20" y1="36" x2="120" y2="36" stroke="#5DCAA5" stroke-width="0.6"/>
+        <text x="20" y="56" font-size="11" fill="#444441">轻量初始化：保存 config / mapping</text>
+        <text x="20" y="74" font-size="11" fill="#444441">tokenizer / dataloader 等</text>
+        <text x="20" y="100" font-size="10.5" fill="#04342C" font-weight="600">关键开关：</text>
+        <text x="20" y="116" font-size="10" font-family="ui-monospace, monospace" fill="#0F6E56">use_critic / use_rm / use_reference_policy</text>
+        <text x="20" y="130" font-size="10" font-family="ui-monospace, monospace" fill="#0F6E56">ref_in_actor / hybrid_engine</text>
+      </g>
+
+      <g transform="translate(440, 0)">
+        <rect x="0" y="0" width="420" height="140" rx="6" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.6"/>
+        <text x="20" y="24" font-size="13" font-weight="700" fill="#04342C">_create_dataloader</text>
+        <line x1="20" y1="36" x2="200" y2="36" stroke="#5DCAA5" stroke-width="0.6"/>
+        <text x="20" y="56" font-size="11" fill="#444441">用 StatefulDataLoader 包 dataset</text>
+        <text x="20" y="80" font-size="10.5" fill="#04342C" font-weight="600">关键能力：</text>
+        <text x="20" y="96" font-size="10" fill="#444441">resume 时不重复 / 不跳过 batch</text>
+        <text x="20" y="116" font-size="10.5" fill="#5f5e5a" font-style="italic">还回填 total_training_steps</text>
+        <text x="20" y="130" font-size="10.5" fill="#5f5e5a" font-style="italic">用于 lr scheduler</text>
+      </g>
+
+      <g transform="translate(880, 0)">
+        <rect x="0" y="0" width="420" height="140" rx="6" fill="#FCEBEB" stroke="#A32D2D" stroke-width="1.5"/>
+        <text x="20" y="24" font-size="13" font-weight="700" fill="#501313">init_workers ★</text>
+        <line x1="20" y1="36" x2="180" y2="36" stroke="#F09595" stroke-width="0.6"/>
+        <text x="20" y="56" font-size="11" fill="#444441">最重的一步：从注册表 → 真实进程</text>
+        <text x="20" y="80" font-size="10.5" fill="#501313" font-weight="600">分 4 阶段：</text>
+        <text x="20" y="96" font-size="10" fill="#A32D2D">A. placement group  B. RayClassWithInitArgs</text>
+        <text x="20" y="112" font-size="10" fill="#A32D2D">C. spawn + init_model  D. 支撑系统</text>
+        <text x="20" y="130" font-size="10.5" fill="#5f5e5a" font-style="italic">已有专门一张图详细解释</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- 组 2: 数据流核心方法（最重要） -->
+  <g transform="translate(60, 900)">
+    <rect x="0" y="0" width="1360" height="500" rx="8" fill="#FFFFFF" stroke="#A32D2D" stroke-width="1.4"/>
+    <rect x="0" y="0" width="6" height="500" rx="2" fill="#A32D2D"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#501313">② 数据流核心方法（8 个 · 每个 step 都被 fit 调用）★★★</text>
+    <line x1="22" y1="44" x2="600" y2="44" stroke="#F09595" stroke-width="0.6"/>
+
+    <text x="22" y="68" font-size="12" fill="#791F1F">这 8 个方法构成 fit() 主循环的"骨干" · 按调用顺序排列</text>
+
+    <g transform="translate(40, 90)">
+      <!-- 第一行：3 个方法 -->
+      <g>
+        <rect x="0" y="0" width="420" height="120" rx="6" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.6"/>
+        <text x="20" y="24" font-size="13" font-weight="700" fill="#501313">_get_gen_batch</text>
+        <line x1="20" y1="36" x2="160" y2="36" stroke="#F09595" stroke-width="0.6"/>
+        <text x="20" y="56" font-size="11" fill="#444441">提取 rollout 生成需要的字段</text>
+        <text x="20" y="76" font-size="10.5" fill="#5f5e5a" font-style="italic">把 reward/advantage 等训练字段</text>
+        <text x="20" y="92" font-size="10.5" fill="#5f5e5a" font-style="italic">从 batch 里 pop 出去</text>
+        <text x="20" y="110" font-size="10.5" fill="#A32D2D" font-weight="600">输入 → 给 rollout 的清爽 batch</text>
+      </g>
+
+      <g transform="translate(440, 0)">
+        <rect x="0" y="0" width="420" height="120" rx="6" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.6"/>
+        <text x="20" y="24" font-size="13" font-weight="700" fill="#501313">_compute_reward_colocate</text>
+        <line x1="20" y1="36" x2="240" y2="36" stroke="#F09595" stroke-width="0.6"/>
+        <text x="20" y="56" font-size="11" fill="#444441">调 reward_loop_manager 算 reward</text>
+        <text x="20" y="80" font-size="10.5" fill="#5f5e5a" font-style="italic">RM 模型 / 规则函数 / agent loop</text>
+        <text x="20" y="96" font-size="10.5" fill="#5f5e5a" font-style="italic">统一入口（不直接调 worker）</text>
+      </g>
+
+      <g transform="translate(880, 0)">
+        <rect x="0" y="0" width="420" height="120" rx="6" fill="#FCEBEB" stroke="#A32D2D" stroke-width="1"/>
+        <text x="20" y="24" font-size="13" font-weight="700" fill="#501313">_compute_old_log_prob</text>
+        <line x1="20" y1="36" x2="240" y2="36" stroke="#F09595" stroke-width="0.6"/>
+        <text x="20" y="56" font-size="11" fill="#444441">PPO ratio 的分母策略</text>
+        <text x="20" y="76" font-family="ui-monospace, monospace" font-size="10" fill="#A32D2D">ratio = exp(log_π_θ − old_log_prob)</text>
+        <text x="20" y="96" font-size="10.5" fill="#5f5e5a" font-style="italic">bypass mode 跳过 · 直接复用 rollout_logp</text>
+      </g>
+
+      <!-- 第二行：3 个方法 -->
+      <g transform="translate(0, 140)">
+        <rect x="0" y="0" width="420" height="120" rx="6" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.6"/>
+        <text x="20" y="24" font-size="13" font-weight="700" fill="#501313">_compute_ref_log_prob</text>
+        <line x1="20" y1="36" x2="240" y2="36" stroke="#F09595" stroke-width="0.6"/>
+        <text x="20" y="56" font-size="11" fill="#444441">冻结 ref policy 的 log_prob</text>
+        <text x="20" y="76" font-size="10.5" fill="#5f5e5a" font-style="italic">KL 约束的基准</text>
+        <text x="20" y="96" font-size="10" fill="#A32D2D">ref_in_actor 时通过关 LoRA adapter 算</text>
+      </g>
+
+      <g transform="translate(440, 140)">
+        <rect x="0" y="0" width="420" height="120" rx="6" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.6"/>
+        <text x="20" y="24" font-size="13" font-weight="700" fill="#501313">_compute_values</text>
+        <line x1="20" y1="36" x2="180" y2="36" stroke="#F09595" stroke-width="0.6"/>
+        <text x="20" y="56" font-size="11" fill="#444441">critic 对每 token 估值</text>
+        <text x="20" y="76" font-size="10.5" fill="#5f5e5a" font-style="italic">PPO/GAE 才需要</text>
+        <text x="20" y="96" font-size="10.5" fill="#5f5e5a" font-style="italic">GRPO 跳过这步</text>
+      </g>
+
+      <g transform="translate(880, 140)">
+        <rect x="0" y="0" width="420" height="120" rx="6" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.6"/>
+        <text x="20" y="24" font-size="13" font-weight="700" fill="#501313">_balance_batch</text>
+        <line x1="20" y1="36" x2="180" y2="36" stroke="#F09595" stroke-width="0.6"/>
+        <text x="20" y="56" font-size="11" fill="#444441">DP 负载均衡</text>
+        <text x="20" y="76" font-size="10.5" fill="#5f5e5a" font-style="italic">按 token 数重排 · 让所有 DP rank</text>
+        <text x="20" y="92" font-size="10.5" fill="#5f5e5a" font-style="italic">的 workload 接近 · 减少等待</text>
+        <text x="20" y="110" font-size="10" fill="#A32D2D">PrefixGrouper 时用 group balancing</text>
+      </g>
+
+      <!-- 第三行：2 个方法（更新模型）-->
+      <g transform="translate(0, 280)">
+        <rect x="0" y="0" width="640" height="180" rx="6" fill="#FFFFFF" stroke="#A32D2D" stroke-width="1.5"/>
+        <text x="20" y="28" font-size="14" font-weight="700" fill="#501313">_update_actor ★★</text>
+        <line x1="20" y1="40" x2="180" y2="40" stroke="#F09595" stroke-width="0.6"/>
+        <text x="20" y="62" font-size="12" fill="#444441">实际更新 actor 参数 · 真 RL loss 在这里</text>
+
+        <g transform="translate(20, 80)" font-size="11">
+          <text x="0" y="0" font-weight="700" fill="#A32D2D">输入（已经过 advantage 计算）：</text>
+          <text x="0" y="20" font-family="ui-monospace, monospace" fill="#444441">prompts + responses + old_log_probs</text>
+          <text x="0" y="36" font-family="ui-monospace, monospace" fill="#444441">+ advantages + ref_log_prob + response_mask</text>
+        </g>
+
+        <text x="20" y="146" font-size="11" fill="#5f5e5a" font-style="italic">worker 内部：FSDP backward + 优化器 step</text>
+        <text x="20" y="162" font-size="11" fill="#5f5e5a" font-style="italic">PPO clip / KL loss / entropy bonus</text>
+      </g>
+
+      <g transform="translate(660, 280)">
+        <rect x="0" y="0" width="640" height="180" rx="6" fill="#FFFFFF" stroke="#A32D2D" stroke-width="1.5"/>
+        <text x="20" y="28" font-size="14" font-weight="700" fill="#501313">_update_critic（PPO 才有）</text>
+        <line x1="20" y1="40" x2="280" y2="40" stroke="#F09595" stroke-width="0.6"/>
+        <text x="20" y="62" font-size="12" fill="#444441">更新 value model · GRPO 跳过</text>
+
+        <g transform="translate(20, 80)" font-size="11">
+          <text x="0" y="0" font-weight="700" fill="#A32D2D">输入：</text>
+          <text x="0" y="20" font-family="ui-monospace, monospace" fill="#444441">values + returns + response_mask</text>
+        </g>
+
+        <text x="20" y="146" font-size="11" fill="#5f5e5a" font-style="italic">value_loss 由 trainer 注入 · loss_fn 在 init_workers 阶段绑定</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- 组 3 4 5 6: Validation/Checkpoint/Profiling/辅助 -->
+  <g transform="translate(60, 1420)">
+    <rect x="0" y="0" width="1360" height="500" rx="8" fill="#FFFFFF" stroke="#534AB7" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="500" rx="2" fill="#534AB7"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#26215C">③ Validation 和日志（6）· ④ Checkpoint（2）· ⑤ Profiling（2）· ⑥ 辅助（1）</text>
+    <line x1="22" y1="44" x2="800" y2="44" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <text x="22" y="68" font-size="12" fill="#534AB7">这些是支撑训练的辅助系统 · 不在数据流主线上但缺一不可</text>
+
+    <g transform="translate(40, 90)">
+      <!-- Validation 系列 -->
+      <g>
+        <rect x="0" y="0" width="640" height="200" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.8"/>
+        <text x="20" y="24" font-size="14" font-weight="700" fill="#26215C">③ Validation 和日志</text>
+        <line x1="20" y1="36" x2="240" y2="36" stroke="#CECBF6" stroke-width="0.6"/>
+
+        <g transform="translate(20, 56)" font-size="11">
+          <text x="0" y="0" font-weight="700" fill="#26215C">_validate</text>
+          <text x="120" y="0" fill="#444441">跑 val_dataloader · 算 reward / pass@k</text>
+
+          <text x="0" y="20" font-weight="700" fill="#26215C">_val_metrics_update</text>
+          <text x="160" y="20" fill="#444441">分 val-core / val-aux 两层指标</text>
+
+          <text x="0" y="40" font-weight="700" fill="#26215C">_merge_validation_results</text>
+          <text x="190" y="40" fill="#444441">合并多段 validation 原始统计</text>
+
+          <text x="0" y="64" font-weight="700" fill="#26215C">_maybe_log_val_generations</text>
+          <text x="200" y="64" fill="#444441">wandb 表格抽 N 条样本</text>
+
+          <text x="0" y="84" font-weight="700" fill="#26215C">_log_rollout_data</text>
+          <text x="160" y="84" fill="#444441">把训练样本落盘 · debug 用</text>
+
+          <text x="0" y="104" font-weight="700" fill="#26215C">_dump_generations</text>
+          <text x="160" y="104" fill="#444441">写 JSONL 到磁盘</text>
+        </g>
+
+        <text x="20" y="180" font-size="10.5" fill="#5f5e5a" font-style="italic">→ 排查 reward hacking / 数据污染 / agent 异常的关键</text>
+      </g>
+
+      <!-- Checkpoint -->
+      <g transform="translate(660, 0)">
+        <rect x="0" y="0" width="640" height="200" rx="6" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.8"/>
+        <text x="20" y="24" font-size="14" font-weight="700" fill="#412402">④ Checkpoint 管理</text>
+        <line x1="20" y1="36" x2="220" y2="36" stroke="#FAC775" stroke-width="0.6"/>
+
+        <g transform="translate(20, 56)" font-size="11">
+          <text x="0" y="0" font-weight="700" fill="#412402">_save_checkpoint</text>
+          <text x="0" y="18" fill="#444441">  存三样：actor + critic + dataloader state</text>
+          <text x="0" y="34" fill="#5f5e5a" font-style="italic">  rollout 副本不存 · 可从 actor 重建</text>
+
+          <text x="0" y="62" font-weight="700" fill="#412402">_load_checkpoint</text>
+          <text x="0" y="80" fill="#444441">  resume_mode: disable / auto / resume_path</text>
+          <text x="0" y="96" fill="#5f5e5a" font-style="italic">  global_steps 自动恢复</text>
+          <text x="0" y="114" fill="#5f5e5a" font-style="italic">  epoch 边界跳过 dataloader state</text>
+        </g>
+
+        <text x="20" y="180" font-size="10.5" fill="#5f5e5a" font-style="italic">→ RL 训练几小时到几天 · checkpoint 是必备</text>
+      </g>
+
+      <!-- Profiling + 辅助 -->
+      <g transform="translate(0, 220)">
+        <rect x="0" y="0" width="640" height="160" rx="6" fill="#E6F1FB" stroke="#378ADD" stroke-width="0.8"/>
+        <text x="20" y="24" font-size="14" font-weight="700" fill="#042C53">⑤ Profiling 和 ⑥ 辅助</text>
+        <line x1="20" y1="36" x2="240" y2="36" stroke="#85B7EB" stroke-width="0.6"/>
+
+        <g transform="translate(20, 56)" font-size="11">
+          <text x="0" y="0" font-weight="700" fill="#042C53">_start_profiling / _stop_profiling</text>
+          <text x="0" y="18" fill="#444441">  统一通知 actor / ref / critic worker 开关 nsys</text>
+          <text x="0" y="34" fill="#5f5e5a" font-style="italic">  按指定 step 采样</text>
+
+          <text x="0" y="62" font-weight="700" fill="#042C53">_get_dp_size</text>
+          <text x="0" y="80" fill="#444441">  从 worker group dispatch 信息查 DP 维度</text>
+          <text x="0" y="96" fill="#5f5e5a" font-style="italic">  用于 _balance_batch · 不要把 world_size 拿去切</text>
+        </g>
+      </g>
+
+      <g transform="translate(660, 220)">
+        <rect x="0" y="0" width="640" height="160" rx="6" fill="#F8F7F2" stroke="#888780" stroke-width="0.8"/>
+        <text x="20" y="24" font-size="14" font-weight="700" fill="#1a1a1a">观察这一组的特征</text>
+        <line x1="20" y1="36" x2="240" y2="36" stroke="#d4d2c7" stroke-width="0.6"/>
+
+        <g transform="translate(20, 56)" font-size="11.5" fill="#444441">
+          <text x="0" y="0">这些方法都不是"训练算法"本身</text>
+          <text x="0" y="22">但每一个都是工业级 RL 训练的必需</text>
+          <text x="0" y="50" font-weight="700" fill="#1a1a1a">这就是为什么 verl 比 TRL 复杂——</text>
+          <text x="0" y="68">不只是算法，还有可观测、可恢复、</text>
+          <text x="0" y="86">可调优的整套支撑系统</text>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 组 7: fit() 主循环                               -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 1940)">
+    <rect x="0" y="0" width="1360" height="900" rx="8" fill="#FFFFFF" stroke="#A32D2D" stroke-width="2"/>
+    <rect x="0" y="0" width="6" height="900" rx="2" fill="#A32D2D"/>
+
+    <text x="22" y="32" font-size="22" font-weight="700" fill="#501313">⑦ fit() 主循环 · 把上面 25 个方法编织起来 ★★★</text>
+    <line x1="22" y1="44" x2="800" y2="44" stroke="#F09595" stroke-width="0.6"/>
+
+    <text x="22" y="70" font-size="13" fill="#791F1F">这一个方法是整个文件的"中央调度器" · 调用了上面几乎每一个方法</text>
+
+    <!-- fit 的整体结构 -->
+    <g transform="translate(40, 100)">
+      <!-- 准备阶段 -->
+      <g>
+        <rect x="0" y="0" width="1280" height="60" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.8"/>
+        <text x="20" y="24" font-size="13" font-weight="700" fill="#26215C">准备阶段（每次 fit 跑一次）</text>
+        <text x="20" y="44" font-size="11" font-family="ui-monospace, monospace" fill="#534AB7">_load_checkpoint() → checkpoint_manager.update_weights() → _validate(初始 baseline)</text>
+      </g>
+
+      <line x1="640" y1="60" x2="640" y2="80" stroke="#A32D2D" stroke-width="2" marker-end="url(#arrow-thin)"/>
+
+      <!-- 主循环框 -->
+      <g transform="translate(0, 88)">
+        <rect x="0" y="0" width="1280" height="600" rx="6" fill="#FCEBEB" stroke="#A32D2D" stroke-width="1.5"/>
+        <text x="20" y="28" font-size="14" font-weight="700" fill="#501313">for epoch in range(total_epochs): for batch in train_dataloader:（主循环）</text>
+        <line x1="20" y1="40" x2="600" y2="40" stroke="#F09595" stroke-width="0.6"/>
+
+        <g transform="translate(20, 60)">
+          <!-- Step 1-3: 数据准备 -->
+          <g>
+            <rect x="0" y="0" width="1240" height="60" rx="4" fill="#FFFFFF" stroke="#A32D2D" stroke-width="0.5"/>
+            <text x="14" y="22" font-size="11.5" font-weight="700" fill="#501313">1. 数据准备</text>
+            <text x="14" y="40" font-size="11" font-family="ui-monospace, monospace" fill="#444441">DataProto.from_single_dict() → 加 uid → _get_gen_batch() → batch.repeat(rollout.n)</text>
+            <text x="14" y="54" font-size="10" fill="#5f5e5a">↑ 100 条 prompt + n=5 → 500 条生成请求</text>
+          </g>
+
+          <!-- Step 4: rollout -->
+          <g transform="translate(0, 70)">
+            <rect x="0" y="0" width="1240" height="50" rx="4" fill="#FFFFFF" stroke="#A32D2D" stroke-width="0.5"/>
+            <text x="14" y="22" font-size="11.5" font-weight="700" fill="#501313">2. Rollout 生成（最耗时）</text>
+            <text x="14" y="40" font-size="11" font-family="ui-monospace, monospace" fill="#444441">async_rollout_manager.generate_sequences(gen_batch) → checkpoint_manager.sleep_replicas()</text>
+          </g>
+
+          <!-- Step 5: reward -->
+          <g transform="translate(0, 130)">
+            <rect x="0" y="0" width="1240" height="50" rx="4" fill="#FFFFFF" stroke="#A32D2D" stroke-width="0.5"/>
+            <text x="14" y="22" font-size="11.5" font-weight="700" fill="#501313">3. Reward 计算</text>
+            <text x="14" y="40" font-size="11" font-family="ui-monospace, monospace" fill="#444441">_compute_reward_colocate(batch) → extract_reward(batch)</text>
+          </g>
+
+          <!-- Step 6: balance -->
+          <g transform="translate(0, 190)">
+            <rect x="0" y="0" width="1240" height="40" rx="4" fill="#FFFFFF" stroke="#A32D2D" stroke-width="0.5"/>
+            <text x="14" y="22" font-size="11.5" font-weight="700" fill="#501313">4. Balance batch</text>
+            <text x="240" y="22" font-size="11" font-family="ui-monospace, monospace" fill="#444441">_balance_batch(batch)</text>
+          </g>
+
+          <!-- Step 7: logp 补全 -->
+          <g transform="translate(0, 240)">
+            <rect x="0" y="0" width="1240" height="60" rx="4" fill="#FFFFFF" stroke="#A32D2D" stroke-width="0.5"/>
+            <text x="14" y="22" font-size="11.5" font-weight="700" fill="#501313">5. 补全 logp 和 values</text>
+            <text x="14" y="40" font-size="11" font-family="ui-monospace, monospace" fill="#444441">_compute_old_log_prob() → _compute_ref_log_prob() → _compute_values()（PPO）</text>
+            <text x="14" y="54" font-size="10" fill="#5f5e5a">↑ bypass mode 时跳过 _compute_old_log_prob</text>
+          </g>
+
+          <!-- Step 8: advantage -->
+          <g transform="translate(0, 310)">
+            <rect x="0" y="0" width="1240" height="60" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+            <text x="14" y="22" font-size="11.5" font-weight="700" fill="#26215C">6. 算法分叉点 · compute_advantage</text>
+            <text x="14" y="40" font-size="11" font-family="ui-monospace, monospace" fill="#534AB7">apply_kl_penalty()（可选） → compute_advantage(adv_estimator=...)</text>
+            <text x="14" y="54" font-size="10" fill="#5f5e5a">↑ GAE / GRPO / RLOO / REINFORCE++ 在这里走不同分支</text>
+          </g>
+
+          <!-- Step 9: update critic -->
+          <g transform="translate(0, 380)">
+            <rect x="0" y="0" width="1240" height="40" rx="4" fill="#FFFFFF" stroke="#A32D2D" stroke-width="0.5"/>
+            <text x="14" y="22" font-size="11.5" font-weight="700" fill="#501313">7. 更新 critic（PPO 才有）</text>
+            <text x="320" y="22" font-size="11" font-family="ui-monospace, monospace" fill="#444441">_update_critic(batch)</text>
+          </g>
+
+          <!-- Step 10: update actor -->
+          <g transform="translate(0, 430)">
+            <rect x="0" y="0" width="1240" height="40" rx="4" fill="#FCEBEB" stroke="#A32D2D" stroke-width="1.2"/>
+            <text x="14" y="22" font-size="11.5" font-weight="700" fill="#501313">8. 更新 actor ★（核心 RL 步骤）</text>
+            <text x="380" y="22" font-size="11" font-family="ui-monospace, monospace" fill="#A32D2D">_update_actor(batch)</text>
+          </g>
+
+          <!-- Step 11: sync rollout -->
+          <g transform="translate(0, 480)">
+            <rect x="0" y="0" width="1240" height="40" rx="4" fill="#FFFFFF" stroke="#A32D2D" stroke-width="0.5"/>
+            <text x="14" y="22" font-size="11.5" font-weight="700" fill="#501313">9. 权重同步</text>
+            <text x="180" y="22" font-size="11" font-family="ui-monospace, monospace" fill="#444441">checkpoint_manager.update_weights() → 下个 step rollout 用新权重</text>
+          </g>
+
+          <!-- Step 12: validate / save / log -->
+          <g transform="translate(0, 530)">
+            <rect x="0" y="0" width="1240" height="50" rx="4" fill="#FFFFFF" stroke="#A32D2D" stroke-width="0.5"/>
+            <text x="14" y="22" font-size="11.5" font-weight="700" fill="#501313">10. 收尾：validate / save / log</text>
+            <text x="14" y="40" font-size="11" font-family="ui-monospace, monospace" fill="#444441">_validate()（按频率） → _save_checkpoint()（按频率） → logger.log()</text>
+          </g>
+        </g>
+      </g>
+
+      <line x1="640" y1="688" x2="640" y2="708" stroke="#A32D2D" stroke-width="2" marker-end="url(#arrow-thin)"/>
+
+      <!-- 收尾 -->
+      <g transform="translate(0, 716)">
+        <rect x="0" y="0" width="1280" height="60" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.8"/>
+        <text x="20" y="24" font-size="13" font-weight="700" fill="#26215C">if is_last_step: pprint(last_val_metrics) → return（退出 fit）</text>
+        <text x="20" y="44" font-size="11" fill="#5f5e5a">→ 控制权回到 TaskRunner.run() · 然后回到 driver · ray.get 解阻塞</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 总结 · 25 + fit                                  -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 2860)">
+    <rect x="0" y="0" width="1360" height="320" rx="8" fill="#FFFFFF" stroke="#534AB7" stroke-width="1.4"/>
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#26215C">理解 ray_trainer.py 的心法</text>
+    <line x1="22" y1="44" x2="500" y2="44" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <g transform="translate(40, 80)" font-size="13">
+      <text x="0" y="0" fill="#444441">
+        <tspan font-weight="700" fill="#A32D2D">第 1 个心法：</tspan>
+        <tspan>fit() 是 1 = 25 的关系 · 一个方法把其他所有方法编织起来</tspan>
+      </text>
+      <text x="0" y="22" fill="#5f5e5a" font-style="italic">
+        · 读源码不要从第 1 行开始 · 从 fit() 开始 · 遇到 self.xxx() 跳过去看
+      </text>
+
+      <text x="0" y="56" fill="#444441">
+        <tspan font-weight="700" fill="#A32D2D">第 2 个心法：</tspan>
+        <tspan>这个文件是 driver 视角 · 任何方法都不直接动 GPU</tspan>
+      </text>
+      <text x="0" y="78" fill="#5f5e5a" font-style="italic">
+        · _update_actor 看起来在更新模型 · 实际只是把 batch 通过 wg.update_actor.remote() 发出去
+      </text>
+      <text x="0" y="94" fill="#5f5e5a" font-style="italic">
+        · 真正的 forward / backward 在远端 worker 进程 · 这个文件只做调度
+      </text>
+
+      <text x="0" y="128" fill="#444441">
+        <tspan font-weight="700" fill="#A32D2D">第 3 个心法：</tspan>
+        <tspan>"算法"和"工程"在这个文件里五五开</tspan>
+      </text>
+      <text x="0" y="150" fill="#5f5e5a" font-style="italic">
+        · 算法部分：apply_kl_penalty + compute_advantage + _update_actor 内的配置（约 1/4 代码）
+      </text>
+      <text x="0" y="166" fill="#5f5e5a" font-style="italic">
+        · 工程部分：dataloader / balance / checkpoint / validation / profiling / log（约 3/4 代码）
+      </text>
+
+      <text x="0" y="200" fill="#444441">
+        <tspan font-weight="700" fill="#A32D2D">第 4 个心法：</tspan>
+        <tspan>读这个文件的"展开顺序"</tspan>
+      </text>
+      <text x="0" y="222" fill="#5f5e5a" font-style="italic">
+        · 先读 fit() 主循环（30 分钟看懂大致流程）
+      </text>
+      <text x="0" y="238" fill="#5f5e5a" font-style="italic">
+        · 再读 8 个数据流方法（理解每步在做什么）
+      </text>
+      <text x="0" y="254" fill="#5f5e5a" font-style="italic">
+        · 然后读 compute_advantage 看算法分叉
+      </text>
+      <text x="0" y="270" fill="#5f5e5a" font-style="italic">
+        · 最后读 validation / checkpoint（这些和 RL 算法无关，但工程上必备）
+      </text>
+    </g>
+  </g>
+
+</svg>

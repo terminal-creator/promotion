@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agent Skill 交互式课件 · 预览</title>
+    <script type="module" crossorigin src="./assets/index-QQ6ze6oy.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DWoFe44b.css">
+    <link rel="stylesheet" href="../_shared/lock.css">
+    <style>
+      .nav-dot-btn[data-cwp-locked="1"] {
+        opacity: 0.45;
+        cursor: not-allowed;
+        position: relative;
+      }
+      .nav-dot-btn[data-cwp-locked="1"]:hover { opacity: 0.6; }
+      .nav-dot-btn[data-cwp-locked="1"]::after {
+        content: "🔒";
+        position: absolute;
+        top: -4px; right: -4px;
+        font-size: 10px;
+      }
+      #cwp-lock-host { position: relative; z-index: 60; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <template id="cwp-lock-tpl">
+      <section class="cwp-lock" aria-label="报名解锁" style="margin-top:80px;">
+        <div class="cwp-lock__fade"></div>
+        <div class="cwp-lock__panel">
+          <div class="cwp-lock__card">
+            <span class="cwp-lock__tag">Agent Skill 完整版 · 8 章 30+ 互动模块</span>
+            <h3 class="cwp-lock__title">解锁剩余 <em>7 章</em> · 含 Skill 4 级实战与企业落地</h3>
+            <p class="cwp-lock__sub">
+              CH1 Skill 是什么 · CH2 为什么需要 Skill · CH3 三层渐进式架构 · CH4 从零构建 Skill · CH5 六大行业场景 · CH6 工业级架构（流水线/路由/ReAct/记忆池）· CH7 Skill 的本质。
+            </p>
+            <div class="cwp-lock__meta">
+              <span class="it"><b>8</b> · 章节</span>
+              <span class="it"><b>30+</b> · 互动模块</span>
+              <span class="it"><b>4</b> 级 Skill 实战</span>
+              <span class="it"><b>6</b> 大行业场景</span>
+            </div>
+            <a class="cwp-lock__cta" href="#enroll" data-cwp-action="enroll">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/><circle cx="12" cy="16.5" r="1.2" fill="currentColor"/></svg>
+              报名解锁完整章节
+            </a>
+            <div class="cwp-lock__hint">已报名同学请联系班主任开通课件权限</div>
+          </div>
+        </div>
+      </section>
+    </template>
+
+    <script src="../_shared/lock.js"></script>
+    <script>
+      (function () {
+        const PREVIEW_MAX_CHAPTER = 1;
+
+        function enrollSignal() {
+          try {
+            if (window.top && window.top !== window) {
+              window.top.postMessage({ type: 'cwp:enroll', from: 'cwp-preview' }, '*');
+              return;
+            }
+          } catch (err) { /* ignore */ }
+          alert('返回 S5 课程页 · 报名后即可解锁 Agent Skill 全部 8 章互动内容');
+        }
+
+        // 首屏直接落到 Chapter 1（核心场景 + 图示最多的一章）
+        if (!/chapter=/.test(location.hash || '')) {
+          location.hash = '#/?chapter=1';
+        }
+
+        function pinChapter() {
+          const h = location.hash || '';
+          if (/chapter=(\d+)/.test(h)) {
+            const n = parseInt(RegExp.$1, 10);
+            if (n > PREVIEW_MAX_CHAPTER) {
+              location.replace(location.pathname + '#/?chapter=1');
+            }
+          }
+        }
+        pinChapter();
+        window.addEventListener('hashchange', pinChapter);
+
+        window.addEventListener('keydown', function (e) {
+          if (e.target && (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName) || e.target.isContentEditable)) return;
+          if (e.key === 'ArrowRight') {
+            e.stopPropagation();
+            e.preventDefault();
+            enrollSignal();
+          }
+        }, true);
+
+        function patchNav() {
+          const dots = document.querySelectorAll('.nav-dot-btn');
+          if (!dots.length) return false;
+          dots.forEach((btn, idx) => {
+            if (idx > PREVIEW_MAX_CHAPTER) {
+              btn.setAttribute('data-cwp-locked', '1');
+              if (!btn.__cwpBound) {
+                btn.__cwpBound = true;
+                btn.addEventListener('click', function (e) {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  enrollSignal();
+                }, true);
+              }
+            }
+          });
+          return true;
+        }
+
+        function injectLock() {
+          const main = document.querySelector('main.overflow-auto') || document.querySelector('main');
+          if (!main) return false;
+          if (document.getElementById('cwp-lock-host')) return true;
+          const tpl = document.getElementById('cwp-lock-tpl');
+          const host = document.createElement('div');
+          host.id = 'cwp-lock-host';
+          host.innerHTML = tpl.innerHTML;
+          main.appendChild(host);
+          return true;
+        }
+
+        const mo = new MutationObserver(function () {
+          patchNav();
+          injectLock();
+        });
+        mo.observe(document.documentElement, { childList: true, subtree: true });
+
+        setTimeout(() => { patchNav(); injectLock(); }, 500);
+        setTimeout(() => { patchNav(); injectLock(); }, 1500);
+      })();
+    </script>
+  </body>
+</html>

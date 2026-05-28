@@ -1,0 +1,576 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1900 2700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Helvetica Neue', sans-serif">
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FAFAF7"/>
+      <stop offset="100%" stop-color="#F3F2EC"/>
+    </linearGradient>
+
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-thin" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect width="1900" height="2700" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="60" y="58" font-size="28" font-weight="600" fill="#1a1a1a" letter-spacing="-0.4">fit() 主流程 · 算法视图 → 物理放置 → DataProto 演化</text>
+  <text x="60" y="86" font-size="14" fill="#6b6b66" font-style="italic">left to right · driver 调度 → 远端 worker 执行 → DataProto 逐步累积训练样本 · 例：100 prompt × n=5 → 500 训练样本</text>
+  <line x1="60" y1="100" x2="1840" y2="100" stroke="#d4d2c7" stroke-width="0.8"/>
+
+  <!-- 三栏标题 -->
+  <g transform="translate(60, 130)">
+    <text x="240" y="20" font-size="14" font-weight="700" fill="#1a1a1a" text-anchor="middle">算法视图（fit 写的代码）</text>
+    <text x="240" y="38" font-size="11" fill="#5f5e5a" font-style="italic" text-anchor="middle">driver 顺序调用</text>
+
+    <text x="900" y="20" font-size="14" font-weight="700" fill="#1a1a1a" text-anchor="middle">物理放置 / 谁在干活</text>
+    <text x="900" y="38" font-size="11" fill="#5f5e5a" font-style="italic" text-anchor="middle">实际 GPU 上的执行</text>
+
+    <text x="1530" y="20" font-size="14" font-weight="700" fill="#1a1a1a" text-anchor="middle">DataProto 状态</text>
+    <text x="1530" y="38" font-size="11" fill="#5f5e5a" font-style="italic" text-anchor="middle">这一步给 batch 加了什么</text>
+  </g>
+
+  <!-- 三栏分隔线 -->
+  <line x1="540" y1="180" x2="540" y2="2440" stroke="#d4d2c7" stroke-width="0.4" stroke-dasharray="4 3"/>
+  <line x1="1280" y1="180" x2="1280" y2="2440" stroke="#d4d2c7" stroke-width="0.4" stroke-dasharray="4 3"/>
+
+  <!-- ============================================== -->
+  <!-- 启动阶段                                          -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 200)">
+    <rect x="0" y="0" width="1780" height="100" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+    <text x="20" y="28" font-size="14" font-weight="700" fill="#26215C">启动（fit 一开始跑一次）</text>
+    <line x1="20" y1="40" x2="280" y2="40" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <!-- 算法视图 -->
+    <g transform="translate(20, 56)" font-family="ui-monospace, monospace" font-size="11">
+      <text x="0" y="0" fill="#534AB7">_load_checkpoint()</text>
+      <text x="0" y="16" fill="#534AB7">checkpoint_manager.update_weights()</text>
+      <text x="0" y="32" fill="#534AB7">if val_before_train: _validate()</text>
+    </g>
+
+    <!-- 物理放置 -->
+    <g transform="translate(580, 56)" font-size="11">
+      <text x="0" y="0" fill="#444441">读 ckpt：<tspan fill="#A32D2D" font-weight="600">Actor/Critic worker</tspan></text>
+      <text x="0" y="16" fill="#444441">权重同步：<tspan fill="#A32D2D" font-weight="600">Actor → vLLM</tspan> 跨 engine</text>
+      <text x="0" y="32" fill="#444441">validation：<tspan fill="#A32D2D" font-weight="600">Actor + vLLM</tspan> 全程跑一遍</text>
+    </g>
+
+    <!-- DataProto 状态 -->
+    <g transform="translate(1240, 56)" font-size="11">
+      <text x="0" y="0" fill="#5f5e5a" font-style="italic">没有 batch · 只有"初始性能 baseline"</text>
+      <text x="0" y="16" fill="#5f5e5a" font-style="italic">告诉你"未训练模型在 val 上多少分"</text>
+    </g>
+  </g>
+
+  <!-- 主循环开始标记 -->
+  <g transform="translate(60, 320)">
+    <rect x="0" y="0" width="1780" height="50" rx="6" fill="#FCEBEB" stroke="#A32D2D" stroke-width="1.5"/>
+    <text x="890" y="32" font-size="14" font-weight="700" fill="#501313" text-anchor="middle">━━━━━━━━ for epoch in range(total_epochs): for batch_dict in train_dataloader: （主循环开始）━━━━━━━━</text>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 步骤 1-4：数据准备                                -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 390)">
+    <rect x="0" y="0" width="1780" height="180" rx="8" fill="#FFFFFF" stroke="#888780" stroke-width="0.8"/>
+    <text x="20" y="28" font-size="14" font-weight="700" fill="#1a1a1a">数据准备（步骤 1-4 · 在 driver 内）</text>
+    <line x1="20" y1="40" x2="500" y2="40" stroke="#d4d2c7" stroke-width="0.6"/>
+
+    <!-- 算法视图 -->
+    <g transform="translate(20, 60)" font-family="ui-monospace, monospace" font-size="11">
+      <text x="0" y="0" fill="#444441">batch = DataProto.from_single_dict(batch_dict)</text>
+      <text x="0" y="20" fill="#444441">batch["uid"] = [uuid4() for _ in batch]</text>
+      <text x="0" y="40" fill="#444441">gen_batch = self._get_gen_batch(batch)</text>
+      <text x="0" y="60" fill="#444441">gen_batch_output = gen_batch.repeat(</text>
+      <text x="0" y="76" fill="#444441">    repeat_times=rollout.n, interleave=True)</text>
+      <text x="0" y="100" fill="#888780"># 100 prompt → 500 生成请求</text>
+    </g>
+
+    <!-- 物理放置 -->
+    <g transform="translate(580, 60)" font-size="11.5">
+      <rect x="0" y="-8" width="160" height="28" rx="3" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.6"/>
+      <text x="80" y="10" fill="#26215C" text-anchor="middle" font-weight="700">Driver 本地</text>
+
+      <text x="200" y="10" fill="#5f5e5a" font-style="italic">这一组完全不动 GPU</text>
+      <text x="0" y="40" fill="#444441">DataProto.from_single_dict 只是包装</text>
+      <text x="0" y="58" fill="#444441">uid 用 uuid4 生成，不查模型</text>
+      <text x="0" y="76" fill="#444441">_get_gen_batch 是字段过滤</text>
+      <text x="0" y="94" fill="#444441">repeat 是 tensor 复制，driver 内存里完成</text>
+    </g>
+
+    <!-- DataProto 状态 -->
+    <g transform="translate(1240, 60)" font-size="11">
+      <rect x="0" y="-8" width="500" height="124" rx="4" fill="#F8F7F2" stroke="#888780" stroke-width="0.4"/>
+
+      <text x="14" y="10" fill="#444441" font-weight="700">batch 字段：</text>
+      <text x="14" y="28" font-family="ui-monospace, monospace" fill="#185FA5">prompts, attention_mask</text>
+      <text x="14" y="44" font-family="ui-monospace, monospace" fill="#185FA5">+ uid（per prompt 唯一）</text>
+      <text x="14" y="60" font-family="ui-monospace, monospace" fill="#185FA5">+ data_source, reward_model 等元信息</text>
+
+      <text x="14" y="84" fill="#444441" font-weight="700">gen_batch_output：</text>
+      <text x="14" y="102" fill="#5f5e5a" font-style="italic">100 条 prompt 复制成 500 条（uid 共享）</text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 步骤 5：Rollout                                  -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 590)">
+    <rect x="0" y="0" width="1780" height="160" rx="8" fill="#FFFFFF" stroke="#D85A30" stroke-width="1.4"/>
+    <rect x="0" y="0" width="6" height="160" rx="2" fill="#D85A30"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#4A1B0C">步骤 5 · Rollout 生成（最耗时 · 50-70% step 时间）★</text>
+    <line x1="22" y1="40" x2="540" y2="40" stroke="#F0997B" stroke-width="0.6"/>
+
+    <!-- 算法视图 -->
+    <g transform="translate(22, 56)" font-family="ui-monospace, monospace" font-size="11">
+      <text x="0" y="0" fill="#444441">with marked_timer("gen", ...):</text>
+      <text x="0" y="16" fill="#A32D2D">    gen_batch_output = self.async_rollout_manager.generate_sequences(</text>
+      <text x="0" y="32" fill="#A32D2D">        gen_batch_output)</text>
+      <text x="0" y="56" fill="#444441">    self.checkpoint_manager.sleep_replicas()</text>
+      <text x="0" y="76" fill="#888780"># sleep 让 vLLM 释放 KV pool 给训练阶段</text>
+    </g>
+
+    <!-- 物理放置 -->
+    <g transform="translate(580, 56)" font-size="11.5">
+      <rect x="0" y="-8" width="200" height="28" rx="3" fill="#FAECE7" stroke="#D85A30" stroke-width="0.6"/>
+      <text x="100" y="10" fill="#4A1B0C" text-anchor="middle" font-weight="700">vLLM workers · TP=2/4/8</text>
+
+      <text x="0" y="40" fill="#444441">async_rollout_manager → llm_server_manager</text>
+      <text x="0" y="58" fill="#444441">→ AgentLoopManager → vLLM TP groups</text>
+      <text x="0" y="76" fill="#444441">→ 500 个生成请求并发处理</text>
+      <text x="0" y="100" fill="#993C1D" font-weight="600">完成后 vLLM 立即 sleep ★</text>
+      <text x="0" y="118" fill="#5f5e5a" font-style="italic">为后续 actor 训练让出显存</text>
+    </g>
+
+    <!-- DataProto 状态 -->
+    <g transform="translate(1240, 56)" font-size="11">
+      <rect x="0" y="-8" width="500" height="100" rx="4" fill="#FAECE7" stroke="#D85A30" stroke-width="0.4"/>
+
+      <text x="14" y="10" fill="#4A1B0C" font-weight="700">gen_batch_output 新增：</text>
+      <text x="14" y="28" font-family="ui-monospace, monospace" fill="#993C1D">+ responses（500 条生成结果）</text>
+      <text x="14" y="44" font-family="ui-monospace, monospace" fill="#993C1D">+ attention_mask</text>
+      <text x="14" y="60" font-family="ui-monospace, monospace" fill="#993C1D">+ rollout_log_probs（vLLM 算的）</text>
+      <text x="14" y="80" fill="#5f5e5a" font-style="italic">这些后面会 union 回 batch</text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 步骤 6-7：合并 + balance                          -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 770)">
+    <rect x="0" y="0" width="1780" height="140" rx="8" fill="#FFFFFF" stroke="#888780" stroke-width="0.8"/>
+    <text x="20" y="28" font-size="14" font-weight="700" fill="#1a1a1a">步骤 6-7 · 合并 prompt-response + 负载均衡（driver 本地）</text>
+    <line x1="20" y1="40" x2="540" y2="40" stroke="#d4d2c7" stroke-width="0.6"/>
+
+    <!-- 算法视图 -->
+    <g transform="translate(20, 56)" font-family="ui-monospace, monospace" font-size="11">
+      <text x="0" y="0" fill="#444441">batch = batch.repeat(rollout.n, interleave=True)</text>
+      <text x="0" y="20" fill="#444441">batch = batch.union(gen_batch_output)</text>
+      <text x="0" y="36" fill="#888780"># 现在 batch 是完整的 prompt+response 训练样本</text>
+      <text x="0" y="60" fill="#444441">if config.trainer.balance_batch:</text>
+      <text x="0" y="76" fill="#444441">    self._balance_batch(batch, metrics)</text>
+    </g>
+
+    <!-- 物理放置 -->
+    <g transform="translate(580, 56)" font-size="11.5">
+      <rect x="0" y="-8" width="160" height="28" rx="3" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.6"/>
+      <text x="80" y="10" fill="#26215C" text-anchor="middle" font-weight="700">Driver 本地</text>
+
+      <text x="0" y="40" fill="#444441">repeat + union 是 tensor 操作</text>
+      <text x="0" y="58" fill="#444441">balance_batch 按 token 数重排样本顺序</text>
+      <text x="0" y="76" fill="#5f5e5a" font-style="italic">让每个 DP rank 拿到接近的 token 量</text>
+    </g>
+
+    <!-- DataProto 状态 -->
+    <g transform="translate(1240, 56)" font-size="11">
+      <rect x="0" y="-8" width="500" height="84" rx="4" fill="#F8F7F2" stroke="#888780" stroke-width="0.4"/>
+
+      <text x="14" y="10" fill="#444441" font-weight="700">batch 此时是"完整训练样本"：</text>
+      <text x="14" y="28" font-family="ui-monospace, monospace" fill="#185FA5">prompts + responses + uid + masks</text>
+      <text x="14" y="44" font-family="ui-monospace, monospace" fill="#185FA5">+ rollout_log_probs（如果 vLLM 输出）</text>
+      <text x="14" y="64" fill="#5f5e5a" font-style="italic">500 条 · 顺序按 token 数重排过</text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 步骤 8：Reward                                    -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 930)">
+    <rect x="0" y="0" width="1780" height="140" rx="8" fill="#FFFFFF" stroke="#BA7517" stroke-width="1.4"/>
+    <rect x="0" y="0" width="6" height="140" rx="2" fill="#BA7517"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#412402">步骤 8 · 计算 reward</text>
+    <line x1="22" y1="40" x2="280" y2="40" stroke="#FAC775" stroke-width="0.6"/>
+
+    <!-- 算法视图 -->
+    <g transform="translate(22, 56)" font-family="ui-monospace, monospace" font-size="11">
+      <text x="0" y="0" fill="#444441">with marked_timer("reward", ...):</text>
+      <text x="0" y="16" fill="#A32D2D">    if self.use_rm:</text>
+      <text x="0" y="32" fill="#A32D2D">        batch_reward = self._compute_reward_colocate(batch)</text>
+      <text x="0" y="48" fill="#A32D2D">        batch = batch.union(batch_reward)</text>
+      <text x="0" y="68" fill="#444441">    reward_tensor, reward_extra_infos_dict = extract_reward(batch)</text>
+    </g>
+
+    <!-- 物理放置 -->
+    <g transform="translate(580, 56)" font-size="11.5">
+      <rect x="0" y="-8" width="220" height="28" rx="3" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.6"/>
+      <text x="110" y="10" fill="#412402" text-anchor="middle" font-weight="700">Reward worker · 或 driver 规则函数</text>
+
+      <text x="0" y="40" fill="#444441">_compute_reward_colocate → reward_loop_manager</text>
+      <text x="0" y="58" fill="#444441">RM 模型在 reward worker · 规则函数在 driver</text>
+      <text x="0" y="76" fill="#5f5e5a" font-style="italic">extract_reward 在 driver 内提取张量</text>
+    </g>
+
+    <!-- DataProto 状态 -->
+    <g transform="translate(1240, 56)" font-size="11">
+      <rect x="0" y="-8" width="500" height="84" rx="4" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.4"/>
+
+      <text x="14" y="10" fill="#412402" font-weight="700">batch 新增：</text>
+      <text x="14" y="28" font-family="ui-monospace, monospace" fill="#854F0B">+ token_level_scores</text>
+      <text x="14" y="44" fill="#5f5e5a" font-style="italic">  形状 [500, response_len]</text>
+      <text x="14" y="62" fill="#5f5e5a" font-style="italic">  outcome reward 时只有最后一个非零</text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 步骤 9-11：补全 logp 和 values                    -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 1090)">
+    <rect x="0" y="0" width="1780" height="280" rx="8" fill="#FFFFFF" stroke="#185FA5" stroke-width="1.4"/>
+    <rect x="0" y="0" width="6" height="280" rx="2" fill="#185FA5"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#042C53">步骤 9-11 · 补全 logp 和 values（每个都要远端 worker forward）</text>
+    <line x1="22" y1="40" x2="600" y2="40" stroke="#85B7EB" stroke-width="0.6"/>
+
+    <!-- 算法视图 -->
+    <g transform="translate(22, 60)" font-family="ui-monospace, monospace" font-size="11">
+      <text x="0" y="0" fill="#888780"># 9. old_log_probs：PPO ratio 的分母</text>
+      <text x="0" y="16" fill="#444441">if bypass_mode:</text>
+      <text x="0" y="32" fill="#A32D2D">    apply_bypass_mode(batch, ...)  </text>
+      <text x="220" y="32" fill="#888780"># 复用 rollout_logp</text>
+      <text x="0" y="48" fill="#444441">else:</text>
+      <text x="0" y="64" fill="#A32D2D">    old_log_prob = self._compute_old_log_prob(batch)</text>
+      <text x="0" y="80" fill="#A32D2D">    batch = batch.union(old_log_prob)</text>
+
+      <text x="0" y="108" fill="#888780"># 10. ref_log_prob：KL 基准</text>
+      <text x="0" y="124" fill="#444441">if self.use_reference_policy:</text>
+      <text x="0" y="140" fill="#A32D2D">    ref_log_prob = self._compute_ref_log_prob(batch)</text>
+      <text x="0" y="156" fill="#A32D2D">    batch = batch.union(ref_log_prob)</text>
+
+      <text x="0" y="184" fill="#888780"># 11. values：PPO/GAE 的 critic 估值</text>
+      <text x="0" y="200" fill="#444441">if self.use_critic:</text>
+      <text x="0" y="216" fill="#A32D2D">    values = self._compute_values(batch)</text>
+      <text x="0" y="232" fill="#A32D2D">    batch = batch.union(values)</text>
+    </g>
+
+    <!-- 物理放置 -->
+    <g transform="translate(580, 60)" font-size="11">
+      <!-- old_logp -->
+      <rect x="0" y="-8" width="180" height="28" rx="3" fill="#FAECE7" stroke="#D85A30" stroke-width="0.6"/>
+      <text x="90" y="10" fill="#4A1B0C" text-anchor="middle" font-weight="700">Actor worker (forward)</text>
+      <text x="0" y="40" fill="#5f5e5a" font-style="italic">用当前 actor 重新打一遍分</text>
+      <text x="0" y="58" fill="#5f5e5a" font-style="italic">bypass mode 时跳过，省一次 forward</text>
+
+      <!-- ref_logp -->
+      <rect x="0" y="100" width="200" height="28" rx="3" fill="#E6F1FB" stroke="#378ADD" stroke-width="0.6"/>
+      <text x="100" y="118" fill="#042C53" text-anchor="middle" font-weight="700">Ref worker / 同 actor (LoRA)</text>
+      <text x="0" y="148" fill="#5f5e5a" font-style="italic">ref_in_actor=True 时 disable adapter</text>
+      <text x="0" y="166" fill="#5f5e5a" font-style="italic">否则独立 ref_policy_wg.compute</text>
+
+      <!-- values -->
+      <rect x="0" y="208" width="180" height="28" rx="3" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.6"/>
+      <text x="90" y="226" fill="#26215C" text-anchor="middle" font-weight="700">Critic worker (forward)</text>
+      <text x="0" y="256" fill="#5f5e5a" font-style="italic">GRPO 跳过这步</text>
+    </g>
+
+    <!-- DataProto 状态 -->
+    <g transform="translate(1240, 60)" font-size="11">
+      <rect x="0" y="-8" width="500" height="240" rx="4" fill="#F8F7F2" stroke="#888780" stroke-width="0.4"/>
+
+      <text x="14" y="10" fill="#444441" font-weight="700">每步 union 后 batch 都"长大"：</text>
+
+      <text x="14" y="38" font-family="ui-monospace, monospace" fill="#993C1D">+ old_log_probs</text>
+      <text x="14" y="54" font-family="ui-monospace, monospace" fill="#993C1D">+ entropys</text>
+      <text x="14" y="70" fill="#5f5e5a" font-style="italic">  (bypass mode 时直接复制 rollout_logp)</text>
+
+      <text x="14" y="100" font-family="ui-monospace, monospace" fill="#185FA5">+ ref_log_prob（如果有 ref policy）</text>
+
+      <text x="14" y="130" font-family="ui-monospace, monospace" fill="#534AB7">+ values（PPO 才有）</text>
+
+      <text x="14" y="170" fill="#444441" font-weight="700">现在 batch 拥有所有训练材料：</text>
+      <text x="14" y="188" font-family="ui-monospace, monospace" font-size="10" fill="#444441">prompts + responses + uid + masks</text>
+      <text x="14" y="202" font-family="ui-monospace, monospace" font-size="10" fill="#444441">+ token_level_scores</text>
+      <text x="14" y="216" font-family="ui-monospace, monospace" font-size="10" fill="#444441">+ old_log_probs + ref_log_prob (+values)</text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 步骤 12-13：advantage 计算（核心）                 -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 1390)">
+    <rect x="0" y="0" width="1780" height="180" rx="8" fill="#FFFFFF" stroke="#534AB7" stroke-width="2"/>
+    <rect x="0" y="0" width="6" height="180" rx="2" fill="#534AB7"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#26215C">步骤 12-13 · KL penalty + compute_advantage（算法分叉点）★★</text>
+    <line x1="22" y1="40" x2="640" y2="40" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <!-- 算法视图 -->
+    <g transform="translate(22, 56)" font-family="ui-monospace, monospace" font-size="11">
+      <text x="0" y="0" fill="#444441">batch.batch["token_level_scores"] = reward_tensor</text>
+      <text x="0" y="20" fill="#444441">if config.algorithm.use_kl_in_reward:</text>
+      <text x="0" y="36" fill="#A32D2D">    batch, kl_metrics = apply_kl_penalty(batch, kl_ctrl, kl_penalty)</text>
+      <text x="0" y="52" fill="#888780">    # rewards = scores - β·KL</text>
+
+      <text x="0" y="76" fill="#444441">batch = compute_advantage(</text>
+      <text x="0" y="92" fill="#A32D2D">    batch, adv_estimator=config.algorithm.adv_estimator, ...)</text>
+      <text x="0" y="108" fill="#888780"># GAE / GRPO / RLOO / REINFORCE++ 在这里走不同分支</text>
+    </g>
+
+    <!-- 物理放置 -->
+    <g transform="translate(580, 56)" font-size="11.5">
+      <rect x="0" y="-8" width="200" height="28" rx="3" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
+      <text x="100" y="10" fill="#26215C" text-anchor="middle" font-weight="700">100% Driver 本地</text>
+
+      <text x="0" y="40" fill="#444441">advantage 是张量运算，比模型 forward 轻得多</text>
+      <text x="0" y="58" fill="#26215C" font-weight="700">不必下放 worker · 在 driver 算最快</text>
+
+      <text x="0" y="86" fill="#444441">GRPO：按 uid 分组归一</text>
+      <text x="0" y="104" fill="#444441">GAE：用 values + rewards 构造</text>
+      <text x="0" y="122" fill="#5f5e5a" font-style="italic">算法切换在配置里改一行</text>
+    </g>
+
+    <!-- DataProto 状态 -->
+    <g transform="translate(1240, 56)" font-size="11">
+      <rect x="0" y="-8" width="500" height="120" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.6"/>
+
+      <text x="14" y="10" fill="#26215C" font-weight="700">batch 新增：</text>
+      <text x="14" y="28" font-family="ui-monospace, monospace" fill="#534AB7">+ token_level_rewards</text>
+      <text x="14" y="44" fill="#5f5e5a" font-style="italic">  (= scores - β·KL，或直接 = scores)</text>
+
+      <text x="14" y="68" font-family="ui-monospace, monospace" fill="#534AB7">+ advantages ★</text>
+      <text x="14" y="84" font-family="ui-monospace, monospace" fill="#534AB7">+ returns（PPO 才有）</text>
+      <text x="14" y="104" fill="#26215C" font-weight="700">这是 actor 更新所需的最后一块拼图</text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 步骤 14-15：update critic + actor                 -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 1590)">
+    <rect x="0" y="0" width="1780" height="220" rx="8" fill="#FFFFFF" stroke="#A32D2D" stroke-width="2"/>
+    <rect x="0" y="0" width="6" height="220" rx="2" fill="#A32D2D"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#501313">步骤 14-15 · 更新模型参数（真 RL 学习发生在这里）★★★</text>
+    <line x1="22" y1="40" x2="600" y2="40" stroke="#F09595" stroke-width="0.6"/>
+
+    <!-- 算法视图 -->
+    <g transform="translate(22, 56)" font-family="ui-monospace, monospace" font-size="11">
+      <text x="0" y="0" fill="#888780"># 14. critic 更新（PPO 才有）</text>
+      <text x="0" y="16" fill="#444441">if self.use_critic:</text>
+      <text x="0" y="32" fill="#A32D2D">    critic_output = self._update_critic(batch)</text>
+
+      <text x="0" y="60" fill="#888780"># 15. critic warmup 期间不更新 actor</text>
+      <text x="0" y="76" fill="#444441">if config.trainer.critic_warmup &gt; self.global_steps:</text>
+      <text x="0" y="92" fill="#444441">    pass  # 只 update_weights 同步 rollout</text>
+      <text x="0" y="108" fill="#444441">else:</text>
+      <text x="0" y="124" fill="#A32D2D">    actor_output = self._update_actor(batch)</text>
+      <text x="0" y="148" fill="#888780"># 都是远端 worker 真实做 forward + backward</text>
+    </g>
+
+    <!-- 物理放置 -->
+    <g transform="translate(580, 56)" font-size="11.5">
+      <rect x="0" y="-8" width="200" height="28" rx="3" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.6"/>
+      <text x="100" y="10" fill="#26215C" text-anchor="middle" font-weight="700">Critic worker (FSDP)</text>
+
+      <text x="0" y="36" fill="#444441">value_loss = (V_pred - returns)²</text>
+      <text x="0" y="52" fill="#444441">backward + optimizer.step</text>
+
+      <rect x="0" y="76" width="200" height="28" rx="3" fill="#FAECE7" stroke="#D85A30" stroke-width="1.5"/>
+      <text x="100" y="94" fill="#4A1B0C" text-anchor="middle" font-weight="700">Actor worker (FSDP) ★</text>
+
+      <text x="0" y="120" fill="#444441">policy_loss = -ratio·adv (PPO clipped)</text>
+      <text x="0" y="138" fill="#444441">+ kl_loss + entropy_bonus</text>
+      <text x="0" y="156" fill="#444441">backward + optimizer.step</text>
+    </g>
+
+    <!-- DataProto 状态 -->
+    <g transform="translate(1240, 56)" font-size="11">
+      <rect x="0" y="-8" width="500" height="160" rx="4" fill="#FCEBEB" stroke="#A32D2D" stroke-width="0.4"/>
+
+      <text x="14" y="10" fill="#501313" font-weight="700">batch 不再变化 · 但模型参数变了：</text>
+
+      <text x="14" y="38" fill="#444441">critic 参数：value model 学会预测 returns</text>
+
+      <text x="14" y="68" fill="#A32D2D" font-weight="700">actor 参数：策略真正改变 ★</text>
+      <text x="14" y="86" font-family="ui-monospace, monospace" fill="#993C1D">→ 高 advantage response 概率提高</text>
+      <text x="14" y="102" font-family="ui-monospace, monospace" fill="#993C1D">→ 低 advantage response 概率降低</text>
+
+      <text x="14" y="132" fill="#5f5e5a" font-style="italic">这就是"模型变得更好"的实际机制</text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 步骤 16-17：checkpoint + 权重同步                 -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 1830)">
+    <rect x="0" y="0" width="1780" height="160" rx="8" fill="#FFFFFF" stroke="#A32D2D" stroke-width="1.4"/>
+    <rect x="0" y="0" width="6" height="160" rx="2" fill="#A32D2D"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#501313">步骤 16-17 · save_checkpoint + update_weights（同步 actor → vLLM）★</text>
+    <line x1="22" y1="40" x2="660" y2="40" stroke="#F09595" stroke-width="0.6"/>
+
+    <!-- 算法视图 -->
+    <g transform="translate(22, 56)" font-family="ui-monospace, monospace" font-size="11">
+      <text x="0" y="0" fill="#444441">if save_freq &gt; 0 and (is_last_step or step % save_freq == 0):</text>
+      <text x="0" y="16" fill="#A32D2D">    self._save_checkpoint()</text>
+
+      <text x="0" y="40" fill="#444441">with marked_timer("update_weights", ...):</text>
+      <text x="0" y="56" fill="#A32D2D">    self.checkpoint_manager.update_weights(self.global_steps)</text>
+      <text x="0" y="80" fill="#888780"># 必须同步！否则下个 step rollout 用的是旧 actor</text>
+    </g>
+
+    <!-- 物理放置 -->
+    <g transform="translate(580, 56)" font-size="11.5">
+      <rect x="0" y="-8" width="220" height="28" rx="3" fill="#FCEBEB" stroke="#A32D2D" stroke-width="1"/>
+      <text x="110" y="10" fill="#501313" text-anchor="middle" font-weight="700">Actor → vLLM 跨 engine 同步</text>
+
+      <text x="0" y="40" fill="#444441">把 FSDP 训完的 actor 权重，重新切成</text>
+      <text x="0" y="58" fill="#444441">vLLM 的 TP 布局，分发给 rollout 副本</text>
+      <text x="0" y="80" fill="#A32D2D" font-weight="700">verl 最难的部分（ShardingManager）</text>
+    </g>
+
+    <!-- DataProto 状态 -->
+    <g transform="translate(1240, 56)" font-size="11">
+      <rect x="0" y="-8" width="500" height="100" rx="4" fill="#F8F7F2" stroke="#888780" stroke-width="0.4"/>
+
+      <text x="14" y="10" fill="#444441" font-weight="700">本 step 的 batch 已经用完：</text>
+      <text x="14" y="28" fill="#5f5e5a">本步训练样本完成使命</text>
+
+      <text x="14" y="58" fill="#A32D2D" font-weight="700">但有重要副作用：</text>
+      <text x="14" y="76" fill="#5f5e5a" font-style="italic">vLLM 副本拿到了新 actor 权重</text>
+      <text x="14" y="92" fill="#5f5e5a" font-style="italic">下个 step rollout 用新策略生成</text>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 步骤 18-19：validate + log                        -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 2010)">
+    <rect x="0" y="0" width="1780" height="180" rx="8" fill="#FFFFFF" stroke="#0F6E56" stroke-width="1.2"/>
+    <rect x="0" y="0" width="6" height="180" rx="2" fill="#0F6E56"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#04342C">步骤 18-19 · validation（按频率） + log + global_steps++</text>
+    <line x1="22" y1="40" x2="500" y2="40" stroke="#5DCAA5" stroke-width="0.6"/>
+
+    <!-- 算法视图 -->
+    <g transform="translate(22, 56)" font-family="ui-monospace, monospace" font-size="11">
+      <text x="0" y="0" fill="#444441">if test_freq &gt; 0 and (is_last_step or step % test_freq == 0):</text>
+      <text x="0" y="16" fill="#A32D2D">    val_metrics = self._validate()</text>
+      <text x="0" y="32" fill="#A32D2D">    metrics.update(val_metrics)</text>
+
+      <text x="0" y="56" fill="#444441">metrics.update(compute_data_metrics(...))      </text>
+      <text x="320" y="56" fill="#888780"># reward / advantage</text>
+      <text x="0" y="72" fill="#444441">metrics.update(compute_timing_metrics(...))    </text>
+      <text x="320" y="72" fill="#888780"># step 各阶段耗时</text>
+      <text x="0" y="88" fill="#444441">metrics.update(compute_throughout_metrics(...))</text>
+      <text x="320" y="88" fill="#888780"># tokens/s</text>
+
+      <text x="0" y="116" fill="#A32D2D">logger.log(data=metrics, step=self.global_steps)</text>
+      <text x="0" y="132" fill="#A32D2D">self.global_steps += 1</text>
+    </g>
+
+    <!-- 物理放置 -->
+    <g transform="translate(580, 56)" font-size="11.5">
+      <rect x="0" y="-8" width="180" height="28" rx="3" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.6"/>
+      <text x="90" y="10" fill="#04342C" text-anchor="middle" font-weight="700">validation 走全套</text>
+
+      <text x="0" y="40" fill="#444441">用刚同步的新权重跑 val_dataloader</text>
+      <text x="0" y="58" fill="#444441">vLLM 生成 + reward 评分</text>
+
+      <rect x="0" y="78" width="160" height="28" rx="3" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.6"/>
+      <text x="80" y="96" fill="#26215C" text-anchor="middle" font-weight="700">log 在 driver 本地</text>
+
+      <text x="0" y="124" fill="#5f5e5a" font-style="italic">写 wandb / console</text>
+    </g>
+
+    <!-- DataProto 状态 -->
+    <g transform="translate(1240, 56)" font-size="11">
+      <rect x="0" y="-8" width="500" height="140" rx="4" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.4"/>
+
+      <text x="14" y="10" fill="#04342C" font-weight="700">step 完成时的产出：</text>
+
+      <text x="14" y="36" fill="#444441">· val_metrics（按频率）</text>
+      <text x="14" y="54" fill="#444441">· data metrics（reward / KL / advantage 分布）</text>
+      <text x="14" y="72" fill="#444441">· timing metrics（每阶段耗时）</text>
+      <text x="14" y="90" fill="#444441">· throughput metrics（tokens/s）</text>
+
+      <text x="14" y="120" fill="#04342C" font-weight="700">→ 下一个 step 开始</text>
+    </g>
+  </g>
+
+  <!-- 主循环结束标记 -->
+  <g transform="translate(60, 2210)">
+    <rect x="0" y="0" width="1780" height="50" rx="6" fill="#FCEBEB" stroke="#A32D2D" stroke-width="1.5"/>
+    <text x="890" y="32" font-size="14" font-weight="700" fill="#501313" text-anchor="middle">━━━━━━━━ if is_last_step: return（退出 fit） · 否则回到主循环顶部 ━━━━━━━━</text>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- 关键洞察                                          -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 2280)">
+    <rect x="0" y="0" width="1780" height="380" rx="8" fill="#FFFFFF" stroke="#534AB7" stroke-width="1.2"/>
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#26215C">三栏对应关系的关键洞察</text>
+    <line x1="22" y1="44" x2="500" y2="44" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <g transform="translate(40, 70)" font-size="13">
+      <text x="0" y="0" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">观察 1 · 算法视图（左栏）是顺序代码，但实际执行（中栏）大部分在远端</tspan>
+      </text>
+      <text x="0" y="22" fill="#5f5e5a" font-style="italic">
+        · driver 写的每一行 self.xxx_wg.yyy() 都是 RPC · 真正的 forward / backward 在远端 GPU
+      </text>
+      <text x="0" y="38" fill="#5f5e5a" font-style="italic">
+        · driver 自己只做 4 件事：DataProto 操作、advantage 计算、KL penalty、metrics 聚合
+      </text>
+
+      <text x="0" y="76" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">观察 2 · 哪些步骤"动 GPU"，哪些步骤"只动 driver 内存"</tspan>
+      </text>
+      <text x="0" y="98" fill="#444441">
+        <tspan font-weight="700" fill="#A32D2D">动 GPU：</tspan>
+        <tspan>步骤 5（Rollout）· 8（Reward）· 9-11（logp/values）· 14-15（update）· 17（同步）· 18（validation）</tspan>
+      </text>
+      <text x="0" y="116" fill="#444441">
+        <tspan font-weight="700" fill="#04342C">不动 GPU：</tspan>
+        <tspan>步骤 1-4（数据准备）· 6-7（合并 + balance）· 12-13（KL + advantage）· 19（log）</tspan>
+      </text>
+
+      <text x="0" y="154" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">观察 3 · DataProto 是贯穿整个 step 的"运货容器"（右栏）</tspan>
+      </text>
+      <text x="0" y="176" fill="#5f5e5a" font-style="italic">
+        · 起点：prompts + uid · 终点：prompts + responses + 所有 logp + advantages + token_level_rewards
+      </text>
+      <text x="0" y="192" fill="#5f5e5a" font-style="italic">
+        · 每经过一个节点都被"加料" · update_actor 用的是经过 7 次 union 累积的完整训练数据
+      </text>
+
+      <text x="0" y="230" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">观察 4 · 这就是 single controller 的精髓</tspan>
+      </text>
+      <text x="0" y="252" fill="#5f5e5a" font-style="italic">
+        · driver 写 19 行顺序 Python · 背后是 N×rollout.n 条 prompt 在数十张 GPU 上并行流动
+      </text>
+      <text x="0" y="268" fill="#5f5e5a" font-style="italic">
+        · 算法工程师只看左栏就能改算法 · 只看中栏就能调资源 · 只看右栏就能调试数据流
+      </text>
+      <text x="0" y="284" fill="#5f5e5a" font-style="italic">
+        · 三栏解耦 · 分别负责"算法 / 系统 / 数据"三个独立维度
+      </text>
+
+      <text x="0" y="324" fill="#A32D2D" font-weight="700">
+        所以读 fit() 时的诊断思维：症状是性能问题 → 看中栏；症状是算法效果问题 → 看左栏；症状是 batch 字段缺失 → 看右栏
+      </text>
+    </g>
+  </g>
+
+</svg>

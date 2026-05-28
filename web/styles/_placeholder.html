@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>样式建设中 · S5 · 2026</title>
+<style>
+  html,body{margin:0;padding:0;height:100%;background:#0E1014;color:#EDE9DC;font-family:'Inter Tight','PingFang SC',system-ui,sans-serif}
+  .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{max-width:520px;width:100%;background:#13161B;border:1px solid #2A2D34;padding:36px 32px;text-align:center}
+  .tag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.18em;color:#F59E0B;text-transform:uppercase;border:1px solid #F59E0B;padding:4px 10px;margin-bottom:18px}
+  h1{font-size:22px;font-weight:800;margin:0 0 12px;letter-spacing:-0.01em}
+  p{font-size:14px;color:rgba(237,233,220,0.62);line-height:1.7;margin:0 0 18px}
+  .info{margin:20px 0;padding:14px 16px;background:#0A0C10;border:1px solid #2A2D34;text-align:left;font-size:13px;line-height:1.85;color:rgba(237,233,220,0.8)}
+  .info b{color:#fff}
+  .info code{font-family:'JetBrains Mono',monospace;color:#F59E0B;font-size:12px}
+  .cta{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;background:#F59E0B;color:#0A0C10;text-decoration:none;font-weight:700;font-size:13.5px;letter-spacing:0.04em;margin-top:6px;transition:all .15s}
+  .cta:hover{background:#fbbf36;transform:translateY(-1px)}
+  .meta{margin-top:20px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#6E6B62;letter-spacing:0.1em}
+  .qr-section{margin:18px 0;padding:14px 16px;background:#0A0C10;border:1px dashed #2A2D34;display:none}
+  .qr-section.has{display:block}
+  .qr-section img{max-width:140px;height:auto;display:block;margin:0 auto 10px;background:#fff;border-radius:4px;padding:6px}
+  .qr-section .wx{font-family:'JetBrains Mono',monospace;font-size:13px;color:#F59E0B;font-weight:700}
+  .qr-section .by{font-size:11px;color:#A8A59A;margin-top:6px}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <span class="tag">STYLE · 建设中</span>
+      <h1>这套样式正在打磨</h1>
+      <p>S5 · 2026 大模型冲刺营的 13 套渠道样式中，<b style="color:#fff" id="styleId">本样式</b>暂未完成。课程内容和报名通道完全可用，只是这一套视觉皮肤还在精修。</p>
+
+      <div class="info">
+        <b>S5 · 2026 大模型冲刺营</b><br>
+        Agentic 系统工程与 Post-Train 落地 · 10 周冲刺<br>
+        10 套交互式课件 · 5 个工业级项目 · 算法 × 工程双修
+      </div>
+
+      <div class="qr-section" id="qrSection">
+        <img data-cwp-bind="qr" src="/static/qr-placeholder.svg" alt="老师二维码">
+        <div>微信 · <span class="wx" data-cwp-bind="wechat">S5_LLM_2026</span></div>
+        <div class="by"><span data-cwp-bind="name">老师</span> · 加好友领试听课</div>
+      </div>
+
+      <a href="/styles/main/" class="cta" id="mainBtn">查看默认样式 →</a>
+
+      <div class="meta" id="meta"></div>
+    </div>
+  </div>
+
+  <script>
+    // 从 URL 推断当前是哪个样式 + 是否带 slug
+    const m = location.pathname.match(/^\/styles\/([\w-]+)/);
+    const styleId = m ? m[1] : '?';
+    document.getElementById('styleId').textContent = styleId;
+
+    const slug = new URLSearchParams(location.search).get('slug');
+    if (slug) {
+      // 学员通过 /c/<slug> 跳来，先尝试拉真实数据填充 QR/微信
+      document.getElementById('qrSection').classList.add('has');
+      document.getElementById('mainBtn').href = `/styles/main/?slug=${slug}`;
+      document.getElementById('mainBtn').textContent = '改用默认样式查看 →';
+      document.getElementById('meta').textContent = `渠道 /c/${slug} · 样式 ${styleId} · 建设中 · 已 fallback 到联系信息`;
+    } else {
+      document.getElementById('meta').textContent = `样式 ${styleId} · 当前为开发占位`;
+    }
+  </script>
+  <script src="/channel-loader.js"></script>
+</body>
+</html>

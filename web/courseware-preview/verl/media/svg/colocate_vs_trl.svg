@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1480 1480" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Helvetica Neue', sans-serif">
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FAFAF7"/>
+      <stop offset="100%" stop-color="#F3F2EC"/>
+    </linearGradient>
+
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-thin" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+
+    <pattern id="empty" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+      <rect width="6" height="6" fill="#FFFFFF"/>
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#D3D1C7" stroke-width="0.8"/>
+    </pattern>
+  </defs>
+
+  <rect width="1480" height="1480" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="60" y="58" font-size="28" font-weight="600" fill="#1a1a1a" letter-spacing="-0.4">关键澄清 · verl 的 colocate 不等于 TRL 的"同进程"</text>
+  <text x="60" y="86" font-size="14" fill="#6b6b66" font-style="italic">共享 GPU 的方式有两种 · 空间共存 vs 时间复用 · 这是 verl 区别于 TRL 的本质设计</text>
+  <line x1="60" y1="100" x2="1420" y2="100" stroke="#d4d2c7" stroke-width="0.8"/>
+
+  <!-- 一句话总结 -->
+  <g transform="translate(60, 120)">
+    <rect x="0" y="0" width="1360" height="60" rx="6" fill="#FFFFFF" stroke="#185FA5" stroke-width="0.8"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#042C53">核心区分</text>
+    <text x="22" y="48" font-size="13" fill="#444441">
+      <tspan font-weight="700" fill="#501313">TRL：</tspan>
+      <tspan>同进程 + 同时刻 + 多模型共存</tspan>
+      <tspan dx="40" font-weight="700" fill="#04342C">verl colocate：</tspan>
+      <tspan>独立进程 + 不同时刻 + 同一模型槽位</tspan>
+    </text>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- LEFT FRAME: TRL                                   -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 200)">
+    <rect x="0" y="0" width="660" height="700" rx="8" fill="#FFFFFF" stroke="#A32D2D" stroke-width="1.4"/>
+    <rect x="0" y="0" width="6" height="700" rx="2" fill="#A32D2D"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#501313">TRL · 一个 Python 进程同时持有所有模型</text>
+    <text x="22" y="54" font-size="12" fill="#791F1F">torchrun 启 N 个进程，每个进程持有完整的 actor / ref / reward Python 对象</text>
+
+    <!-- 进程视图 -->
+    <g transform="translate(40, 90)">
+      <text x="0" y="0" font-size="13" font-weight="600" fill="#1a1a1a">单个 Python 进程内部</text>
+
+      <!-- 进程容器 -->
+      <rect x="0" y="14" width="580" height="380" rx="8" fill="#FCEBEB" stroke="#A32D2D" stroke-width="1.5" stroke-dasharray="6 4"/>
+      <text x="290" y="40" font-size="13" font-weight="700" fill="#501313" text-anchor="middle">torchrun process · rank 0 (PID 12345)</text>
+
+      <!-- 进程内的三个模型对象 同时存在 -->
+      <g transform="translate(20, 64)">
+
+        <!-- Actor 对象 -->
+        <rect x="0" y="0" width="170" height="100" rx="6" fill="#FAECE7" stroke="#D85A30" stroke-width="1"/>
+        <text x="85" y="22" font-size="12" font-weight="700" fill="#4A1B0C" text-anchor="middle">actor_model</text>
+        <text x="85" y="42" font-size="10.5" fill="#993C1D" text-anchor="middle">AutoModelForCausalLM</text>
+        <text x="85" y="62" font-size="10.5" fill="#993C1D" text-anchor="middle">参数 + 优化器</text>
+        <text x="85" y="82" font-size="10.5" fill="#993C1D" text-anchor="middle">在 GPU 上常驻</text>
+
+        <!-- Ref 对象 -->
+        <rect x="186" y="0" width="170" height="100" rx="6" fill="#E6F1FB" stroke="#378ADD" stroke-width="1"/>
+        <text x="271" y="22" font-size="12" font-weight="700" fill="#042C53" text-anchor="middle">ref_model</text>
+        <text x="271" y="42" font-size="10.5" fill="#185FA5" text-anchor="middle">AutoModelForCausalLM</text>
+        <text x="271" y="62" font-size="10.5" fill="#185FA5" text-anchor="middle">frozen 参数</text>
+        <text x="271" y="82" font-size="10.5" fill="#185FA5" text-anchor="middle">在 GPU 上常驻</text>
+
+        <!-- Reward 对象 -->
+        <rect x="372" y="0" width="168" height="100" rx="6" fill="#EAF3DE" stroke="#639922" stroke-width="1"/>
+        <text x="456" y="22" font-size="12" font-weight="700" fill="#173404" text-anchor="middle">reward_model</text>
+        <text x="456" y="42" font-size="10.5" fill="#3B6D11" text-anchor="middle">AutoModelForSeqClass</text>
+        <text x="456" y="62" font-size="10.5" fill="#3B6D11" text-anchor="middle">frozen 参数</text>
+        <text x="456" y="82" font-size="10.5" fill="#3B6D11" text-anchor="middle">在 GPU 上常驻</text>
+
+        <!-- 三个对象之间的"同时存在"标记 -->
+        <text x="270" y="124" font-size="11" fill="#501313" text-anchor="middle" font-weight="600">↑ 三个对象在 Python heap 里同时存在 · 显存里也同时存在 ↑</text>
+      </g>
+
+      <!-- 主 step() 函数 -->
+      <g transform="translate(20, 210)">
+        <rect x="0" y="0" width="540" height="160" rx="6" fill="#FFFFFF" stroke="#A32D2D" stroke-width="0.8"/>
+        <text x="12" y="20" font-size="11.5" font-weight="700" fill="#501313">PPOTrainer.step() · 同一个函数顺序调用</text>
+        <line x1="12" y1="28" x2="280" y2="28" stroke="#F09595" stroke-width="0.5"/>
+
+        <g transform="translate(12, 40)" font-family="ui-monospace, 'SF Mono', monospace" font-size="11">
+          <text x="0" y="0" fill="#444441"><tspan fill="#A32D2D">resp = </tspan>self.actor_model.generate(prompts)</text>
+          <text x="0" y="20" fill="#444441"><tspan fill="#A32D2D">old_lp = </tspan>self.actor_model(resp).logits</text>
+          <text x="0" y="40" fill="#444441"><tspan fill="#A32D2D">ref_lp = </tspan>self.ref_model(resp).logits</text>
+          <text x="0" y="60" fill="#444441"><tspan fill="#A32D2D">scores = </tspan>self.reward_model(resp).logits</text>
+          <text x="0" y="80" fill="#444441"><tspan fill="#A32D2D">loss = </tspan>compute_ppo_loss(old_lp, ref_lp, scores)</text>
+          <text x="0" y="100" fill="#444441"><tspan fill="#A32D2D">loss.</tspan>backward()  <tspan fill="#888780">↑ 同进程 · 直接函数调用</tspan></text>
+        </g>
+      </g>
+    </g>
+
+    <!-- 物理特征 -->
+    <g transform="translate(40, 510)">
+      <rect x="0" y="0" width="580" height="170" rx="6" fill="#FCEBEB" stroke="#E24B4A" stroke-width="0.6"/>
+      <text x="16" y="22" font-size="12" font-weight="700" fill="#501313">物理后果</text>
+      <line x1="16" y1="32" x2="120" y2="32" stroke="#F09595" stroke-width="0.5"/>
+
+      <g transform="translate(16, 46)" font-size="11.5">
+        <text x="0" y="0" fill="#444441"><tspan font-weight="600" fill="#A32D2D">显存：</tspan>三个模型一直在 GPU 上 · 互相挤压 · 7B 已经 86% · 13B 直接 OOM</text>
+        <text x="0" y="22" fill="#444441"><tspan font-weight="600" fill="#A32D2D">引擎：</tspan>只能用 transformers.generate · 没法换 vLLM（vLLM 是独立进程/服务）</text>
+        <text x="0" y="44" fill="#444441"><tspan font-weight="600" fill="#A32D2D">耦合：</tspan>改 actor 的并行策略会影响 ref 的内存布局 · 牵一发动全身</text>
+        <text x="0" y="66" fill="#444441"><tspan font-weight="600" fill="#A32D2D">灵活性：</tspan>没办法让 ref 用更小的 TP / actor 用更大的 TP</text>
+        <text x="0" y="88" fill="#444441"><tspan font-weight="600" fill="#A32D2D">扩展性：</tspan>想加 critic 模型？再挤一份显存进来 · 想换 reward model 大小？整个 yaml 重写</text>
+        <text x="0" y="110" fill="#5f5e5a" font-style="italic">本质：进程是物理边界，进程内的对象注定共享生命周期、共享显存、共享调度</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- RIGHT FRAME: verl colocate                        -->
+  <!-- ============================================== -->
+  <g transform="translate(760, 200)">
+    <rect x="0" y="0" width="660" height="700" rx="8" fill="#FFFFFF" stroke="#0F6E56" stroke-width="1.4"/>
+    <rect x="0" y="0" width="6" height="700" rx="2" fill="#0F6E56"/>
+
+    <text x="22" y="32" font-size="18" font-weight="700" fill="#04342C">verl colocate · 多个独立进程时间复用同一 GPU</text>
+    <text x="22" y="54" font-size="12" fill="#0F6E56">Ray 在同一 GPU 上启多个 actor 进程 · 每个进程只装一个模型 · 通过 offload 让出显存</text>
+
+    <!-- 进程视图 -->
+    <g transform="translate(40, 90)">
+      <text x="0" y="0" font-size="13" font-weight="600" fill="#1a1a1a">同一张 GPU 上的多个独立进程</text>
+
+      <!-- GPU 容器 -->
+      <rect x="0" y="14" width="580" height="380" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1.5" stroke-dasharray="6 4"/>
+      <text x="290" y="40" font-size="13" font-weight="700" fill="#04342C" text-anchor="middle">GPU 0（被多个独立 Ray actor 共享）</text>
+
+      <!-- 三个独立进程 -->
+      <g transform="translate(20, 64)">
+
+        <!-- Actor 进程 -->
+        <rect x="0" y="0" width="170" height="100" rx="6" fill="#FAECE7" stroke="#D85A30" stroke-width="1"/>
+        <text x="85" y="20" font-size="11.5" font-weight="700" fill="#4A1B0C" text-anchor="middle">ActorRolloutWorker</text>
+        <text x="85" y="36" font-size="10" fill="#993C1D" text-anchor="middle">PID 22001 · 独立进程</text>
+        <text x="85" y="56" font-size="10.5" fill="#993C1D" text-anchor="middle">vLLM + FSDP 引擎</text>
+        <text x="85" y="74" font-size="10.5" fill="#993C1D" text-anchor="middle">用时 load · 完了 offload</text>
+        <text x="85" y="92" font-size="10" fill="#712B13" text-anchor="middle" font-style="italic">Ray actor</text>
+
+        <!-- Ref 进程 -->
+        <rect x="186" y="0" width="170" height="100" rx="6" fill="#E6F1FB" stroke="#378ADD" stroke-width="1"/>
+        <text x="271" y="20" font-size="11.5" font-weight="700" fill="#042C53" text-anchor="middle">RefWorker</text>
+        <text x="271" y="36" font-size="10" fill="#185FA5" text-anchor="middle">PID 22042 · 独立进程</text>
+        <text x="271" y="56" font-size="10.5" fill="#185FA5" text-anchor="middle">FSDP forward only</text>
+        <text x="271" y="74" font-size="10.5" fill="#185FA5" text-anchor="middle">用时 load · 完了 offload</text>
+        <text x="271" y="92" font-size="10" fill="#0C447C" text-anchor="middle" font-style="italic">Ray actor</text>
+
+        <!-- Reward 进程 -->
+        <rect x="372" y="0" width="168" height="100" rx="6" fill="#EAF3DE" stroke="#639922" stroke-width="1"/>
+        <text x="456" y="20" font-size="11.5" font-weight="700" fill="#173404" text-anchor="middle">RewardWorker</text>
+        <text x="456" y="36" font-size="10" fill="#3B6D11" text-anchor="middle">PID 22087 · 独立进程</text>
+        <text x="456" y="56" font-size="10.5" fill="#3B6D11" text-anchor="middle">FSDP forward only</text>
+        <text x="456" y="74" font-size="10.5" fill="#3B6D11" text-anchor="middle">用时 load · 完了 offload</text>
+        <text x="456" y="92" font-size="10" fill="#27500A" text-anchor="middle" font-style="italic">Ray actor</text>
+
+        <!-- 标注：进程间的"互不可见" -->
+        <text x="270" y="124" font-size="11" fill="#04342C" text-anchor="middle" font-weight="600">↑ 三个独立 Python 解释器 · 显存里同一时刻只有一个在用 ↑</text>
+      </g>
+
+      <!-- Driver 端 controller 调用 -->
+      <g transform="translate(20, 210)">
+        <rect x="0" y="0" width="540" height="160" rx="6" fill="#FFFFFF" stroke="#0F6E56" stroke-width="0.8"/>
+        <text x="12" y="20" font-size="11.5" font-weight="700" fill="#04342C">Driver 进程调用 · 通过 Ray RPC</text>
+        <line x1="12" y1="28" x2="240" y2="28" stroke="#5DCAA5" stroke-width="0.5"/>
+
+        <g transform="translate(12, 40)" font-family="ui-monospace, 'SF Mono', monospace" font-size="11">
+          <text x="0" y="0" fill="#444441"><tspan fill="#04342C">resp = </tspan>actor_wg.generate(prompts).get()  <tspan fill="#888780">↑ RPC</tspan></text>
+          <text x="0" y="20" fill="#444441"><tspan fill="#04342C">old_lp = </tspan>actor_wg.compute_logp(resp).get()</text>
+          <text x="0" y="40" fill="#444441"><tspan fill="#04342C">  </tspan><tspan fill="#A32D2D"># actor offload, ref load (在 worker 内自动)</tspan></text>
+          <text x="0" y="60" fill="#444441"><tspan fill="#04342C">ref_lp = </tspan>ref_wg.compute_logp(resp).get()</text>
+          <text x="0" y="80" fill="#444441"><tspan fill="#04342C">  </tspan><tspan fill="#A32D2D"># ref offload, reward load</tspan></text>
+          <text x="0" y="100" fill="#444441"><tspan fill="#04342C">scores = </tspan>reward_wg.score(resp).get()</text>
+          <text x="0" y="120" fill="#444441"><tspan fill="#04342C">  </tspan><tspan fill="#A32D2D"># reward offload, actor reload (训练态)</tspan></text>
+        </g>
+      </g>
+    </g>
+
+    <!-- 物理特征 -->
+    <g transform="translate(40, 510)">
+      <rect x="0" y="0" width="580" height="170" rx="6" fill="#E1F5EE" stroke="#1D9E75" stroke-width="0.6"/>
+      <text x="16" y="22" font-size="12" font-weight="700" fill="#04342C">物理后果</text>
+      <line x1="16" y1="32" x2="120" y2="32" stroke="#5DCAA5" stroke-width="0.5"/>
+
+      <g transform="translate(16, 46)" font-size="11.5">
+        <text x="0" y="0" fill="#444441"><tspan font-weight="600" fill="#0F6E56">显存：</tspan>同一时刻只有一个模型在 GPU · 单个模型可以独占 70GB+ · 70B 也跑得动</text>
+        <text x="0" y="22" fill="#444441"><tspan font-weight="600" fill="#0F6E56">引擎：</tspan>actor 进程用 vLLM · ref/reward 进程用 transformers · 互不冲突</text>
+        <text x="0" y="44" fill="#444441"><tspan font-weight="600" fill="#0F6E56">解耦：</tspan>每个 worker 独立配置 TP / DP / 切分策略 · 互不影响</text>
+        <text x="0" y="66" fill="#444441"><tspan font-weight="600" fill="#0F6E56">灵活性：</tspan>ref 可以小 TP · actor 可以大 TP · reward 可以是规则函数（无 GPU）</text>
+        <text x="0" y="88" fill="#444441"><tspan font-weight="600" fill="#0F6E56">扩展性：</tspan>加 critic 模型 = 多启一个 Ray actor · 不影响其他进程</text>
+        <text x="0" y="110" fill="#5f5e5a" font-style="italic">本质：进程是隔离边界 · 通过 RPC 协调 · 显存通过 offload 时间复用</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- BOTTOM SECTION · 关键差异表                       -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 920)">
+    <rect x="0" y="0" width="1360" height="280" rx="6" fill="#FFFFFF" stroke="#d4d2c7" stroke-width="0.8"/>
+    <text x="22" y="28" font-size="14" font-weight="600" fill="#1a1a1a">六个维度的细致对比</text>
+    <line x1="22" y1="40" x2="380" y2="40" stroke="#d4d2c7" stroke-width="0.6"/>
+
+    <!-- Table -->
+    <g transform="translate(22, 60)" font-size="12">
+      <!-- Header row -->
+      <rect x="0" y="0" width="1316" height="28" fill="#F1EFE8"/>
+      <text x="16" y="18" font-weight="700" fill="#1a1a1a">维度</text>
+      <text x="280" y="18" font-weight="700" fill="#501313">TRL（同进程多模型共存）</text>
+      <text x="800" y="18" font-weight="700" fill="#04342C">verl colocate（独立进程时间复用）</text>
+
+      <!-- Row 1: 进程数 -->
+      <g transform="translate(0, 28)">
+        <rect x="0" y="0" width="1316" height="32" fill="#FFFFFF" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="16" y="20" font-weight="600" fill="#444441">进程数</text>
+        <text x="280" y="20" fill="#444441">每 GPU 1 个进程，包含全部模型</text>
+        <text x="800" y="20" fill="#444441">每 GPU 多个 Ray actor 进程，每个只装一种模型</text>
+      </g>
+
+      <!-- Row 2: 同时刻显存 -->
+      <g transform="translate(0, 60)">
+        <rect x="0" y="0" width="1316" height="32" fill="#F8F7F2" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="16" y="20" font-weight="600" fill="#444441">同时刻显存</text>
+        <text x="280" y="20" fill="#444441">所有模型 + 优化器 + KV 同时在显存里</text>
+        <text x="800" y="20" fill="#444441">同时刻只有"当前阶段"的一个模型 · 其他 offload 到 CPU</text>
+      </g>
+
+      <!-- Row 3: 推理引擎 -->
+      <g transform="translate(0, 92)">
+        <rect x="0" y="0" width="1316" height="32" fill="#FFFFFF" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="16" y="20" font-weight="600" fill="#444441">推理引擎</text>
+        <text x="280" y="20" fill="#444441">绑定 transformers.generate · 改不了</text>
+        <text x="800" y="20" fill="#444441">每个 worker 独立选 · actor 用 vLLM, ref 用 FSDP forward, 互不冲突</text>
+      </g>
+
+      <!-- Row 4: 模型独立配置 -->
+      <g transform="translate(0, 124)">
+        <rect x="0" y="0" width="1316" height="32" fill="#F8F7F2" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="16" y="20" font-weight="600" fill="#444441">独立配置</text>
+        <text x="280" y="20" fill="#444441">所有模型共用 TP / DP / 精度配置</text>
+        <text x="800" y="20" fill="#444441">每个模型独立 yaml 节 · 独立 TP / 独立 dtype / 独立 dispatch</text>
+      </g>
+
+      <!-- Row 5: 模型大小 -->
+      <g transform="translate(0, 156)">
+        <rect x="0" y="0" width="1316" height="32" fill="#FFFFFF" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="16" y="20" font-weight="600" fill="#444441">异构支持</text>
+        <text x="280" y="20" fill="#444441">actor / ref / reward 必须同架构同切分方式</text>
+        <text x="800" y="20" fill="#444441">actor 可 70B、reward 可 7B、ref 可量化、reward 可纯规则函数</text>
+      </g>
+
+      <!-- Row 6: 失败隔离 -->
+      <g transform="translate(0, 188)">
+        <rect x="0" y="0" width="1316" height="32" fill="#F8F7F2" stroke="#F1EFE8" stroke-width="0.5"/>
+        <text x="16" y="20" font-weight="600" fill="#444441">失败隔离</text>
+        <text x="280" y="20" fill="#444441">任何一个模型崩溃 = 整个进程挂 = 整个 step 重来</text>
+        <text x="800" y="20" fill="#444441">单个 worker 崩溃 = Ray 自动重启该 actor · 其他 worker 不受影响</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============================================== -->
+  <!-- BOTTOM CALLOUT                                    -->
+  <!-- ============================================== -->
+  <g transform="translate(60, 1220)">
+    <rect x="0" y="0" width="1360" height="220" rx="6" fill="#FFFFFF" stroke="#534AB7" stroke-width="1"/>
+    <text x="22" y="28" font-size="14" font-weight="700" fill="#26215C">为什么这个区分如此重要</text>
+    <line x1="22" y1="40" x2="320" y2="40" stroke="#CECBF6" stroke-width="0.6"/>
+
+    <g transform="translate(22, 60)" font-size="12.5">
+      <text x="0" y="0" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">表面看：</tspan>
+        <tspan>verl colocate 和 TRL 都是"所有模型用同一组 GPU" · 看起来一样</tspan>
+      </text>
+      <text x="0" y="24" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">实际差：</tspan>
+        <tspan>TRL 是空间维度共存（一直在那挤着）· verl 是时间维度复用（轮流上场）</tspan>
+      </text>
+      <text x="0" y="48" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">关键意义：</tspan>
+        <tspan>正因为是独立进程，verl 才能给 actor 用 vLLM 而给 ref 用 FSDP · 才能让 70B actor 配 7B reward · 才能在 reshard 时安全切换权重布局</tspan>
+      </text>
+      <text x="0" y="72" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">代价：</tspan>
+        <tspan>多了 RPC 序列化开销 · 多了 offload/reload 的内存搬运 · 多了 sharding_manager 这种复杂模块</tspan>
+      </text>
+      <text x="0" y="96" fill="#444441">
+        <tspan font-weight="700" fill="#26215C">为什么值得：</tspan>
+        <tspan>对小模型不值得（TRL 更简单），对 7B+ 必须这么做（不然没法用 vLLM、没法跑大模型）</tspan>
+      </text>
+      <text x="0" y="132" fill="#5f5e5a" font-style="italic">
+        一个比喻：TRL 像把所有家具堆在客厅同时存在 · verl colocate 像同一间会议室 A 用完打扫干净 B 进来用 · 物理空间一样，使用方式完全不同
+      </text>
+    </g>
+  </g>
+
+</svg>

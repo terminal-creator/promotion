@@ -1,0 +1,2142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Deep-OpenClaw · Gateway 控制平面 · 预览</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="./assets/app.css">
+  <link rel="stylesheet" href="./assets/code_drawer.css">
+  <link rel="stylesheet" href="../_shared/lock.css">
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="./assets/vendor/react.production.min.js"></script>
+  <script src="./assets/vendor/react-dom.production.min.js"></script>
+  <script src="./assets/vendor/babel.min.js"></script>
+
+  <script type="text/babel" data-presets="react">
+
+/* === components/primitives.jsx === */
+/* components/primitives.jsx
+   Shared React primitives used by every module.
+   Exports to window so other Babel scripts can use them.
+*/
+
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+/* ---------- Section ---------- */
+function Section({ id, idx, eyebrow, title, lead, children }) {
+  return (
+    <section id={id} className="section">
+      <div className="section-head">
+        <div>
+          {eyebrow ? <div className="eyebrow">{eyebrow}</div> : null}
+          <h2 className="h-section">{title}</h2>
+        </div>
+        <div className="section-idx">{idx}</div>
+      </div>
+      {lead ? <p className="lead" style={{ marginTop: 0, marginBottom: 22 }}>{lead}</p> : null}
+      {children}
+    </section>
+  );
+}
+
+/* ---------- Card ---------- */
+function Card({ title, right, children, style, className }) {
+  return (
+    <div className={"card " + (className || "")} style={style}>
+      {(title || right) && (
+        <div className="card-title" style={{ justifyContent: "space-between" }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+            <span className="dot" />
+            {title}
+          </span>
+          {right}
+        </div>
+      )}
+      {children}
+    </div>
+  );
+}
+
+/* ---------- Badge ---------- */
+function Badge({ tone = "", children }) {
+  return <span className={"badge " + tone}>{children}</span>;
+}
+
+/* ---------- Key/Value row ---------- */
+function KV({ k, v, mono }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        padding: "6px 0",
+        borderBottom: "1px dashed var(--line-soft)",
+        gap: 14,
+      }}
+    >
+      <span className="dim" style={{ fontSize: 12.5 }}>{k}</span>
+      <span style={{ fontFamily: mono ? "var(--font-mono)" : undefined, fontSize: 12.5 }}>{v}</span>
+    </div>
+  );
+}
+
+/* ---------- Step Player ----------
+   A controllable timeline: prev / play / next / step / jump.
+   Renders children as a function of the current step index.
+*/
+function StepPlayer({ steps, render, autoPlayMs = 0, storageKey }) {
+  const [i, setI] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const timer = useRef(null);
+
+  const safeSet = useCallback(
+    (ni) => {
+      setI(Math.max(0, Math.min(steps.length - 1, ni)));
+    },
+    [steps.length]
+  );
+
+  useEffect(() => {
+    if (playing) {
+      timer.current = setInterval(() => {
+        setI((prev) => {
+          if (prev >= steps.length - 1) {
+            setPlaying(false);
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, autoPlayMs || 1800);
+    } else if (timer.current) {
+      clearInterval(timer.current);
+      timer.current = null;
+    }
+    return () => timer.current && clearInterval(timer.current);
+  }, [playing, steps.length, autoPlayMs]);
+
+  useEffect(() => {
+    if (storageKey) {
+      try {
+        const v = parseInt(localStorage.getItem(storageKey) || "0", 10);
+        if (!Number.isNaN(v) && v < steps.length) setI(v);
+      } catch (e) {}
+    }
+  }, [storageKey, steps.length]);
+  useEffect(() => {
+    if (storageKey) {
+      try { localStorage.setItem(storageKey, String(i)); } catch (e) {}
+    }
+  }, [storageKey, i]);
+
+  const current = steps[i];
+
+  return (
+    <div className="player">
+      <div className="player-stage">{render(i, current)}</div>
+      <div className="player-controls">
+        <button
+          className="ctrl-btn"
+          onClick={() => safeSet(0)}
+          title="回到开头"
+          disabled={i === 0}
+        >
+          ⏮
+        </button>
+        <button
+          className="ctrl-btn"
+          onClick={() => safeSet(i - 1)}
+          disabled={i === 0}
+          title="上一步"
+        >
+          ◀
+        </button>
+        <button
+          className="ctrl-btn primary"
+          onClick={() => setPlaying((p) => !p)}
+          title={playing ? "暂停" : "播放"}
+        >
+          {playing ? "❚❚" : "▶"}
+        </button>
+        <button
+          className="ctrl-btn"
+          onClick={() => safeSet(i + 1)}
+          disabled={i >= steps.length - 1}
+          title="下一步"
+        >
+          ▶
+        </button>
+        <div className="ctrl-step-indicator">
+          {String(i + 1).padStart(2, "0")} / {String(steps.length).padStart(2, "0")}
+        </div>
+        <div className="ctrl-track">
+          {steps.map((s, k) => (
+            <div
+              key={k}
+              className={"ctrl-tick " + (k === i ? "active" : k < i ? "done" : "")}
+              onClick={() => {
+                setPlaying(false);
+                safeSet(k);
+              }}
+              title={s.label || `步骤 ${k + 1}`}
+            />
+          ))}
+        </div>
+        <div className="ctrl-label" title={current?.label}>
+          {current?.label || ""}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Narration (step description) ---------- */
+function Narration({ tag, children }) {
+  return (
+    <div className="narration fade-in" key={String(children)}>
+      {tag ? <span className="tag">{tag}</span> : null}
+      {children}
+    </div>
+  );
+}
+
+/* ---------- Toggle / Checkbox ---------- */
+function Toggle({ on, onChange, label }) {
+  return (
+    <label
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        cursor: "pointer",
+        userSelect: "none",
+        fontSize: 13,
+      }}
+    >
+      <span
+        style={{
+          width: 34,
+          height: 18,
+          background: on ? "var(--claw)" : "var(--bg-chip)",
+          border: "1px solid " + (on ? "var(--claw-line)" : "var(--line)"),
+          borderRadius: 10,
+          position: "relative",
+          transition: "background 150ms",
+        }}
+      >
+        <span
+          style={{
+            position: "absolute",
+            top: 1,
+            left: on ? 16 : 1,
+            width: 14,
+            height: 14,
+            background: "#fff",
+            borderRadius: "50%",
+            transition: "left 150ms",
+          }}
+        />
+      </span>
+      {label}
+      <input
+        type="checkbox"
+        checked={on}
+        onChange={(e) => onChange(e.target.checked)}
+        style={{ display: "none" }}
+      />
+    </label>
+  );
+}
+
+/* ---------- Context chip (message in agent context window) ---------- */
+function CtxChip({ type, children, fresh }) {
+  const labels = {
+    sys: "SYSTEM",
+    mem: "MEMORY",
+    tool: "TOOL",
+    usr: "USER",
+    asst: "AGENT",
+    skill: "SKILL",
+    boot: "BOOT",
+  };
+  return (
+    <div className={"ctx-chip " + (fresh ? "new" : "")}>
+      <span className={"ctype " + type}>{labels[type] || type.toUpperCase()}</span>
+      <span style={{ flex: 1 }}>{children}</span>
+    </div>
+  );
+}
+
+Object.assign(window, { Section, Card, Badge, KV, StepPlayer, Narration, Toggle, CtxChip });
+
+
+/* === components/icons.jsx === */
+/* components/icons.jsx
+   Original geometric glyphs. No real brand logos. Single-stroke SVG.
+   Every icon takes size + color via style/props.
+*/
+
+function I({ children, size = 16, stroke = 1.6 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={stroke}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ flexShrink: 0 }}
+    >
+      {children}
+    </svg>
+  );
+}
+
+/* --- Channel glyphs (abstract shapes) --- */
+const IconWeChat   = (p) => <I {...p}><rect x="3" y="5" width="14" height="10" rx="2"/><rect x="9" y="11" width="12" height="8" rx="2"/></I>;
+const IconFeishu   = (p) => <I {...p}><path d="M4 18L12 4l8 14"/><path d="M8 14h8"/></I>;
+const IconTelegram = (p) => <I {...p}><path d="M3 11l18-7-4 17-6-5-3 4-1-6z"/></I>;
+const IconSlack    = (p) => <I {...p}><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/><path d="M15 8h5M4 15h5"/></I>;
+const IconDiscord  = (p) => <I {...p}><path d="M4 8c3-2 13-2 16 0l1 10c-2 1-5 2-7 2l-1-2m-2 2l-1-2c-2 0-5-1-7-2z"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/></I>;
+const IconDingTalk = (p) => <I {...p}><circle cx="12" cy="12" r="8"/><path d="M8 11l3 3 5-5"/></I>;
+const IconQQ       = (p) => <I {...p}><ellipse cx="12" cy="11" rx="7" ry="8"/><path d="M9 10v1M15 10v1"/><path d="M7 18l5 2 5-2"/></I>;
+const IconSignal   = (p) => <I {...p}><circle cx="12" cy="12" r="7"/><path d="M5 9l-2-1M19 9l2-1M5 15l-2 1M19 15l2 1"/></I>;
+const IconIMessage = (p) => <I {...p}><path d="M4 6h16v10H10l-4 4v-4H4z"/></I>;
+const IconWebChat  = (p) => <I {...p}><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c3 3 3 13 0 16M12 4c-3 3-3 13 0 16"/></I>;
+const IconMatrix   = (p) => <I {...p}><path d="M5 4v16M19 4v16M5 4c2 2 2 14 0 16M19 4c-2 2-2 14 0 16"/></I>;
+const IconLine     = (p) => <I {...p}><path d="M4 6h16v10H13l-5 4v-4H4z"/><path d="M8 10v3M12 10v3M16 10v3M8 10h8"/></I>;
+
+/* --- Subsystem glyphs --- */
+const IconGateway  = (p) => <I {...p}><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M7 14h4M7 17h6"/></I>;
+const IconAgent    = (p) => <I {...p}><circle cx="12" cy="9" r="4"/><path d="M4 21a8 8 0 0116 0"/></I>;
+const IconBrain    = (p) => <I {...p}><path d="M9 5a3 3 0 00-3 3 3 3 0 00-2 4 3 3 0 002 3 3 3 0 003 3 3 3 0 003 0 3 3 0 003 0 3 3 0 003-3 3 3 0 002-3 3 3 0 00-2-4 3 3 0 00-3-3z"/><path d="M12 5v14"/></I>;
+const IconTerminal = (p) => <I {...p}><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10l3 2-3 2M12 16h5"/></I>;
+const IconFile     = (p) => <I {...p}><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></I>;
+const IconBrowser  = (p) => <I {...p}><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18M6 7h.01M9 7h.01M12 7h.01"/></I>;
+const IconCanvas   = (p) => <I {...p}><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 14l5-4 4 3 3-2 6 5"/><circle cx="8" cy="9" r="1"/></I>;
+const IconNode     = (p) => <I {...p}><rect x="5" y="3" width="14" height="10" rx="2"/><rect x="9" y="17" width="6" height="4" rx="1"/><path d="M12 13v4"/></I>;
+const IconCloud    = (p) => <I {...p}><path d="M7 17h10a4 4 0 000-8 5 5 0 00-10 0 3 3 0 000 8z"/></I>;
+const IconLock     = (p) => <I {...p}><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></I>;
+const IconKey      = (p) => <I {...p}><circle cx="8" cy="12" r="4"/><path d="M12 12l8 0M17 12v4M20 12v3"/></I>;
+const IconShield   = (p) => <I {...p}><path d="M12 3l8 3v5c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6z"/></I>;
+const IconPlug     = (p) => <I {...p}><path d="M9 3v4M15 3v4"/><rect x="7" y="7" width="10" height="6" rx="1"/><path d="M12 13v4a3 3 0 003 3"/></I>;
+const IconSkill    = (p) => <I {...p}><path d="M6 3h8l4 4v14H6z"/><path d="M9 11l2 2 4-4"/></I>;
+const IconMemory   = (p) => <I {...p}><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 5v14M15 5v14M5 9h14M5 15h14"/></I>;
+const IconPlay     = (p) => <I {...p}><path d="M7 4l12 8-12 8z"/></I>;
+const IconSearch   = (p) => <I {...p}><circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/></I>;
+const IconDevice   = (p) => <I {...p}><rect x="6" y="3" width="12" height="18" rx="2"/><circle cx="12" cy="18" r="1"/></I>;
+const IconMic      = (p) => <I {...p}><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3M9 21h6"/></I>;
+const IconCron     = (p) => <I {...p}><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M10 3h4"/></I>;
+const IconSocket   = (p) => <I {...p}><circle cx="12" cy="12" r="8"/><path d="M12 4v4M12 16v4M4 12h4M16 12h4"/></I>;
+const IconBox      = (p) => <I {...p}><path d="M3 7l9-4 9 4-9 4zM3 7v10l9 4 9-4V7M12 11v10"/></I>;
+const IconPlus     = (p) => <I {...p}><path d="M12 5v14M5 12h14"/></I>;
+const IconCheck    = (p) => <I {...p}><path d="M5 12l5 5 9-11"/></I>;
+const IconCross    = (p) => <I {...p}><path d="M6 6l12 12M18 6l-12 12"/></I>;
+const IconArrow    = (p) => <I {...p}><path d="M5 12h14M13 5l7 7-7 7"/></I>;
+const IconFlow     = (p) => <I {...p}><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 6h10M5 8v8M19 8v8M7 18h10"/></I>;
+const IconSpark    = (p) => <I {...p}><path d="M12 3v6M12 15v6M3 12h6M15 12h6M6 6l4 4M14 14l4 4M18 6l-4 4M10 14l-4 4"/></I>;
+const IconDocker   = (p) => <I {...p}><rect x="3" y="11" width="4" height="4"/><rect x="8" y="11" width="4" height="4"/><rect x="13" y="11" width="4" height="4"/><rect x="8" y="6" width="4" height="4"/><path d="M3 15c3 3 14 3 18-2"/></I>;
+const IconTree     = (p) => <I {...p}><circle cx="12" cy="5" r="2"/><circle cx="6" cy="13" r="2"/><circle cx="18" cy="13" r="2"/><circle cx="6" cy="20" r="2"/><circle cx="18" cy="20" r="2"/><path d="M12 7v2M6 15v3M18 15v3M10 6l-3 5M14 6l3 5"/></I>;
+const IconEye      = (p) => <I {...p}><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></I>;
+
+Object.assign(window, {
+  IconWeChat, IconFeishu, IconTelegram, IconSlack, IconDiscord, IconDingTalk,
+  IconQQ, IconSignal, IconIMessage, IconWebChat, IconMatrix, IconLine,
+  IconGateway, IconAgent, IconBrain, IconTerminal, IconFile, IconBrowser,
+  IconCanvas, IconNode, IconCloud, IconLock, IconKey, IconShield, IconPlug,
+  IconSkill, IconMemory, IconPlay, IconSearch, IconDevice, IconMic, IconCron,
+  IconSocket, IconBox, IconPlus, IconCheck, IconCross, IconArrow, IconFlow,
+  IconSpark, IconDocker, IconTree, IconEye,
+});
+
+
+/* === components/learn_mode.jsx === */
+/* components/learn_mode.jsx
+   新手/老手模式全局开关 + <Primer>（先搞懂这件事）+ <Recap>（总结+自测）+ <T>（术语标注）
+   全部通过 window.__ocLearn 广播状态，避免 Context。
+*/
+
+const { useSyncExternalStore } = React;
+
+/* ---------------- global mode store ---------------- */
+(function initLearnStore() {
+  if (window.__ocLearn) return;
+  const KEY = "oc_learn_mode"; // "beginner" | "veteran"
+  let mode = "beginner";
+  try {
+    const stored = localStorage.getItem(KEY);
+    if (stored === "beginner" || stored === "veteran") mode = stored;
+  } catch (e) {}
+  const listeners = new Set();
+  window.__ocLearn = {
+    get() { return mode; },
+    set(next) {
+      if (mode === next) return;
+      mode = next;
+      try { localStorage.setItem(KEY, next); } catch (e) {}
+      listeners.forEach((fn) => fn());
+    },
+    subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
+  };
+})();
+
+function useLearnMode() {
+  return useSyncExternalStore(
+    (cb) => window.__ocLearn.subscribe(cb),
+    () => window.__ocLearn.get(),
+    () => "beginner"
+  );
+}
+
+/* ---------------- Mode Toggle (top-right floating) ---------------- */
+function LearnModeToggle() {
+  const mode = useLearnMode();
+  const set = (m) => window.__ocLearn.set(m);
+  return (
+    <div className="learn-toggle">
+      <span className="learn-toggle-label">学习模式</span>
+      <div className="learn-toggle-group">
+        <button
+          className={"learn-toggle-btn " + (mode === "beginner" ? "active" : "")}
+          onClick={() => set("beginner")}
+          title="新手模式：所有补课/总结盒子默认展开，术语高亮"
+        >
+          新手
+        </button>
+        <button
+          className={"learn-toggle-btn " + (mode === "veteran" ? "active" : "")}
+          onClick={() => set("veteran")}
+          title="老手模式：所有补课/总结盒子收起，密度优先"
+        >
+          老手
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- <Primer>  先搞懂这件事 ---------------- */
+/* 放在 Section 的 lead 下方、可视化上方。
+   三段结构：analogy（类比）/ contrast（对照组）/ tech（技术解释）
+   props:
+     - analogy:  string | JSX — 生活类比
+     - contrast: string | JSX — 不这样会怎样
+     - tech:     string | JSX — 技术上到底是什么
+     - terms:    [{ term, def }] — 这个模块首次出现的术语速查
+     - title:    可选，默认 "先搞懂这件事"
+*/
+function Primer({ analogy, contrast, tech, terms, title }) {
+  const mode = useLearnMode();
+  const [open, setOpen] = React.useState(mode === "beginner");
+  React.useEffect(() => { setOpen(mode === "beginner"); }, [mode]);
+
+  return (
+    <div className={"primer " + (open ? "open" : "")}>
+      <button className="primer-head" onClick={() => setOpen(!open)}>
+        <span className="primer-icon">📖</span>
+        <span className="primer-title">{title || "先搞懂这件事"}</span>
+        <span className="primer-hint dim">{open ? "点击收起" : "点击展开"}</span>
+        <span className="primer-chev">{open ? "▾" : "▸"}</span>
+      </button>
+      {open && (
+        <div className="primer-body">
+          {analogy && (
+            <div className="primer-row">
+              <div className="primer-row-tag">类比</div>
+              <div className="primer-row-body">{analogy}</div>
+            </div>
+          )}
+          {contrast && (
+            <div className="primer-row">
+              <div className="primer-row-tag">如果不这么做</div>
+              <div className="primer-row-body">{contrast}</div>
+            </div>
+          )}
+          {tech && (
+            <div className="primer-row">
+              <div className="primer-row-tag">技术上是什么</div>
+              <div className="primer-row-body">{tech}</div>
+            </div>
+          )}
+          {terms && terms.length > 0 && (
+            <div className="primer-terms">
+              <div className="primer-terms-title">本节新术语</div>
+              <div className="primer-terms-list">
+                {terms.map((t, i) => (
+                  <div key={i} className="primer-term">
+                    <span className="primer-term-name">{t.term}</span>
+                    <span className="primer-term-def">{t.def}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------------- <Recap> 一句话总结 + 自测 ----------------
+   放在 Section 的可视化下方。
+   props:
+     - summary: string | JSX — 一句话总结
+     - quiz:    [{ q, a }] — 自测问答，点击展开答案
+*/
+function Recap({ summary, quiz }) {
+  const mode = useLearnMode();
+  if (mode !== "beginner") return null;
+  return (
+    <div className="recap">
+      <div className="recap-head">
+        <span className="recap-icon">🎯</span>
+        <span className="recap-title">一句话记住</span>
+      </div>
+      {summary && <div className="recap-summary">{summary}</div>}
+      {quiz && quiz.length > 0 && (
+        <div className="recap-quiz">
+          <div className="recap-quiz-title">自测（点击查看答案）</div>
+          {quiz.map((item, i) => (
+            <RecapQA key={i} q={item.q} a={item.a} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RecapQA({ q, a }) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <div className={"recap-qa " + (open ? "open" : "")}>
+      <button className="recap-q" onClick={() => setOpen(!open)}>
+        <span className="recap-q-chev">{open ? "▾" : "▸"}</span>
+        <span>{q}</span>
+      </button>
+      {open && <div className="recap-a">{a}</div>}
+    </div>
+  );
+}
+
+/* ---------------- <T> 术语标记 ----------------
+   用法: <T k="websocket">WebSocket</T>
+   - 渲染一个带下划虚线的行内 span
+   - hover 显示 tooltip（从 GLOSSARY 取定义，精简版）
+   - 点击 → 打开术语表抽屉并定位到该术语
+*/
+function T({ k, children }) {
+  const [hover, setHover] = React.useState(false);
+  const entry = (window.GLOSSARY || {})[k];
+  const def = entry ? entry.short : null;
+  const onClick = (e) => {
+    e.preventDefault();
+    if (window.__ocGlossary) window.__ocGlossary.open(k);
+  };
+  return (
+    <span
+      className="term-mark"
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      onClick={onClick}
+    >
+      {children}
+      {hover && def && (
+        <span className="term-tip">
+          <span className="term-tip-name">{entry.term || k}</span>
+          <span className="term-tip-def">{def}</span>
+          <span className="term-tip-hint dim">点击查看完整解释</span>
+        </span>
+      )}
+    </span>
+  );
+}
+
+Object.assign(window, { LearnModeToggle, Primer, Recap, T, useLearnMode });
+
+
+/* === components/glossary.jsx === */
+/* components/glossary.jsx
+   全局术语表 + 右下角浮动按钮 + 抽屉面板
+   通过 window.__ocGlossary.open(key?) 打开并可选定位术语
+   术语数据挂在 window.GLOSSARY 供 <T> hover 查询
+*/
+
+/* ============ 术语库 ============
+   key: 稳定 id
+   term: 显示名
+   short: hover tooltip 用的精简释义（一句话）
+   analogy: 生活类比
+   detail: 更完整的技术解释（1-2 段）
+   where: 首次出现的模块 id，点击可跳转
+*/
+window.GLOSSARY = {
+  websocket: {
+    term: "WebSocket",
+    short: "浏览器和服务器之间的一条常开的双向通道。",
+    analogy: "想象一条始终接通的电话线。HTTP 是你打电话、问完挂掉、再打；WebSocket 是线一直开着，双方想说话随时能说。",
+    detail: "WebSocket 是一种网络协议，它在一次握手后保持长连接，之后客户端和服务端任何一方都可以随时主动向对方推送数据。它比 HTTP 轮询省流量、省延迟，适合聊天、通知、实时协作这类需要服务器主动推送的场景。在 OpenClaw 里，Gateway 用 WebSocket 维持所有节点和你各端的常开通道。",
+    where: "m2a",
+  },
+  longpoll: {
+    term: "HTTP 轮询",
+    short: "客户端不停问服务器「有新消息吗」的笨办法。",
+    analogy: "每 1 秒拨一次前台电话问「有人找我吗」。没消息也得拨、也得挂。",
+    detail: "轮询是用 HTTP 请求周期性地询问服务器有没有新内容。优点是实现简单，缺点是延迟高（取决于间隔）、流量浪费（大量空请求）、服务器压力大。是 WebSocket 出现之前的权宜之计。",
+    where: "m2a",
+  },
+  session: {
+    term: "Session / 会话",
+    short: "一次独立的「对话线程」，自带上下文和权限。",
+    analogy: "你登录网站时后台给你开了一张临时身份牌——会话结束牌也作废。OpenClaw 的 session 更重：每个会话自带一整套记忆、工具权限、模型配置。",
+    detail: "OpenClaw 把 agent 的每一次独立运行都包在一个 session 里：main session 是你的主会话（权限最大），其它是派生的子会话或定时任务会话（权限按角色收窄）。这样可以让实验性任务、定时任务、外部请求都跑在隔离空间里，不会污染主线。",
+    where: "m3a",
+  },
+  sandbox: {
+    term: "Sandbox / 沙箱",
+    short: "一个关起来的房间，里面的程序干什么都影响不到外面。",
+    analogy: "实验室里的独立工作台——打翻试剂也只弄脏自己那桌，不扩散。",
+    detail: "沙箱是一种隔离机制，用来限制不受信任或实验性代码能访问的资源（文件、网络、系统调用等）。强度有差别：进程级沙箱（最轻）→ 容器（中）→ 虚拟机（最强）。OpenClaw 对入站 DM、Docker 会话、Playwright 浏览器都用不同级别的沙箱。",
+    where: "m5a",
+  },
+  tool_use: {
+    term: "tool_use / tool_result",
+    short: "模型「我想用工具」的请求 + 工具执行完的回报。",
+    analogy: "经理说「去查一下今天的订单」是 tool_use；助理把订单报告放回桌上是 tool_result。",
+    detail: "这是现代 agent 的标准调用范式。模型不会自己直接执行文件读写、命令、HTTP 调用——它只会输出一个结构化的 tool_use 请求（工具名 + 参数），由 agent 框架去执行，然后把结果以 tool_result 的形式再喂回模型上下文。这样工具执行是可审计、可拦截、可改写的。",
+    where: "m4a",
+  },
+  context_window: {
+    term: "上下文窗口",
+    short: "模型一次能看到的所有文字的总容量（以 token 计）。",
+    analogy: "模型的「短期记忆桌面」——桌面就这么大，塞太多就要挤掉旧的。",
+    detail: "大模型不是无限记忆的。每次推理只能看到上下文窗口内的 token（token 近似于「半个汉字或一个英文单词」）。窗口一般是几万到几十万 token。窗口爆了就得裁剪、摘要或把老内容放去长期记忆。OpenClaw 的工具层会主动给大输出做摘要，就是为了省上下文。",
+    where: "m3c",
+  },
+  cwd: {
+    term: "cwd / 当前工作目录",
+    short: "会话当前「站在」的文件夹，相对路径从这里算起。",
+    analogy: "你在终端敲 pwd 看到的那个路径。",
+    detail: "每个 session 维护一个 cwd（current working directory）。模型发出的相对路径都会以 cwd 为起点解析，再和 roots 白名单比对。让 cwd 绑死会话可以避免模型「跳到别的目录」。",
+    where: "m4b",
+  },
+  roots: {
+    term: "roots / 根白名单",
+    short: "会话允许访问的目录列表，目录之外一律拒绝。",
+    analogy: "家里门禁卡只能开指定几扇门，刷其它门直接红灯。",
+    detail: "roots 是一组允许访问的目录前缀。fs 工具会把模型要读/写的路径展开成绝对路径，再看它是否落在某个 roots 前缀下，否则直接拒绝。这样即使模型「想」访问 ~/.ssh 也访问不到。",
+    where: "m4b",
+  },
+  allowlist: {
+    term: "allowlist / 白名单",
+    short: "只允许在清单上的东西通过，其它一律拒绝。",
+    analogy: "嘉宾名单——上了名单才让进，其他一概不放。",
+    detail: "allowlist（白名单）是「默认拒绝」安全策略的实现方式：列出允许的命令/域名/路径，未列出的全部拦。反面是 blocklist（黑名单），默认允许、只挡已知坏东西。白名单更安全，但维护成本更高。",
+    where: "m4d",
+  },
+  accessibility_tree: {
+    term: "Accessibility Tree / 可访问性树",
+    short: "浏览器内部维护的语义树，不是从 HTML 字符串直接解析出来的。",
+    analogy: "把网页从「彩色截图」变成「浏览器认可的语义大纲」——按钮、输入框、链接都有角色和名字。",
+    detail: "浏览器解析 HTML 得到 DOM 后，会结合 ARIA、计算样式、可见性和动态 JS 状态维护一棵 accessibility tree，给读屏软件和自动化工具用。display:none / aria-hidden 的节点通常会被剔除，role=\"button\" / aria-label 会改变节点语义。OpenClaw 的 browser 工具通过 CDP / 浏览器 API 抽取这棵树，再给可交互节点加 refId；浏览器原生 a11y tree 里没有 refId。",
+    where: "m4c",
+  },
+  playwright: {
+    term: "Playwright",
+    short: "一个能自动化控制浏览器的程序库。",
+    analogy: "它可以替你去「点、滑、填、等」网页，像一个 24 小时不累的实习生在用浏览器。",
+    detail: "Playwright 是微软开源的浏览器自动化工具，支持 Chromium、Firefox、WebKit。OpenClaw 的 browser 工具基于它：它提供稳定的选择器、等待机制、session 复用（登录态保持）等能力，让 agent 能「像人一样」使用任何网站。",
+    where: "m4c",
+  },
+  sigterm: {
+    term: "SIGTERM / SIGKILL",
+    short: "给进程发的「请你退出」和「强制结束」两个信号。",
+    analogy: "敲门说「请你走」是 SIGTERM——进程可以先收拾一下再离开；踹门是 SIGKILL——马上被踢出去，来不及清理。",
+    detail: "操作系统用信号跟进程沟通。SIGTERM 是优雅退出信号，进程可捕获、做清理再退出。SIGKILL 无法被捕获、立刻终止。OpenClaw shell 工具超时处理就是先 SIGTERM 给 3 秒缓冲，再 SIGKILL。",
+    where: "m4d",
+  },
+  patch_mode: {
+    term: "patch 模式",
+    short: "只改指定几行，不是整个文件重写。",
+    analogy: "改合同用便利贴改几条，而不是撕了重新打印整份。",
+    detail: "OpenClaw 的 fs.write 默认只接受 patch（按行范围替换）：模型必须告诉工具「第几行到第几行换成这些内容」。这样一来，即使模型产生幻觉也只会污染局部，不会把整个文件重写成它「以为」的版本。写入前还会显示 diff 预览。",
+    where: "m4b",
+  },
+  namespace: {
+    term: "命名空间 / scope",
+    short: "每个角色有自己的「抽屉」，别人打不开也写不到。",
+    analogy: "公司里每人一个私有文件柜。钥匙只给自己，同事写不进去。",
+    detail: "命名空间是把资源（记忆、文件、权限）按归属切分的技术手段。OpenClaw 的记忆系统用 scope 做隔离：子会话只能写进自己的子命名空间，改不了主会话的事实层；定时任务只能读和写自己那一格。",
+    where: "m5b",
+  },
+  ed25519: {
+    term: "Ed25519 签名",
+    short: "作者留下的「防伪印章」，能证明这东西是 TA 写的、没被改过。",
+    analogy: "快递单上贴的不可复制的防伪条——撕下来就失效，改一个字就对不上。",
+    detail: "Ed25519 是一种公钥签名算法。作者用私钥对内容生成一段短签名，任何人用配套公钥都能验证「这段内容确实出自私钥持有者之手、且一字未改」。ClawHub 上每个 skill 包都带作者 Ed25519 签名，安装时客户端自动校验，不通过就拒绝装。",
+    where: "m6b",
+  },
+  mcp: {
+    term: "MCP (Model Context Protocol)",
+    short: "AI 接外部工具的标准插口，类似 USB。",
+    analogy: "就像 USB：任何设备只要按 USB 协议做，就能插到任何电脑上——MCP 让工具能「插」进任何支持 MCP 的 agent。",
+    detail: "MCP 是 Anthropic 提出并开源的协议：把「工具服务器」和「模型客户端」之间的通信统一成一套标准（工具发现、调用、权限）。OpenClaw 内置的工具可以是 MCP 服务器，你也可以把社区里别人写的 MCP 服务器接进来复用。",
+    where: "m6a",
+  },
+  plugin_vs_skill: {
+    term: "Plugin vs Skill",
+    short: "Plugin = 新工具（新动词），Skill = 新套路（新做法）。",
+    analogy: "餐厅里 Plugin 是新增一把厨具（蒸锅、烤箱），Skill 是新增一道菜的做法（番茄炒蛋的菜谱）。",
+    detail: "Plugin 给 Agent 增加「能做什么」——比如新增一个 feishu.send 工具。Skill 给 Agent 增加「怎么做」——一段 prompt 处方 + 模板 + 示例，告诉模型面对某类任务时的最佳套路。两者互补：Skill 经常会调用 Plugin 提供的工具。",
+    where: "m6a",
+  },
+  gateway: {
+    term: "Gateway / 网关",
+    short: "所有消息进出的唯一入口，负责路由、鉴权、限流。",
+    analogy: "公司前台 + 总机。外面人怎么找你（微信、飞书、电话）都先到前台，前台按规则转接到合适的同事。",
+    detail: "Gateway 是 OpenClaw 的控制平面。它对所有入站消息做统一鉴权、路由到合适的会话、做限流和审计；同时维持所有后端节点、Agent 会话和各个消息通道之间的长连接。你与 OpenClaw 的每一次对话都会先经过 Gateway。",
+    where: "m2a",
+  },
+  channel: {
+    term: "通道适配器",
+    short: "把微信/飞书/Telegram 各自的 API 统一翻译成 OpenClaw 内部消息格式。",
+    analogy: "不同插头插到同一个插座——适配器负责中间「翻译」。",
+    detail: "每个外部平台（微信、飞书、Telegram、Slack 等）都有自己的 API 和消息格式。通道适配器是一层薄薄的翻译层：进来统一成 OpenClaw 的内部事件，出去按各平台的格式发。这样 Agent 核心不用关心「这条消息来自哪个 App」。",
+    where: "m2b",
+  },
+  tailnet: {
+    term: "Tailnet / 内网穿透",
+    short: "在公网上跑的一个「虚拟小内网」，只有授权成员能互通。",
+    analogy: "相当于给你的设备发一张虚拟工牌——戴着工牌的设备之间能互访，其他人看都看不到。",
+    detail: "像 Tailscale 这类 mesh VPN 给每台授权设备分配一个私有虚拟 IP，设备之间点对点加密通信，对公网完全不可见。OpenClaw 的「Tailnet 暴露档」就是把节点放在这种虚拟内网里——好用、可远程，但不开公网。",
+    where: "m2c",
+  },
+  pairing: {
+    term: "配对 / pairing",
+    short: "陌生人第一次来时，必须用带外方式确认身份才能进主会话。",
+    analogy: "外卖员到楼下，保安不会直接放他进电梯，要先让你在门禁系统确认一下。",
+    detail: "OpenClaw 对入站 DM 默认走 pairing：未知身份落在沙箱里只能拿到固定配对指引，必须由你在主会话里主动批准 + 建立信任，才能升级为正常身份。这是防社工攻击的第一道门。",
+    where: "m5a",
+  },
+  skill_sandbox_dryrun: {
+    term: "dry-run / 沙盒预演",
+    short: "真装进来之前先空跑一遍，看它会用哪些能力。",
+    analogy: "新员工上岗前先在模拟场景里跑一遍，不给真权限。",
+    detail: "ClawHub 安装 skill 时，默认不直接把它放进主会话。而是在一个隔离的子会话里跑一次 dry-run：真实上下文、但所有工具换成 mock 版本。跑完后把它试图调用了哪些工具列给你看，你批准后才升级到真调用。",
+    where: "m6b",
+  },
+  manifest: {
+    term: "manifest / 清单文件",
+    short: "一份「这个 skill 会用什么工具、写哪些记忆、依赖什么」的声明书。",
+    analogy: "食品包装上的成分表——吃之前能看清楚。",
+    detail: "manifest 是 skill 包里的一份结构化声明：工具调用清单、记忆命名空间、依赖的 plugin、作者签名等。有 manifest 的意义是「装之前你能读懂它要干什么」，而不是等运行起来才知道。",
+    where: "m6b",
+  },
+  agent_vs_chatbot: {
+    term: "Agent vs Chatbot",
+    short: "Chatbot 一问一答；Agent 你交代目标、它自己拆步骤、调工具、多轮协作到完成。",
+    analogy: "Chatbot 像自助查询机（你查它答）；Agent 像实习生（你说「把本周销售做个汇报发给王总」，它自己去查数、整理、发邮件）。",
+    detail: "Chatbot 和 Agent 的核心区别是「谁负责拆解和执行」。Chatbot 里用户把工作拆到原子问题再问；Agent 里用户给高层目标，模型自己迭代「想-做-看-改」的循环，中间可能调用十几次工具、发起几个子会话。OpenClaw 就是一个 Agent 运行时。",
+    where: "m0",
+  },
+  process_container_vm: {
+    term: "进程 / 容器 / 虚拟机",
+    short: "三级隔离强度，由弱到强：共享系统 → 独立文件和进程 → 独立操作系统。",
+    analogy: "进程 = 一个员工；容器 = 独立办公隔间；虚拟机 = 独栋办公楼。包得越紧，「爆雷」时波及越小，但成本也越高。",
+    detail: "进程是操作系统最基本的运行单元，共享同一个内核和很多系统资源。容器（Docker 等）在进程之上加了一层文件/网络/权限隔离，感觉像一台独立机器但共享内核。虚拟机还要再模拟一层操作系统，最彻底但最重。OpenClaw 对不同风险级别的会话用不同强度的隔离。",
+    where: "m0",
+  },
+  harness: {
+    term: "Harness",
+    short: "Runtime 之上的 lifecycle 抽象，把细粒度 AgentEvent 聚合成一次 attempt 的结果，并提供 compact/reset/dispose。",
+    analogy: "Runtime 是发动机；Harness 是试车台——上层只说「跑一次」，它负责塞参数、观察事件流、整理最终报告。",
+    detail: "AgentHarness 是 Protocol，要求实现 id / supports(ctx) / run_attempt(params)→AgentHarnessAttemptResult / compact / reset / dispose。BuiltinHarness 把 AgentHarnessAttemptParams 翻译成 AgentRunRequest，调用 runtime.run()，再把 TEXT_DELTA 累成 assistant_texts、USAGE 累成 token 账单。真实 Python 代码已经创建 HarnessRegistry 并注册 BuiltinHarness(embedded)，但 WebChat/飞书主消息路径当前仍直接调用 runtime.run() 以保留流式事件；HarnessRegistry.select((provider, model_id)) 是未来给特殊模型 lifecycle 选专用 harness 的扩展点。",
+    where: "m3b",
+  },
+  subagent: {
+    term: "Subagent",
+    short: "main 在跑某一步时分叉出去的临时子代理，跑完只把结论文本回给 main。物理隔离靠 session_key 命名空间。",
+    analogy: "你（main）让实习生去查个资料——他坐自己工位、用自己的笔记本、干完只汇报结论，过程不打扰你。",
+    detail: "spawn_subagent() 给子代理一个 child_session_key（subagent:{parent}:{run_id}），让它跑独立的 runtime.run()。父子 transcript 物理隔离靠 SessionStore 按 key 分条目——不需要新进程或容器。深度上限 MAX_SPAWN_DEPTH=5 防 fork 炸弹（LLM 失控自我递归）。cleanup=\"delete\" 跑完丢 transcript 只留 result_text 给 main，是上下文减压的核心手段。SubagentRegistry 跟踪 active/completed，kill_subagent() 通过设置 outcome=killed 触发 abort_signal 让 runtime 主动退出。",
+    where: "m3b",
+  },
+};
+
+/* ============ 右下角浮动按钮 + 抽屉 ============ */
+(function initGlossaryStore() {
+  if (window.__ocGlossary) return;
+  let snapshot = { open: false, focusKey: null };
+  const listeners = new Set();
+  const emit = () => listeners.forEach((fn) => fn());
+  window.__ocGlossary = {
+    open(key) {
+      snapshot = { open: true, focusKey: key || null };
+      emit();
+    },
+    close() {
+      snapshot = { open: false, focusKey: null };
+      emit();
+    },
+    toggle() {
+      snapshot = snapshot.open
+        ? { open: false, focusKey: null }
+        : { open: true, focusKey: snapshot.focusKey };
+      emit();
+    },
+    getState() { return snapshot; },
+    subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
+  };
+})();
+
+function useGlossary() {
+  return React.useSyncExternalStore(
+    (cb) => window.__ocGlossary.subscribe(cb),
+    () => window.__ocGlossary.getState()
+  );
+}
+
+function GlossaryFab() {
+  const { open } = useGlossary();
+  return (
+    <button
+      className={"glossary-fab " + (open ? "open" : "")}
+      onClick={() => window.__ocGlossary.toggle()}
+      title="术语表"
+    >
+      <span className="glossary-fab-icon">📖</span>
+      <span className="glossary-fab-label">术语表</span>
+    </button>
+  );
+}
+
+function GlossaryDrawer() {
+  const { open, focusKey } = useGlossary();
+  const [q, setQ] = React.useState("");
+  const itemRefs = React.useRef({});
+
+  React.useEffect(() => {
+    if (open && focusKey && itemRefs.current[focusKey]) {
+      setTimeout(() => {
+        itemRefs.current[focusKey]?.scrollIntoView({ block: "center", behavior: "smooth" });
+      }, 80);
+    }
+  }, [open, focusKey]);
+
+  // 按首次出现模块分组
+  const grouped = React.useMemo(() => {
+    const G = window.GLOSSARY || {};
+    const groups = {};
+    Object.entries(G).forEach(([k, v]) => {
+      const m = v.where || "misc";
+      if (!groups[m]) groups[m] = [];
+      groups[m].push({ k, ...v });
+    });
+    const order = ["m0", "m1", "m2a", "m2b", "m2c", "m3a", "m3b", "m3c", "m3d",
+                   "m4a", "m4b", "m4c", "m4d", "m5a", "m5b", "m6a", "m6b", "misc"];
+    return order.filter((m) => groups[m]).map((m) => ({ m, items: groups[m] }));
+  }, []);
+
+  const MODULE_NAMES = {
+    m0: "预备知识", m1: "开场",
+    m2a: "Gateway", m2b: "通道", m2c: "远程暴露",
+    m3a: "Session", m3b: "Agent Loop", m3c: "Runtime 上下文", m3d: "记忆",
+    m4a: "工具家族", m4b: "文件系统", m4c: "浏览器", m4d: "Shell",
+    m5a: "入站 DM", m5b: "权限矩阵",
+    m6a: "Plugin/Skill/MCP", m6b: "ClawHub",
+    misc: "其他",
+  };
+
+  const filter = q.trim().toLowerCase();
+
+  if (!open) return null;
+  return (
+    <>
+      <div className="glossary-backdrop" onClick={() => window.__ocGlossary.close()} />
+      <aside className="glossary-drawer">
+        <div className="glossary-drawer-head">
+          <div>
+            <div className="glossary-drawer-title">术语表</div>
+            <div className="glossary-drawer-sub dim">在任何模块碰到不懂的词，回这里查</div>
+          </div>
+          <button className="glossary-close" onClick={() => window.__ocGlossary.close()}>×</button>
+        </div>
+
+        <div className="glossary-search">
+          <input
+            type="text"
+            placeholder="搜索术语（中英文均可）…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+        </div>
+
+        <div className="glossary-body">
+          {grouped.map((g) => {
+            const visibleItems = g.items.filter((it) => {
+              if (!filter) return true;
+              return (
+                it.term.toLowerCase().includes(filter) ||
+                it.short.toLowerCase().includes(filter) ||
+                it.k.toLowerCase().includes(filter)
+              );
+            });
+            if (visibleItems.length === 0) return null;
+            return (
+              <div key={g.m} className="glossary-group">
+                <div className="glossary-group-title">
+                  <span>{MODULE_NAMES[g.m] || g.m}</span>
+                </div>
+                {visibleItems.map((it) => (
+                  <div
+                    key={it.k}
+                    ref={(el) => { itemRefs.current[it.k] = el; }}
+                    className={"glossary-item " + (focusKey === it.k ? "focus" : "")}
+                  >
+                    <div className="glossary-item-head">
+                      <span className="glossary-item-name">{it.term}</span>
+                      {it.where && it.where !== "misc" && (
+                        <button
+                          className="glossary-jump"
+                          onClick={() => {
+                            const el = document.getElementById(it.where);
+                            if (el) {
+                              window.__ocGlossary.close();
+                              setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+                            }
+                          }}
+                        >
+                          去 {MODULE_NAMES[it.where]} →
+                        </button>
+                      )}
+                    </div>
+                    <div className="glossary-item-short">{it.short}</div>
+                    {it.analogy && (
+                      <div className="glossary-item-analogy">
+                        <span className="glossary-item-tag">类比</span>
+                        {it.analogy}
+                      </div>
+                    )}
+                    {it.detail && (
+                      <div className="glossary-item-detail">{it.detail}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      </aside>
+    </>
+  );
+}
+
+Object.assign(window, { GlossaryFab, GlossaryDrawer });
+
+
+
+/* === components/nav.jsx === */
+/* components/nav.jsx
+   Sidebar nav with progress, scrollspy, and localStorage progress tracking.
+*/
+
+/* components/nav.jsx
+   Sidebar nav with progress, scrollspy, and localStorage progress tracking.
+*/
+
+const NAV_SECTIONS = [
+  { id: "prep", label: "预备", items: [
+    { id: "m0", num: "00", label: "预备知识 · 新手必看" },
+  ]},
+  { id: "opening", label: "开场", items: [
+    { id: "m1", num: "01", label: "OpenClaw 是什么" },
+  ]},
+  { id: "architecture", label: "架构", items: [
+    { id: "m2a", num: "02", label: "Gateway 控制平面" },
+    { id: "m2b", num: "03", label: "通道矩阵" },
+    { id: "m2c", num: "04", label: "远程暴露四档" },
+  ]},
+  { id: "agent-runtime", label: "Agent 运行时", items: [
+    { id: "m3a", num: "05", label: "Session 模型" },
+    { id: "m3b", num: "06", label: "Agent Loop · 那个 while" },
+    { id: "m3c", num: "07", label: "Runtime 上下文变化" },
+    { id: "m3d", num: "08", label: "记忆系统" },
+  ]},
+  { id: "tools", label: "工具层", items: [
+    { id: "m4a", num: "09", label: "工具家族概览" },
+    { id: "m4b", num: "10", label: "文件系统工具" },
+    { id: "m4c", num: "11", label: "Playwright 浏览器" },
+    { id: "m4d", num: "12", label: "Shell 执行" },
+  ]},
+  { id: "security", label: "安全", items: [
+    { id: "m5a", num: "13", label: "入站 DM 沙箱" },
+    { id: "m5b", num: "14", label: "会话沙箱与权限矩阵" },
+  ]},
+  { id: "ecosystem", label: "生态", items: [
+    { id: "m6a", num: "15", label: "Plugin · Skill · MCP" },
+    { id: "m6b", num: "16", label: "ClawHub 技能生命周期" },
+  ]},
+  { id: "overview", label: "总览", items: [
+    { id: "m7", num: "17", label: "完整 Workflow 架构" },
+  ]},
+  { id: "closing", label: "收尾", items: [
+    { id: "m8", num: "18", label: "互动小测" },
+    { id: "m9", num: "19", label: "为什么 OpenClaw 这么火" },
+  ]},
+  { id: "easter-egg", label: "🥚 彩蛋", items: [
+    { id: "m10", num: "20", label: "Harness Engineering 的本质" },
+  ]},
+];
+
+function Sidebar({ activeId, visited }) {
+  const total = NAV_SECTIONS.reduce((s, g) => s + g.items.length, 0);
+  const done = visited.size;
+  const pct = Math.round((done / total) * 100);
+
+  const click = (id) => {
+    const el = document.getElementById(id);
+    if (el) window.scrollTo({ top: el.offsetTop - 18, behavior: "smooth" });
+  };
+
+  return (
+    <aside className="sidebar">
+      <div className="brand">
+        <div className="brand-mark" />
+        <div>
+          <div className="brand-name">OpenClaw</div>
+          <div className="brand-sub">core architecture · 交互课件</div>
+        </div>
+      </div>
+
+      {NAV_SECTIONS.map((g) => (
+        <div className="nav-group" key={g.id}>
+          <div className="nav-group-title">{g.label}</div>
+          {g.items.map((it) => (
+            <div
+              key={it.id}
+              className={"nav-item " + (activeId === it.id ? "active" : "")}
+              onClick={() => click(it.id)}
+            >
+              <span className="nav-num">{it.num}</span>
+              <span>{it.label}</span>
+              {visited.has(it.id) && activeId !== it.id ? <span className="nav-done" /> : null}
+            </div>
+          ))}
+        </div>
+      ))}
+
+      <div className="progress-rail">
+        <div className="progress-meta">
+          <span>学习进度</span>
+          <span>{done} / {total}</span>
+        </div>
+        <div className="progress-bar"><span style={{ width: pct + "%" }} /></div>
+      </div>
+    </aside>
+  );
+}
+
+function useScrollSpy(ids) {
+  const [active, setActive] = useState(ids[0]);
+  const [visited, setVisited] = useState(() => {
+    try {
+      const v = JSON.parse(localStorage.getItem("oc_visited") || "[]");
+      return new Set(v);
+    } catch (e) { return new Set(); }
+  });
+
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY + 120;
+      let cur = ids[0];
+      for (const id of ids) {
+        const el = document.getElementById(id);
+        if (el && el.offsetTop <= y) cur = id;
+      }
+      setActive(cur);
+      setVisited((old) => {
+        if (old.has(cur)) return old;
+        const next = new Set(old);
+        next.add(cur);
+        try { localStorage.setItem("oc_visited", JSON.stringify([...next])); } catch (e) {}
+        return next;
+      });
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [ids.join("|")]);
+
+  return { active, visited };
+}
+
+Object.assign(window, { Sidebar, NAV_SECTIONS, useScrollSpy });
+
+
+
+/* === components/code_drawer.jsx === */
+/* components/code_drawer.jsx
+   代码抽屉 —— 每个模块都可以挂一个 <CodeDrawer> 按钮，点开显示:
+     1) 涉及文件的小型 tree
+     2) 精选的代码片段（附中文旁注）
+     3) "从哪里开始看"导读
+     4) 设计权衡讨论
+   数据由每个模块传入，组件负责统一呈现 + 语法高亮。
+
+   用 Prism.js 做 Python 语法高亮（动态注入 <script>/<link>）。
+*/
+
+/* ================= Prism loader (idempotent) ================= */
+(function loadPrism() {
+  if (window.__prismLoaded) return;
+  window.__prismLoaded = true;
+
+  const css = document.createElement("link");
+  css.rel = "stylesheet";
+  css.href = "./assets/vendor/prism-tomorrow.min.css";
+  document.head.appendChild(css);
+
+  const core = document.createElement("script");
+  core.src = "./assets/vendor/prism.min.js";
+  core.onload = () => {
+    const py = document.createElement("script");
+    py.src = "./assets/vendor/prism-python.min.js";
+    py.onload = () => {
+      window.__prismReady = true;
+      document.dispatchEvent(new CustomEvent("prism-ready"));
+    };
+    document.head.appendChild(py);
+  };
+  document.head.appendChild(core);
+})();
+
+function usePrismReady() {
+  const [ready, setReady] = React.useState(!!window.__prismReady);
+  React.useEffect(() => {
+    if (window.__prismReady) { setReady(true); return; }
+    const h = () => setReady(true);
+    document.addEventListener("prism-ready", h);
+    return () => document.removeEventListener("prism-ready", h);
+  }, []);
+  return ready;
+}
+
+/* ================= <CodeBlock> ================= */
+/* 渲染一段 Python 代码，行号 + 高亮。可选 highlightLines (1-based)，会把这些行染成橙色底。 */
+function CodeBlock({ code, lang = "python", highlightLines = [], startLine = 1 }) {
+  const ready = usePrismReady();
+  const ref = React.useRef(null);
+
+  React.useEffect(() => {
+    if (ready && ref.current && window.Prism) {
+      window.Prism.highlightElement(ref.current);
+    }
+  }, [ready, code]);
+
+  const lines = code.split("\n");
+  const hiSet = new Set(highlightLines);
+
+  return (
+    <div className="cd-codeblock">
+      <div className="cd-lineno">
+        {lines.map((_, i) => (
+          <span
+            key={i}
+            className={hiSet.has(i + 1) ? "cd-ln hi" : "cd-ln"}
+          >
+            {startLine + i}
+          </span>
+        ))}
+      </div>
+      <pre className="cd-code">
+        <code ref={ref} className={"language-" + lang}>{code}</code>
+      </pre>
+      {hiSet.size > 0 && (
+        <div className="cd-hi-overlay" aria-hidden="true">
+          {lines.map((_, i) => (
+            <div
+              key={i}
+              className={hiSet.has(i + 1) ? "cd-hi-row" : "cd-hi-row gap"}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ================= <CodeTree> =================
+   显示相关文件的小型树。
+   props.files: [{ path, role, key }]
+   path 用 "/" 分段，自动拼成树状。
+*/
+function CodeTree({ files, activeKey, onPick }) {
+  // Group by top-level folder
+  const tree = React.useMemo(() => {
+    const root = {};
+    for (const f of files) {
+      const parts = f.path.split("/");
+      let cur = root;
+      for (let i = 0; i < parts.length; i++) {
+        const seg = parts[i];
+        const last = i === parts.length - 1;
+        if (last) {
+          cur.__files = cur.__files || [];
+          cur.__files.push({ ...f, name: seg });
+        } else {
+          cur[seg] = cur[seg] || {};
+          cur = cur[seg];
+        }
+      }
+    }
+    return root;
+  }, [files]);
+
+  const renderNode = (node, depth) => {
+    const entries = [];
+    // Dirs first
+    Object.keys(node).filter((k) => k !== "__files").sort().forEach((k) => {
+      entries.push(
+        <div key={"d-" + depth + "-" + k}>
+          <div className="cd-tree-dir" style={{ paddingLeft: 10 + depth * 14 }}>
+            <span className="cd-tree-chev">▾</span>
+            <span className="cd-tree-folder">📁</span>
+            <span>{k}/</span>
+          </div>
+          {renderNode(node[k], depth + 1)}
+        </div>
+      );
+    });
+    // Files
+    (node.__files || []).forEach((f) => {
+      entries.push(
+        <div
+          key={"f-" + f.key}
+          className={"cd-tree-file " + (activeKey === f.key ? "active" : "")}
+          style={{ paddingLeft: 10 + depth * 14 }}
+          onClick={() => onPick && onPick(f.key)}
+        >
+          <span className="cd-tree-icon">🐍</span>
+          <span className="cd-tree-name">{f.name}</span>
+          {f.role && <span className="cd-tree-role">{f.role}</span>}
+        </div>
+      );
+    });
+    return entries;
+  };
+
+  return (
+    <div className="cd-tree">
+      <div className="cd-tree-head">📂 涉及的文件</div>
+      {renderNode(tree, 0)}
+    </div>
+  );
+}
+
+/* ================= <CodeDrawer> =================
+   props:
+     moduleId: 对应的模块 id（不参与渲染，仅用于 key）
+     entry: 'openclaw-src/...' 的主入口文件路径（给读者"从哪里开始看"）
+     files: [{ key, path, role }] 要显示在 tree 里的文件清单
+     snippets: [{
+        key: string,           // 与 files[i].key 对应（可选）
+        fileLabel: string,     // 片段头部显示的文件路径
+        startLine: number,     // 从原文件第几行开始（显示用）
+        code: string,          // 精选的代码片段
+        note: string | JSX,    // 中文旁注（解释这段在做什么）
+        highlight: number[],   // 在该片段内要重点高亮的行（1-based，相对于 code 起始）
+     }]
+     narrative: {
+        start: JSX,            // 从哪里开始看
+        layers: JSX,           // 分层解读 / 设计权衡
+     }
+*/
+function CodeDrawer({ moduleId, label, entry, files = [], snippets = [], narrative }) {
+  const [open, setOpen] = React.useState(false);
+  const [tab, setTab] = React.useState(0);
+
+  return (
+    <div className={"cd-wrap " + (open ? "open" : "")}>
+      <button
+        className="cd-trigger"
+        onClick={() => setOpen(!open)}
+        title="查看这一章对应的代码结构和逻辑"
+      >
+        <span className="cd-trigger-icon">{"</>"}</span>
+        <span>{label || "看代码"}</span>
+        <span className="cd-trigger-chev">{open ? "▴" : "▾"}</span>
+      </button>
+
+      {open && (
+        <div className="cd-panel">
+          {/* Top bar: entry point */}
+          {entry && (
+            <div className="cd-entry">
+              <span className="cd-entry-tag">入口</span>
+              <code>{entry}</code>
+              <span className="cd-entry-hint dim">从这里开始读</span>
+            </div>
+          )}
+
+          <div className="cd-layout">
+            {/* Left: tree */}
+            <div className="cd-sidebar">
+              {files.length > 0 && (
+                <CodeTree
+                  files={files}
+                  activeKey={snippets[tab]?.key}
+                  onPick={(k) => {
+                    const idx = snippets.findIndex((s) => s.key === k);
+                    if (idx >= 0) setTab(idx);
+                  }}
+                />
+              )}
+              {narrative?.layers && (
+                <div className="cd-layers">
+                  <div className="cd-layers-head">💭 设计权衡</div>
+                  <div className="cd-layers-body">{narrative.layers}</div>
+                </div>
+              )}
+            </div>
+
+            {/* Right: snippets */}
+            <div className="cd-main">
+              {narrative?.start && (
+                <div className="cd-start">
+                  <span className="cd-start-tag">🧭 从哪里开始看</span>
+                  <div className="cd-start-body">{narrative.start}</div>
+                </div>
+              )}
+
+              {snippets.length > 1 && (
+                <div className="cd-tabs">
+                  {snippets.map((s, i) => (
+                    <button
+                      key={i}
+                      className={"cd-tab " + (tab === i ? "active" : "")}
+                      onClick={() => setTab(i)}
+                      title={s.fileLabel}
+                    >
+                      {s.tabLabel || s.fileLabel?.split("/").pop()}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {snippets[tab] && (
+                <div className="cd-snippet" key={tab}>
+                  <div className="cd-snippet-head">
+                    <span className="cd-snippet-path">📄 {snippets[tab].fileLabel}</span>
+                    {snippets[tab].startLine && (
+                      <span className="cd-snippet-line">第 {snippets[tab].startLine} 行起</span>
+                    )}
+                  </div>
+                  {snippets[tab].note && (
+                    <div className="cd-snippet-note">
+                      <span className="cd-snippet-note-tag">旁注</span>
+                      <span>{snippets[tab].note}</span>
+                    </div>
+                  )}
+                  <CodeBlock
+                    code={snippets[tab].code}
+                    highlightLines={snippets[tab].highlight || []}
+                    startLine={snippets[tab].startLine || 1}
+                  />
+                  {snippets[tab].takeaway && (
+                    <div className="cd-snippet-takeaway">
+                      💡 {snippets[tab].takeaway}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+Object.assign(window, { CodeDrawer, CodeBlock, CodeTree });
+
+
+/* === components/m0_primer.jsx === */
+/* components/m0_primer.jsx
+   Module 00 · 预备知识
+   新手入门必看，给后面所有模块打底。
+   5 个子小节：
+     ① Agent vs Chatbot
+     ② 客户端/服务端/长连接/WebSocket
+     ③ 进程 / 容器 / 沙箱
+     ④ 上下文窗口（为什么不能无限记忆）
+     ⑤ 工具调用协议（tool_use → tool_result）
+*/
+
+const { useState: m0_useState } = React;
+
+
+/* === Gateway 相关内容组件（来自源 2690 / 2848 / 3332 / 4255） === */
+function GatewayResponsibilities() {
+  const items = [
+    {
+      key: "route",
+      no: "01",
+      name: "路由",
+      en: "ROUTING",
+      what: "决定这条消息归谁",
+      color: "oklch(0.72 0.14 220)",
+      detail: "同一个用户上午在微信问'帮我升依赖',下午在飞书说'继续'——Gateway 要知道把'继续'丢进哪个 session。",
+      diagram: "route",
+      ifNot: "每个渠道各管各的会话——你跨设备聊不到一起,30 分钟前的事它就忘了。",
+    },
+    {
+      key: "auth",
+      no: "02",
+      name: "鉴权",
+      en: "AUTH",
+      what: "决定谁能进门",
+      color: "oklch(0.72 0.14 30)",
+      detail: "陌生人第一次发消息,先落沙箱拿 pairing 指引;远程节点带的 token 过期了,直接拒。",
+      diagram: "auth",
+      ifNot: "任何人发个 webhook 就能直接调你的 Agent · 调你的工具 · 操作你的电脑。",
+    },
+    {
+      key: "fanout",
+      no: "03",
+      name: "广播",
+      en: "FAN-OUT",
+      what: "一对多同步",
+      color: "oklch(0.72 0.14 140)",
+      detail: "Agent 流式输出每个 token,要同时推给:网页 UI(让你看到打字)、其他在听的客户端(让它们的窗口同步)。",
+      diagram: "fanout",
+      ifNot: "你网页里看到的进度,微信里完全感知不到——多端体验割裂。",
+    },
+    {
+      key: "version",
+      no: "04",
+      name: "状态版本",
+      en: "STATE VERSION",
+      what: "断线重连不丢东西",
+      color: "oklch(0.74 0.12 290)",
+      detail: "每次状态变 version+1。客户端断了 5 分钟回来,只要报上自己的 version,Gateway 知道补发哪几条就够。",
+      diagram: "version",
+      ifNot: "断线就丢消息,要么得重新拉整个会话快照——又慢又费流量。",
+    },
+  ];
+
+  return (
+    <div>
+      {/* 钩子句 */}
+      <div style={{
+        padding: 16,
+        background: "oklch(0.20 0.02 60 / 0.6)",
+        backdropFilter: "blur(6px)",
+        border: "1px solid oklch(0.55 0.04 60 / 0.30)",
+        borderLeft: "3px solid oklch(0.85 0.16 60)",
+        borderRadius: 4,
+        fontSize: 14, color: "var(--fg-mute)", lineHeight: 1.8,
+        marginBottom: 18,
+      }}>
+        <strong style={{ color: "var(--fg)" }}>"Gateway 不就是死逻辑、做数据转换的吗?"</strong>
+        <br />
+        对一半。它确实<strong style={{ color: "var(--fg)" }}>不思考</strong>(那是 Agent 的事)——
+        但它<strong style={{ color: "var(--fg)" }}>不止翻译</strong>。把它想成 <strong style={{ color: "oklch(0.92 0.10 60)" }}>邮局</strong>,而不是邮编翻译机:
+        除了"翻译地址",邮局还得管<span className="mono">分发</span> · <span className="mono">安检</span> · <span className="mono">广播</span> · <span className="mono">挂号补发</span>——下面这 4 件,缺一个就出问题。
+      </div>
+
+      <div style={{
+        display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12,
+      }}>
+        {items.map((it) => (
+          <div key={it.key} style={{
+            padding: 14,
+            background: "var(--bg)",
+            border: "1px solid var(--line-soft)",
+            borderTop: `3px solid ${it.color}`,
+            borderRadius: 4,
+            display: "flex", flexDirection: "column", gap: 12,
+          }}>
+            {/* 顶部:编号 + 名字 + 一句话 */}
+            <div>
+              <div style={{
+                display: "flex", alignItems: "baseline", gap: 8, marginBottom: 6,
+              }}>
+                <span className="mono" style={{
+                  fontSize: 11, color: it.color, letterSpacing: "0.06em",
+                }}>{it.no}</span>
+                <span style={{ fontSize: 15, fontWeight: 700, color: "var(--fg)" }}>
+                  {it.name}
+                </span>
+              </div>
+              <div className="mono" style={{
+                fontSize: 9.5, color: "var(--fg-dim)",
+                letterSpacing: "0.16em", marginBottom: 4,
+              }}>
+                {it.en}
+              </div>
+              <div style={{ fontSize: 12, color: "var(--fg-mute)", lineHeight: 1.55 }}>
+                {it.what}
+              </div>
+            </div>
+
+            {/* 中部:小图示 */}
+            <div style={{
+              padding: 10,
+              background: "oklch(0.16 0.01 60)",
+              border: "1px solid var(--line-soft)",
+              borderRadius: 4,
+              minHeight: 90,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <RespDiagram kind={it.diagram} color={it.color} />
+            </div>
+
+            {/* 详情 */}
+            <div style={{
+              fontSize: 11.5, color: "var(--fg-mute)", lineHeight: 1.7,
+            }}>
+              {it.detail}
+            </div>
+
+            {/* 底部:如果没它 */}
+            <div style={{
+              marginTop: "auto",
+              padding: "10px 12px",
+              background: "oklch(0.18 0.04 30 / 0.40)",
+              borderLeft: "2px solid oklch(0.62 0.16 30)",
+              borderRadius: "0 3px 3px 0",
+            }}>
+              <div className="mono" style={{
+                fontSize: 9.5, color: "oklch(0.78 0.14 30)",
+                letterSpacing: "0.10em", marginBottom: 4,
+              }}>
+                ⚠ 如果没它
+              </div>
+              <div style={{ fontSize: 11.5, color: "var(--fg-mute)", lineHeight: 1.65 }}>
+                {it.ifNot}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 底部小结 */}
+      <div style={{
+        marginTop: 16,
+        fontSize: 12.5, color: "var(--fg-dim)", lineHeight: 1.75,
+        paddingTop: 14, borderTop: "1px dashed var(--line-soft)",
+      }}>
+        所以更准确的描述是 ——
+        <strong style={{ color: "var(--fg)" }}>Gateway 是无 AI 的、有状态的、协议层的死逻辑</strong>。
+        "死"是优点(可预测 · 易测试),但它管的是消息<span className="mono">怎么流</span>,不是消息<span className="mono">说了什么</span>。
+      </div>
+    </div>
+  );
+}
+
+function RespDiagram({ kind, color }) {
+  const [tick, setTick] = m0_useState(0);
+  React.useEffect(() => {
+    const t = setInterval(() => setTick((x) => (x + 1) % 4), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const dim = "oklch(0.55 0.04 60)";
+  const fg = "oklch(0.88 0.01 60)";
+
+  if (kind === "route") {
+    // 三个入口 → Gateway → 决定路由到哪个 session
+    const targets = ["S1", "S2", "S3"];
+    const target = tick % 3;
+    return (
+      <svg viewBox="0 0 200 90" width="100%" height="90">
+        {/* 入口 */}
+        {["微信", "飞书", "Tg"].map((c, i) => (
+          <g key={i}>
+            <circle cx="20" cy={20 + i * 25} r="3" fill={dim} />
+            <text x="8" y={24 + i * 25} fill={dim} fontSize="9">{c}</text>
+            <line x1="24" y1={20 + i * 25} x2="80" y2="45" stroke={dim} strokeWidth="0.8" />
+          </g>
+        ))}
+        {/* Gateway 节点 */}
+        <rect x="80" y="36" width="34" height="18" rx="3"
+          fill="oklch(0.30 0.05 60)" stroke={color} strokeWidth="1.2" />
+        <text x="97" y="48" textAnchor="middle" fill={color} fontSize="9" fontWeight="700">GW</text>
+        {/* 三个 session */}
+        {targets.map((s, i) => (
+          <g key={i}>
+            <rect x="160" y={14 + i * 25} width="32" height="16" rx="2"
+              fill={target === i ? "oklch(0.30 0.10 220)" : "oklch(0.22 0.01 60)"}
+              stroke={target === i ? color : dim} strokeWidth={target === i ? "1.2" : "0.6"} />
+            <text x="176" y={25 + i * 25} textAnchor="middle"
+              fill={target === i ? fg : dim} fontSize="8.5">{s}</text>
+            <line x1="114" y1="45" x2="160" y2={22 + i * 25}
+              stroke={target === i ? color : dim} strokeWidth={target === i ? "1.4" : "0.6"}
+              strokeDasharray={target === i ? "0" : "2 2"} />
+          </g>
+        ))}
+      </svg>
+    );
+  }
+
+  if (kind === "auth") {
+    // 三个请求,一个红 X(被拒) 两个绿 √
+    const states = [
+      { label: "已知", ok: true },
+      { label: "陌生", ok: false },
+      { label: "过期", ok: false },
+      { label: "已知", ok: true },
+    ];
+    const cur = states[tick];
+    return (
+      <svg viewBox="0 0 200 90" width="100%" height="90">
+        <rect x="20" y="35" width="50" height="20" rx="3"
+          fill="oklch(0.22 0.01 60)" stroke={dim} strokeWidth="0.8" />
+        <text x="45" y="48" textAnchor="middle" fill={fg} fontSize="9.5">{cur.label}请求</text>
+        {/* 门 */}
+        <rect x="90" y="22" width="6" height="46" fill={cur.ok ? "oklch(0.55 0.16 140)" : "oklch(0.55 0.18 30)"} />
+        <text x="93" y="14" textAnchor="middle" fill={cur.ok ? "oklch(0.78 0.14 140)" : "oklch(0.82 0.16 30)"}
+          fontSize="11" fontWeight="700">{cur.ok ? "✓" : "✕"}</text>
+        {/* Agent */}
+        <rect x="120" y="35" width="60" height="20" rx="3"
+          fill={cur.ok ? "oklch(0.30 0.05 220)" : "oklch(0.20 0.01 60)"}
+          stroke={cur.ok ? color : dim} strokeWidth="0.8"
+          strokeDasharray={cur.ok ? "0" : "2 2"} />
+        <text x="150" y="48" textAnchor="middle" fill={cur.ok ? fg : dim} fontSize="9.5">Agent</text>
+      </svg>
+    );
+  }
+
+  if (kind === "fanout") {
+    // 一个 event 同时推到 3 个 client
+    return (
+      <svg viewBox="0 0 200 90" width="100%" height="90">
+        <rect x="14" y="36" width="36" height="20" rx="3"
+          fill="oklch(0.30 0.05 60)" stroke={color} strokeWidth="1.2" />
+        <text x="32" y="49" textAnchor="middle" fill={color} fontSize="9" fontWeight="700">GW</text>
+        {[20, 45, 70].map((y, i) => (
+          <g key={i}>
+            <line x1="50" y1="46" x2="160" y2={y + 6}
+              stroke={color} strokeWidth="0.9" strokeOpacity="0.6" />
+            <circle cx={50 + (110 * (((tick * 0.5 + i * 0.33) % 1)))}
+              cy={46 + ((y + 6 - 46) * (((tick * 0.5 + i * 0.33) % 1)))}
+              r="2.4" fill={color} />
+            <rect x="160" y={y - 4} width="34" height="20" rx="2"
+              fill="oklch(0.22 0.01 60)" stroke={dim} strokeWidth="0.6" />
+            <text x="177" y={y + 8} textAnchor="middle" fill={fg} fontSize="9">
+              {["UI", "节点", "通道"][i]}
+            </text>
+          </g>
+        ))}
+      </svg>
+    );
+  }
+
+  if (kind === "version") {
+    // 显示一个版本计数器在跳, 客户端断线重连补差量
+    const v = 142 + tick;
+    return (
+      <svg viewBox="0 0 200 90" width="100%" height="90">
+        <text x="100" y="22" textAnchor="middle" fill={dim}
+          fontSize="9" fontFamily="var(--font-mono)" letterSpacing="0.1em">
+          stateVersion
+        </text>
+        <text x="100" y="50" textAnchor="middle" fill={color}
+          fontSize="22" fontWeight="700" fontFamily="var(--font-mono)">
+          {v}
+        </text>
+        <text x="100" y="72" textAnchor="middle" fill={fg}
+          fontSize="9.5">
+          客户端报 v={v - 3} → 补发 3 条
+        </text>
+      </svg>
+    );
+  }
+  return null;
+}
+
+/* ============ Frame 协议教学组件 · 把代码先讲明白再读代码 ============ */
+function EnvelopeNormalizer() {
+  const channels = [
+    {
+      id: "wechat",
+      label: "微信",
+      sub: "Bridge · 私有协议",
+      color: "oklch(0.72 0.14 140)",
+      raw: {
+        MsgType: "text",
+        FromUserName: "wxid_8a1b2c3d4e",
+        ToUserName: "wxid_li_xiao",
+        CreateTime: 1714207890,
+        MsgId: 8472913650382,
+        Content: "帮我把仓库里过期的依赖升一下",
+      },
+      hint: "字段名是大驼峰 · 时间是秒级时间戳 · 用户 ID 是 wxid 内部编号",
+    },
+    {
+      id: "feishu",
+      label: "飞书",
+      sub: "Bot API · 标准 webhook",
+      color: "oklch(0.72 0.14 220)",
+      raw: {
+        schema: "2.0",
+        header: { event_type: "im.message.receive_v1" },
+        event: {
+          sender: { sender_id: { open_id: "ou_3a8c..." } },
+          message: {
+            message_id: "om_xxxx",
+            create_time: "1714207890123",
+            chat_type: "p2p",
+            content: '{"text":"帮我把仓库里过期的依赖升一下"}',
+          },
+        },
+      },
+      hint: "嵌套 5 层 · 时间是字符串毫秒 · 内容还是 JSON 字符串(要再 parse 一次)",
+    },
+    {
+      id: "telegram",
+      label: "Telegram",
+      sub: "Bot API · 平台标准",
+      color: "oklch(0.74 0.12 250)",
+      raw: {
+        update_id: 928374651,
+        message: {
+          message_id: 4827,
+          from: { id: 12345678, username: "li_xiao", language_code: "zh-cn" },
+          chat: { id: 12345678, type: "private" },
+          date: 1714207890,
+          text: "帮我把仓库里过期的依赖升一下",
+        },
+      },
+      hint: "字段名是 snake_case · 用户 ID 是数字 · 自带 chat 类型",
+    },
+    {
+      id: "imessage",
+      label: "iMessage",
+      sub: "Bridge · macOS 桥接",
+      color: "oklch(0.72 0.13 320)",
+      raw: {
+        guid: "p:0/+8613800138000",
+        handle_id: 87,
+        text: "帮我把仓库里过期的依赖升一下",
+        is_from_me: 0,
+        date: 738531090000000000,
+        service: "iMessage",
+      },
+      hint: "Apple Core Data 风格 · 时间是 nanoseconds since 2001 · 用 phone+ 标识用户",
+    },
+  ];
+
+  // 统一 envelope 长一样
+  const makeEnvelope = (ch) => ({
+    type: "channel.message.in",
+    envelope_id: "env_01HXKJ7Q...",
+    channel: { kind: ch.id, adapter: ch.sub.split(" · ")[0] },
+    user: { id: "user:li.xiao", display: "李霄" },
+    session: "main",
+    payload: {
+      kind: "text",
+      text: "帮我把仓库里过期的依赖升一下",
+    },
+    timestamp: "2024-04-27T10:11:30.123Z",
+  });
+
+  const [idx, setIdx] = m0_useState(0);
+  const [paused, setPaused] = m0_useState(false);
+  React.useEffect(() => {
+    if (paused) return;
+    const t = setInterval(() => setIdx((x) => (x + 1) % channels.length), 3200);
+    return () => clearInterval(t);
+  }, [paused, channels.length]);
+
+  const cur = channels[idx];
+  const env = makeEnvelope(cur);
+
+  // 高亮：哪几行是"用户内容"——它在不同渠道里藏在不同字段
+  const contentPaths = new Set([
+    "raw.Content",
+    "raw.event.message.content",
+    "raw.message.text",
+    "raw.text",
+    "envelope.payload.text",
+  ]);
+  const renderJSON = (obj, path = []) => {
+    if (obj === null) return <span style={{ color: "oklch(0.65 0.01 60)" }}>null</span>;
+    if (typeof obj === "string") {
+      const isContent = contentPaths.has(path.join("."));
+      return (
+        <span style={{
+          color: isContent ? "oklch(0.85 0.16 60)" : "oklch(0.78 0.10 140)",
+          background: isContent ? "oklch(0.85 0.16 60 / 0.12)" : "transparent",
+          padding: isContent ? "0 3px" : 0, borderRadius: 2,
+        }}>"{obj}"</span>
+      );
+    }
+    if (typeof obj === "number") {
+      return <span style={{ color: "oklch(0.78 0.13 250)" }}>{obj}</span>;
+    }
+    if (Array.isArray(obj)) {
+      return <>[{obj.map((v, i) => <span key={i}>{renderJSON(v, path.concat(String(i)))}{i < obj.length - 1 ? ", " : ""}</span>)}]</>;
+    }
+    if (typeof obj === "object") {
+      const keys = Object.keys(obj);
+      return (
+        <>{"{"}
+          {keys.map((k, i) => (
+            <div key={k} style={{ paddingLeft: 14 }}>
+              <span style={{ color: "oklch(0.78 0.10 60)" }}>"{k}"</span>
+              <span style={{ color: "oklch(0.65 0.01 60)" }}>: </span>
+              {renderJSON(obj[k], path.concat(k))}
+              {i < keys.length - 1 && <span style={{ color: "oklch(0.65 0.01 60)" }}>,</span>}
+            </div>
+          ))}
+          {"}"}</>
+      );
+    }
+    return String(obj);
+  };
+
+  return (
+    <div style={{
+      display: "grid", gridTemplateColumns: "1fr 80px 1fr", gap: 14, alignItems: "stretch",
+    }}>
+      {/* 左:原始 payload */}
+      <div style={{
+        padding: 14, background: "var(--bg)", border: "1px solid var(--line-soft)",
+        borderLeft: `3px solid ${cur.color}`, borderRadius: 4,
+        display: "flex", flexDirection: "column", minHeight: 360,
+      }}>
+        <div style={{
+          display: "flex", alignItems: "baseline", justifyContent: "space-between",
+          marginBottom: 4, gap: 8, flexWrap: "wrap",
+        }}>
+          <div>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--fg)" }}>{cur.label} 原始 payload</div>
+            <div className="mono" style={{ fontSize: 10.5, color: "var(--fg-dim)", letterSpacing: "0.04em" }}>
+              {cur.sub}
+            </div>
+          </div>
+          <span className="mono" style={{
+            fontSize: 10, color: cur.color, padding: "2px 7px",
+            border: `1px solid ${cur.color}`, borderRadius: 100, letterSpacing: "0.06em",
+          }}>{idx + 1} / {channels.length}</span>
+        </div>
+        <pre className="mono" style={{
+          flex: 1, margin: "10px 0 0 0", padding: 12,
+          background: "oklch(0.16 0.01 60)",
+          border: "1px solid var(--line-soft)", borderRadius: 4,
+          fontSize: 11, lineHeight: 1.6, color: "var(--fg-mute)",
+          overflow: "auto", whiteSpace: "pre-wrap",
+        }}>
+          {renderJSON(cur.raw, ["raw"])}
+        </pre>
+        <div style={{
+          marginTop: 8, fontSize: 11, color: "var(--fg-dim)", lineHeight: 1.65,
+        }}>
+          <span style={{ color: cur.color }}>· </span>{cur.hint}
+        </div>
+      </div>
+
+      {/* 中:Gateway 标识 */}
+      <div style={{
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        gap: 12, position: "relative",
+      }}>
+        <div style={{
+          width: 56, height: 56, borderRadius: 12,
+          background: "linear-gradient(135deg, oklch(0.32 0.10 60), oklch(0.24 0.05 60))",
+          border: "1.4px solid oklch(0.75 0.16 60 / 0.5)",
+          boxShadow: "0 0 0 4px oklch(0.75 0.16 60 / 0.08), 0 4px 18px oklch(0.55 0.18 30 / 0.25)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          color: "oklch(0.92 0.10 60)", fontFamily: "var(--font-mono)",
+          fontSize: 11, fontWeight: 700, letterSpacing: "0.06em",
+          animation: "envPulse 1.6s ease-in-out infinite",
+        }}>GATE</div>
+        <div className="mono" style={{
+          fontSize: 9.5, color: "var(--fg-dim)", letterSpacing: "0.1em", textAlign: "center",
+        }}>NORMALIZE</div>
+        {/* 流动小点 */}
+        <svg width="80" height="32" style={{ marginTop: -6 }}>
+          {[0, 1, 2].map((i) => (
+            <circle key={i} cx="0" cy="16" r="2.4" fill="oklch(0.85 0.16 60)">
+              <animate attributeName="cx" from="0" to="80" dur="1.6s"
+                begin={`${i * 0.5}s`} repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.9;1" dur="1.6s"
+                begin={`${i * 0.5}s`} repeatCount="indefinite" />
+            </circle>
+          ))}
+        </svg>
+        <style>{`@keyframes envPulse { 0%,100% { box-shadow: 0 0 0 4px oklch(0.75 0.16 60 / 0.08), 0 4px 18px oklch(0.55 0.18 30 / 0.25); } 50% { box-shadow: 0 0 0 8px oklch(0.75 0.16 60 / 0.14), 0 4px 22px oklch(0.55 0.18 30 / 0.40); } }`}</style>
+      </div>
+
+      {/* 右:统一 envelope */}
+      <div style={{
+        padding: 14, background: "var(--bg)", border: "1px solid var(--line-soft)",
+        borderLeft: "3px solid oklch(0.85 0.16 60)", borderRadius: 4,
+        display: "flex", flexDirection: "column", minHeight: 360,
+      }}>
+        <div style={{ marginBottom: 4 }}>
+          <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--fg)" }}>
+            OpenClaw 内部 envelope
+          </div>
+          <div className="mono" style={{ fontSize: 10.5, color: "var(--fg-dim)", letterSpacing: "0.04em" }}>
+            统一格式 · 不管来源是哪
+          </div>
+        </div>
+        <pre className="mono" style={{
+          flex: 1, margin: "10px 0 0 0", padding: 12,
+          background: "oklch(0.20 0.04 60)",
+          border: "1px solid oklch(0.55 0.10 60 / 0.40)", borderRadius: 4,
+          fontSize: 11, lineHeight: 1.6, color: "var(--fg-mute)",
+          overflow: "auto", whiteSpace: "pre-wrap",
+        }}>
+          {renderJSON(env, ["envelope"])}
+        </pre>
+        <div style={{
+          marginTop: 8, fontSize: 11, color: "var(--fg-dim)", lineHeight: 1.65,
+        }}>
+          <span style={{ color: "oklch(0.85 0.16 60)" }}>· </span>
+          上面 4 个渠道的原始数据,经过 Channel 适配器,出来的 envelope <strong style={{ color: "var(--fg)" }}>都长这样</strong>。
+        </div>
+      </div>
+
+      {/* 底部:渠道切换器 */}
+      <div style={{ gridColumn: "1 / -1", marginTop: 6 }}>
+        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+          {channels.map((c, i) => (
+            <button key={c.id} onClick={() => { setIdx(i); setPaused(true); }}
+              style={{
+                padding: "5px 11px", fontSize: 11.5,
+                background: idx === i ? c.color : "var(--bg-soft)",
+                color: idx === i ? "oklch(0.16 0.01 60)" : "var(--fg-mute)",
+                border: `1px solid ${idx === i ? c.color : "var(--line-soft)"}`,
+                borderRadius: 100, cursor: "pointer", fontFamily: "inherit",
+                fontWeight: idx === i ? 600 : 400, transition: "all 160ms ease",
+              }}>{c.label}</button>
+          ))}
+          <button onClick={() => setPaused(!paused)} style={{
+            marginLeft: 6, padding: "5px 11px", fontSize: 11,
+            background: "transparent", color: "var(--fg-dim)",
+            border: "1px solid var(--line-soft)", borderRadius: 100,
+            cursor: "pointer", fontFamily: "var(--font-mono)", letterSpacing: "0.04em",
+          }}>{paused ? "▶ 继续" : "⏸ 暂停"}</button>
+          <span style={{
+            marginLeft: "auto", fontSize: 11, color: "var(--fg-dim)",
+          }}>
+            注意右边的 <span className="mono" style={{ color: "oklch(0.85 0.16 60)" }}>payload.text</span> ——
+            不管左边怎么变,它的位置和字段名都不变。
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============ ⓪ Gateway 是什么 (m0 第一节) ============ */
+function GatewayDiagram() {
+  const [hover, setHover] = useState(null);
+  const nodes = [
+    { id: "channels", x: 60,  y: 40,  w: 180, h: 60, label: "消息通道适配器", sub: "WeCom · Lark · Telegram · Slack · Discord" },
+    { id: "piagent",  x: 60,  y: 130, w: 180, h: 60, label: "Pi Agent / CLI",  sub: "命令行终端客户端" },
+    { id: "webchat",  x: 60,  y: 220, w: 180, h: 60, label: "WebChat UI",      sub: "浏览器客户端" },
+    { id: "mac",      x: 60,  y: 310, w: 180, h: 60, label: "macOS Node",      sub: "本机 + 工具" },
+    { id: "ios",      x: 60,  y: 400, w: 180, h: 60, label: "iOS / Android",   sub: "移动设备节点" },
+
+    { id: "model",    x: 700, y: 40,  w: 200, h: 60, label: "Model Providers", sub: "Anthropic · OpenAI · Local" },
+    { id: "tools",    x: 700, y: 130, w: 200, h: 60, label: "Tools",           sub: "fs / shell / browser / canvas" },
+    { id: "skills",   x: 700, y: 220, w: 200, h: 60, label: "Skills & Plugins",sub: "ClawHub · 本地 · MCP Server" },
+    { id: "store",    x: 700, y: 310, w: 200, h: 60, label: "State / Memory",  sub: "SQLite · Vector · KV" },
+    { id: "cron",     x: 700, y: 400, w: 200, h: 60, label: "Cron / Scheduler",sub: "后台任务 · 订阅" },
+  ];
+
+  const gw = { x: 380, y: 200, w: 200, h: 120 };
+
+  const edges = nodes.map(n => ({
+    from: n.id,
+    x1: n.x < 400 ? n.x + n.w : n.x,
+    y1: n.y + n.h / 2,
+    x2: n.x < 400 ? gw.x : gw.x + gw.w,
+    y2: gw.y + gw.h / 2 + (n.y - 220) * 0.12,
+  }));
+
+  return (
+    <div className="card" style={{ padding: 18 }}>
+      <svg viewBox="0 0 960 500" width="100%" style={{ display: "block" }}>
+        {edges.map((e) => (
+          <path key={e.from}
+            d={`M${e.x1} ${e.y1} C ${(e.x1+e.x2)/2} ${e.y1}, ${(e.x1+e.x2)/2} ${e.y2}, ${e.x2} ${e.y2}`}
+            className={"edge " + (hover === e.from ? "active" : "")}
+            fill="none" />
+        ))}
+        {nodes.map((n) => (
+          <g key={n.id}
+             onMouseEnter={() => setHover(n.id)}
+             onMouseLeave={() => setHover(null)}
+             style={{ cursor: "pointer" }}>
+            <rect x={n.x} y={n.y} width={n.w} height={n.h} rx="8"
+              className={"node-box " + (hover === n.id ? "active" : "")} />
+            <text x={n.x + n.w/2} y={n.y + 26} textAnchor="middle" className="node-label" style={{ fontWeight: 600 }}>{n.label}</text>
+            <text x={n.x + n.w/2} y={n.y + 44} textAnchor="middle" className="node-sub">{n.sub}</text>
+          </g>
+        ))}
+        {/* Gateway core */}
+        <rect x={gw.x} y={gw.y} width={gw.w} height={gw.h} rx="12"
+          fill="var(--claw-wash)" stroke="var(--claw)" strokeWidth="1.4" />
+        <text x={gw.x + gw.w/2} y={gw.y + 38} textAnchor="middle"
+          style={{ fontSize: 16, fontWeight: 600, fill: "var(--fg)" }}>Gateway</text>
+        <text x={gw.x + gw.w/2} y={gw.y + 60} textAnchor="middle" className="node-sub">WebSocket hub · single-user</text>
+        <text x={gw.x + gw.w/2} y={gw.y + 80} textAnchor="middle" className="node-sub">ws://127.0.0.1:18789</text>
+        <text x={gw.x + gw.w/2} y={gw.y + 102} textAnchor="middle" className="node-sub" style={{ fill: "var(--claw-soft)" }}>
+          routes · auth · fanout · sessions
+        </text>
+      </svg>
+
+      <div style={{ fontSize: 13, color: "var(--fg-mute)", marginTop: 6 }}>
+        {hover ? (
+          <>悬停：<span className="mono" style={{ color: "var(--claw-soft)" }}>{hover}</span> — 点亮它与 Gateway 之间的连线。</>
+        ) : (
+          <>鼠标移到任意节点查看它如何接入 Gateway。所有组件——包括通道适配器、CLI、设备节点、模型、工具——都以 <span className="kbd">WebSocket</span> 客户端身份连回同一个枢纽。</>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ===========================================================
+   预览版 · App + LockOverlay · ModuleGateway m2a 部分
+   =========================================================== */
+
+function PreviewLock() {
+  function onEnroll(e) {
+    e.preventDefault();
+    try {
+      if (window.top && window.top !== window) {
+        window.top.postMessage({ type: 'cwp:enroll', from: 'cwp-preview' }, '*');
+        return;
+      }
+    } catch (err) { /* ignore */ }
+    alert('返回 S5 课程页 · 报名后即可解锁 OpenClaw 全部 20 节互动内容');
+  }
+  return (
+    <section className="cwp-lock" aria-label="报名解锁" style={{ marginTop: 40 }}>
+      <div className="cwp-lock__fade"></div>
+      <div className="cwp-lock__panel">
+        <div className="cwp-lock__card">
+          <span className="cwp-lock__tag">本课件完整版 · 8 组 · 20 节 · 约 2 小时</span>
+          <h3 className="cwp-lock__title">解锁剩余 <em>19 节</em> · 含通道矩阵 / Agent 运行时 / 工具沙箱 / Plugin</h3>
+          <p className="cwp-lock__sub">
+            Module 00 预备 · 01 OpenClaw 是什么 · <strong>本预览（02 Gateway 控制平面）</strong> · 03 通道矩阵 · 04 远程暴露四档 · 05-08 Agent 运行时 · 09-12 工具家族 · 13-14 安全沙箱 · 15-16 Plugin/Skill/MCP · 17 完整 Workflow · 18-20 互动小测与彩蛋。
+          </p>
+          <div className="cwp-lock__meta">
+            <span className="it"><b>20</b> · 节互动</span>
+            <span className="it"><b>8</b> · 章节组</span>
+            <span className="it"><b>4</b> · Gateway 职责</span>
+            <span className="it"><b>4</b> · 隔离等级</span>
+          </div>
+          <a className="cwp-lock__cta" href="#enroll" onClick={onEnroll}>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/><circle cx="12" cy="16.5" r="1.2" fill="currentColor"/></svg>
+            报名解锁完整章节
+          </a>
+          <div className="cwp-lock__hint">已报名同学请联系班主任开通课件权限</div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PreviewGateway() {
+  return (
+    <Section
+      id="m2a"
+      idx="MODULE · 02 · 预览"
+      eyebrow="架构"
+      title="Gateway 控制平面"
+      lead="OpenClaw 的所有组件都是 WebSocket 客户端，回连本机的单进程 Gateway。枢纽之外，没有任何共享状态——这是 local-first 的关键。"
+    >
+      <Primer
+        title="为什么要有一个「Gateway」？"
+        analogy={<>想象一个<strong>公司前台</strong>：快递、客户、外卖、员工都得经过前台登记 + 分发。没有前台，每个部门都要自己处理进出，乱成一团。Gateway 就是 OpenClaw 的前台——<strong>唯一的「进/出」</strong>。</>}
+        contrast={<>没有 Gateway 的做法：每个渠道直接调模型、每台设备直接走自己的授权。结果：应用之间状态不一致（微信说过的事电脑上不知道）、权限无法统一管控、审计也没地方记。</>}
+        tech={<>Gateway 是一个单用户、单进程的 <T k="websocket">WebSocket</T> 枢纽，默认跑在 <code>ws://127.0.0.1:18789</code>。所有组件以客户端身份回连，消息按 envelope（<T k="session">session</T> + source + user + time）路由。Gateway 自己不跑模型也不存数据——只负责路由、授权、fanout。</>}
+      />
+      <GatewayDiagram />
+
+      <h3 className="h-sub" style={{ marginTop: 30 }}>Gateway 在做什么 · 把"五花八门"翻译成"长得一样"</h3>
+      <div style={{ fontSize: 14, color: "var(--fg-mute)", lineHeight: 1.75, marginBottom: 14 }}>
+        每个外部平台都有自己的消息格式——字段名、嵌套结构、时间格式、用户 ID 编码方式都不一样。
+        Gateway 通过 <strong style={{ color: "var(--fg)" }}>Channel 适配器</strong>把它们统一翻译成一种内部 envelope,
+        后面所有组件(Session / Agent / Tool)只需要认这一种格式。
+      </div>
+      <EnvelopeNormalizer />
+
+      <h3 className="h-sub" style={{ marginTop: 30 }}>但 Gateway 不只是翻译 · 4 件正经活</h3>
+      <GatewayResponsibilities />
+    </Section>
+  );
+}
+
+function App() {
+  const ids = NAV_SECTIONS.flatMap(g => g.items.map(it => it.id));
+  const { active, visited } = useScrollSpy(ids);
+
+  React.useEffect(() => {
+    function onSidebarClick(e) {
+      const link = e.target.closest('.sidebar a[href^="#"]');
+      if (!link) return;
+      const href = link.getAttribute('href');
+      if (href !== '#m2a') {
+        e.preventDefault();
+        try {
+          if (window.top && window.top !== window) {
+            window.top.postMessage({ type: 'cwp:enroll', from: 'cwp-preview' }, '*');
+            return;
+          }
+        } catch (err) { /* ignore */ }
+        alert('返回 S5 课程页 · 报名后即可解锁 OpenClaw 全部 20 节互动内容');
+      }
+    }
+    document.addEventListener('click', onSidebarClick, true);
+    return () => document.removeEventListener('click', onSidebarClick, true);
+  }, []);
+
+  return (
+    <div className="app">
+      <Sidebar activeId={active} visited={visited} />
+      <main className="main">
+        <PreviewGateway />
+        <PreviewLock />
+
+        <footer style={{
+          marginTop: 40,
+          paddingTop: 20,
+          borderTop: "1px dashed var(--line)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          fontFamily: "var(--font-mono)",
+          fontSize: 11,
+          color: "var(--fg-dim)",
+          letterSpacing: "0.08em",
+        }}>
+          <span>OpenClaw · 核心架构与原理 · 预览版</span>
+          <span>v0.2 · S5 报名后开放完整版</span>
+        </footer>
+      </main>
+
+      <LearnModeToggle />
+      <GlossaryFab />
+      <GlossaryDrawer />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+
+  </script>
+</body>
+</html>
